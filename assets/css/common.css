@@ -717,3 +717,31 @@ html.zv-open{overflow:hidden}
 @media(max-width:640px){
   .p1-sec .pg-item{flex-basis:78%}
 }
+
+/* ============ 분야별 수정안 (WBS 13, 2026-11-03) ============
+   무용 커리큘럼 — 음악 「이렇게 배웁니다」 사진 카드(.wk-fw)의 네 칸판. 1100 이하 두 칸씩(점선 숨김), 768 이하 한 칸 */
+.wk-fw.c4{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.wk-fw.c4 > li::after{width:calc(100% + 24px)}
+.wk-fw.c4 > li:last-child::after{width:calc(100% - 8px)}
+.wk-fw.c4 .wk-ph{height:240px}
+.wk-fw.c4 h3{font-size:20px;line-height:1.35}
+/* 전통예술 · 미술 — 다섯 칸판(13.9). PC 한 줄, 1100 이하 세 칸씩, 768 이하 한 칸 */
+.wk-fw.c5{grid-template-columns:repeat(5,minmax(0,1fr));gap:20px}
+.wk-fw.c5 > li::after{width:calc(100% + 20px)}
+.wk-fw.c5 > li:last-child::after{width:calc(100% - 8px)}
+.wk-fw.c5 .wk-ph{height:200px}
+.wk-fw.c5 h3{font-size:18px;line-height:1.35}
+.wk-fw.c5 p{font-size:14.5px}
+@media(max-width:1100px){
+  .wk-fw.c4{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:44px;padding-top:0}
+  .wk-fw.c5{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:44px;padding-top:0}
+  .wk-fw.c4 > li::before,.wk-fw.c4 > li::after,.wk-fw.c5 > li::before,.wk-fw.c5 > li::after{content:none}
+  .wk-fw.c4 .wk-ph{height:280px}
+  .wk-fw.c5 .wk-ph{height:220px}
+}
+@media(max-width:768px){
+  .wk-fw.c4,.wk-fw.c5{grid-template-columns:minmax(0,1fr)}
+  .wk-fw.c5 .wk-ph{height:280px}
+  .wk-fw.c5 h3{font-size:20px}
+  .wk-fw.c5 p{font-size:15px}
+}
