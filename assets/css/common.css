@@ -111,12 +111,8 @@ body.menu-open #allmenu{opacity:1;pointer-events:auto}
 #sv .in{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:end;gap:26px 40px;padding:70px 0 56px}
 #sv h1{font-size:68px;font-weight:800;line-height:1.1;letter-spacing:-.05em}
 #sv .desc{justify-self:end;padding-bottom:10px;font-size:17px;color:var(--gray);letter-spacing:-.02em;text-align:right}
+/* 위 사진 띠 — 관리자 페이지 「사이트 사진」의 sv-* 사진만(photos.js가 --photo로 넣음). 기본 사진 없음 (2026-11-04) */
 #sv::after{content:"";display:block;height:360px;background:#222 var(--photo,var(--sv-img)) var(--photo-pos,var(--sv-pos,center)) / cover no-repeat}
-#sv[data-page="about"]{--sv-img:url("../img/real/sv-about.jpg");--sv-pos:center 45%}
-#sv[data-page="programs"]{--sv-img:url("../img/real/sv-programs.jpg");--sv-pos:center 40%}
-#sv[data-page="recruit"]{--sv-img:url("../img/real/sv-recruit.jpg");--sv-pos:center 55%}
-#sv[data-page="mentoring"]{--sv-img:url("../img/real/sv-mentoring.jpg");--sv-pos:center 45%}
-#sv[data-page="camp"]{--sv-img:url("../img/real/sv-camp.jpg");--sv-pos:center 50%}
 #sv[data-page="news"]::after{content:none}
 
 /* ---------- 경로 표시 — 하위 머리 맨 위, 작은 회색 · 지금 페이지만 검정 ---------- */
@@ -775,7 +771,7 @@ h1,h2,h3,h4,.kick,.p1-ld,.mn-lead,p,dd,li,figcaption{text-wrap:balance}
 .ln-s{display:inline-block;max-width:100%}
 
 /* ===== 사진을 뺀 자리 (photoMode 'attached', photos.js · 2026-11-04) — 사진 없이 바탕만 ===== */
-img.ph-none{background:#F4F2EC}
+img.ph-none,img[data-photo]{background:#F4F2EC}
 .wk-ph.ph-none{background:#F4F2EC}
 #sv.ph-none::after{display:none}
 #recruit.ph-none::before{display:none}

@@ -6,21 +6,11 @@
 
 :root{
   /* 주소는 이 파일(assets/css/) 기준 → url("../img/hero1.jpg"). 사진 출처는 docs/decisions.md 2절 */
-  /* 표지 기본 사진 — 관리자 페이지 「표지 사진」에서 올린 사진이 있으면 그 사진이 대신 보인다. 기본 사진이 없는(var(--none)) 칸은 올린 사진이 없으면 건너뜀 */
-  /* 운영 사진(실사진, 2026-11-04 WBS 16.1 — preview4와 같음). 출처 표는 docs/decisions.md 「실사진 미리보기 사진 출처」 */
-  --img-hero-dance:url("../img/real/hero-dance.jpg"); /* 표지 : 무용 */
-  --img-hero-music:url("../img/real/hero-music.jpg"); /* 표지 : 음악 */
-  --img-hero-art  :url("../img/real/hero-art.jpg");   /* 표지 : 미술 */
-  --img-hero-trad :url("../img/real/hero-trad.jpg");  /* 표지 : 전통예술 */
-  /* 분야 사진 4컷 — 메인에서는 여정 STEP 01 · 02가 p2 · p3, 모집 띠가 p4를 쓴다 */
-  --img-p1:url("../img/p1.jpg");  /* 무용 */
-  --img-p2:url("../img/p2.jpg");  /* 음악 */
-  --img-p3:url("../img/p3.jpg");  /* 미술 */
-  --img-p4:url("../img/real/band.jpg");  /* 모집 띠 */
-  /* 여정 세 단계 — 워크숍 · 심화 멘토링 · 겨울캠프 (시안 사진, 겨울캠프는 가운데 70%) */
-  --img-step1:url("../img/real/step1.jpg");
-  --img-step2:url("../img/real/step2.jpg");
-  --img-step3:url("../img/real/step3.jpg");
+  /* 기본 사진 없음 (2026-11-04 WBS 17.8) — 사진은 모두 관리자 페이지에서 올린 것(data/posts.json hero · photos)만 보인다.
+     사진을 뺀 자리는 비워 둔다. 예전 기본 사진 파일은 assets/img/real/(preview4와 같음)에 남아 있다 */
+  --img-hero-dance:var(--none); --img-hero-music:var(--none); --img-hero-art:var(--none); --img-hero-trad:var(--none);
+  --img-p4:var(--none);
+  --img-step1:var(--none); --img-step2:var(--none); --img-step3:var(--none);
 }
 
 /* 메인 본문 폭 — 1440 화면에서 1290(양쪽 75px), 화면이 좁아지면 양쪽 여백만 줄인다 */
@@ -106,7 +96,7 @@
 .mn-r{grid-template-columns:minmax(0,501fr) minmax(0,747fr)}
 .mn-r .mn-ph{order:2}
 .mn-r .mn-tx{justify-self:end;width:min(360px,100%);margin-right:6px}
-.mn-ph{display:block;aspect-ratio:747/420;overflow:hidden;background:#222}
+.mn-ph{display:block;aspect-ratio:747/420;overflow:hidden;background:#F4F2EC}
 .mn-ph i{display:block;width:100%;height:100%;background-size:cover;background-position:var(--photo-pos,center);transition:transform .8s cubic-bezier(.22,1,.36,1)}
 /* --photo · --photo-pos: 관리자 페이지 「사이트 사진」에서 바꾼 사진 · 위치 (photos.js, WBS 15). 없으면 기본 사진 */
 .mn-jy > div:nth-of-type(1) .mn-ph i{background-image:var(--photo,var(--img-step1))}
