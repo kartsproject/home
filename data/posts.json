@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T17:18:07+09:00",
+  "updatedAt": "2026-11-04T17:18:33+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -370,13 +370,9 @@
       "h": 1080
     },
     "da2": {
-      "fileId": "1_0pL51zxhMUekerAlm54iGM98agIAuNb",
-      "w": 1000,
-      "h": 564,
-      "pos": {
-        "x": 50,
-        "y": 45
-      }
+      "fileId": "1aAFawB_0kmJAZxppdK1k3eUd5d95HHqS",
+      "w": 1247,
+      "h": 1080
     },
     "da3": {
       "fileId": "18FvCuCYYy-64zaHtHmFddHzpXzCEDDFS",
