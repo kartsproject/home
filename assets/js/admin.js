@@ -6,7 +6,7 @@
    ▣ 운영진이 입력한 값은 textContent로만 화면에 넣는다.
    ============================================================ */
 (function(){
-  var GATEWAY = 'https://script.google.com/macros/s/AKfycbzfrJrDmXwhRAb62MEVCiWFDLU2e-HzFy5R9RWTkw0uatO9BMlYgCi5dPlNfUgIxAEITQ/exec';
+  var GATEWAY = 'https://script.google.com/macros/s/AKfycbwPIFQhd7WS_Lrc_ab0o4VORrhfL4En-VlkHN4gdEdG1wx3cBATWw3uq26WnnjeXU-j/exec';
   var K = { token:'hp_admin_token', exp:'hp_admin_exp', device:'hp_admin_device' };
   try{ localStorage.removeItem('hp_admin_name'); }catch(e){}   // 예전에 저장하던 이름 (2026-10-14부터 쓰지 않음)
   var UPLOAD_PARALLEL = 3;     /* 사진을 동시에 올리는 수 (관문은 시트 기록만 잠근다) */

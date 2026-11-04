@@ -299,7 +299,7 @@
 | 16.1 | preview4 실사진을 운영 기본 사진으로 — 표지 4 · 여정 3 · 모집 띠 · 위 사진 띠 5 · 사업소개 4 · 워크숍 카드 17 (「사진 준비 중」 없음) | `assets/img/real/` · main.css · common.css · about.html · programs.html · admin.js 기본 사진 | 완료 (2026-11-04) |
 | 16.2 | 이전 도구 — 첨부를 새 계정 드라이브로 복사(`moveAttachments`, 표지 첨부는 옮기지 않음) · 설정 점검(`checkSetup`) · 발행 기본 위치 main | `apps-script/Migrate.js` · `CheckSetup.js` · Setup.js | 완료 (관문 흉내 시험) |
 | 16.3 | 자동 배포 — 새 프로젝트에 배포가 아직 없으면 코드만 올리고 안내 | `.github/workflows/gateway.yml` | 완료 |
-| 16.4 | 사용자 셋팅 — 시트 사본 · Secrets · setup · 토큰 · 첨부 옮기기 · 웹앱 배포 · 새 관문 주소 반영 | 안내서 1~5단계 | 대기 (사용자) |
+| 16.4 | 사용자 셋팅 — 시트 사본 · Secrets · setup · 토큰 · 첨부 옮기기 · 웹앱 배포 · 새 관문 주소 반영 | 안내서 1~5단계 | 진행 — 홍보 사이트 완료(2026-11-04 첨부 옮기기 · 발행 확인, 새 관문 주소 `admin.js` 반영). 아카이빙은 시트 통합 여부 결정 대기 |
 
 ## 4. 진행 순서
 
