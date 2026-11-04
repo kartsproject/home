@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T15:13:14+09:00",
+  "updatedAt": "2026-11-04T15:15:28+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -281,5 +281,15 @@
     }
   },
   "heroVideo": {},
-  "photos": {}
+  "photos": {
+    "step1": {
+      "fileId": "1Eri6LtaEDEJCSg6xlc14gn_hRq73rIjL",
+      "w": 2400,
+      "h": 1350,
+      "pos": {
+        "x": 5,
+        "y": 61
+      }
+    }
+  }
 }
