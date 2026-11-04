@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T16:48:59+09:00",
+  "updatedAt": "2026-11-04T17:07:02+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -451,13 +451,9 @@
       }
     },
     "sv-recruit": {
-      "fileId": "1xXgLHrOfNpCC_dRCvMotzEPBFvWKtQAD",
-      "w": 2400,
-      "h": 600,
-      "pos": {
-        "x": 62,
-        "y": 17
-      }
+      "fileId": "1NKv-3HfVK8xF5uIgybKacs7yoCiOaR68",
+      "w": 2105,
+      "h": 568
     },
     "sv-mentoring": {
       "fileId": "1kaNngGzu-t7H_dWZNgpisL7dX40Z3RCw",
