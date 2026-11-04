@@ -565,7 +565,11 @@
     drawDepth(e, depthBox);
     if(def) wrap.appendChild(h('div', { class:'fld' }, [
       h('span', { class:'lb', text:'기본 사진 (올린 사진이 없을 때 보임)' }),
-      h('img', { class:'mg-hero-def', src:def, alt:'' })
+      h('img', { class:'mg-hero-def', src:def, alt:'' }),
+      h('p', { class:'syntax' }, [h('button', { type:'button', class:'mg-btn sm', text:'기본 사진을 잘라서 쓰기', onclick:function(){
+        if(e.photos.length) return toast('올린 사진이 있습니다. 올린 사진의 [자르기]를 쓰거나 ✕로 뺀 뒤 다시 눌러 주세요.', true);
+        cropDefault(e, def);
+      } })])
     ]));
     wrap.appendChild(h('div', { class:'mg-actions' }, [
       h('div', { class:'r' }, [
@@ -592,7 +596,11 @@
     drawPos(e, posBox);
     if(info.def) wrap.appendChild(h('div', { class:'fld' }, [
       h('span', { class:'lb', text:'기본 사진 (올린 사진이 없을 때 보임)' }),
-      h('img', { class:'mg-hero-def', src:info.def, alt:'', style:'aspect-ratio:auto' })
+      h('img', { class:'mg-hero-def', src:info.def, alt:'', style:'aspect-ratio:auto' }),
+      h('p', { class:'syntax' }, [h('button', { type:'button', class:'mg-btn sm', text:'기본 사진을 잘라서 쓰기', onclick:function(){
+        if(e.photos.length) return toast('올린 사진이 있습니다. 올린 사진의 [자르기]를 쓰거나 ✕로 뺀 뒤 다시 눌러 주세요.', true);
+        cropDefault(e, info.def);
+      } })])
     ]));
     wrap.appendChild(h('div', { class:'mg-actions' }, [
       (e.photos.length || p.pos) ? h('button', { type:'button', class:'mg-btn warn', text:info.def ? '기본 사진 · 위치로 되돌리기' : '비우기 (사진 준비 중)', onclick:function(){
@@ -959,6 +967,7 @@
           e.maxPhotos > 1 ? h('button', { type:'button', text:'◀', title:'앞으로', disabled:i === 0, onclick:function(){ move(i - 1); } }) : null,
           e.maxPhotos > 1 ? h('button', { type:'button', text:'▶', title:'뒤로', disabled:i === e.photos.length - 1, onclick:function(){ move(i + 1); } }) : null,
           e.maxPhotos > 1 ? h('button', { type:'button', text:isGallery ? '대표로' : '맨 앞', disabled:i === 0, onclick:function(){ move(0); } }) : null,
+          !ph.uploading && !ph.error && (ph.local || ph.fileId) ? h('button', { type:'button', text:'자르기', title:'확대 · 축소해 자르기', onclick:function(){ recropPhoto(e, i); } }) : null,
           h('button', { type:'button', class:'x', text:'✕', title:'빼기', onclick:function(){ e.photos.splice(i, 1); markDirty(); drawPhotos(null, e); photoChanged(e); } })
         ])
       ]));
@@ -977,25 +986,75 @@
   function addPhotos(e, list){
     var room = e.maxPhotos - e.photos.length;
     if(list.length > room){ toast('사진은 최대 ' + e.maxPhotos + '장입니다. ' + room + '장만 올립니다.', true); list = list.slice(0, room); }
+    // 표지 · 사이트 사진은 한 장이라 올리기 전에 자르기 창을 연다(2026-11-04 사용자 요청). [그대로 쓰기]를 누르면 자르지 않는다
+    if(list.length === 1 && (e.board === 'hero' || e.board === 'photo')){
+      var file = list[0], url = URL.createObjectURL(file);
+      cropPhoto(url, { ratio:cropRatio(e), maxSide:e.photoSide, skip:true }).then(function(r){
+        if(r === null){ URL.revokeObjectURL(url); return; }   // 취소
+        var ph = { uploading:true, name:file.name };
+        e.photos.push(ph);
+        photoChanged(e);
+        uploadPhoto(e, ph, file.name, r === 'skip' ? shrinkPhoto(file, e.photoSide) : Promise.resolve(r));
+      }, function(){ toast('이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.', true); });
+      return;
+    }
     var jobs = list.map(function(file){
       var ph = { uploading:true, name:file.name };
       e.photos.push(ph);
-      return function(){
-        return shrinkPhoto(file, e.photoSide).then(function(r){
-          ph.local = r.preview; ph.w = r.w; ph.h = r.h; drawPhotos(null, e); drawPos(e);
-          return blobToBase64(r.blob).then(function(b64){
-            return api('upload', { kind:'photo', name:file.name.replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
-          });
-        }).then(function(d){
-          ph.attachmentId = d.attachmentId; ph.fileId = d.fileId; ph.size = d.size; ph.uploading = false; markDirty();
-        }, function(err){
-          ph.uploading = false; ph.error = err && err.code ? errMsg(err) : '이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.';
-        }).then(function(){ if(S.edit === e){ drawPhotos(null, e); drawDepth(e); drawPos(e); } });
-      };
+      return function(){ return uploadPhoto(e, ph, file.name, shrinkPhoto(file, e.photoSide)); };
     });
     drawPhotos(null, e);
     if(jobs.length) photoChanged(e);
     runQueue(jobs, UPLOAD_PARALLEL);
+  }
+
+  // prepared: { blob, w, h, preview }을 주는 Promise. 올린 뒤 ph에 첨부ID · 파일ID를 적는다
+  function uploadPhoto(e, ph, name, prepared){
+    ph.uploading = true; ph.error = null;
+    drawPhotos(null, e);
+    return prepared.then(function(r){
+      ph.local = r.preview; ph.w = r.w; ph.h = r.h; drawPhotos(null, e); drawPos(e);
+      return blobToBase64(r.blob).then(function(b64){
+        return api('upload', { kind:'photo', name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
+      });
+    }).then(function(d){
+      ph.attachmentId = d.attachmentId; ph.fileId = d.fileId; ph.size = d.size; ph.uploading = false; markDirty();
+    }, function(err){
+      ph.uploading = false; ph.error = err && err.code ? errMsg(err) : '이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.';
+    }).then(function(){ if(S.edit === e){ drawPhotos(null, e); drawDepth(e); drawPos(e); } });
+  }
+
+  // 이미 넣은 사진을 다시 자른다 — 자른 사진을 새로 올려 그 자리를 바꾼다(드라이브의 원래 사진은 저장할 때 빠진 첨부로 정리됨)
+  function recropPhoto(e, i){
+    var ph = e.photos[i];
+    if(!ph || ph.uploading) return;
+    var src = ph.local || (ph.fileId && Board.photoUrl(ph.fileId, Math.max(e.photoSide, 2400)));
+    cropPhoto(src, { ratio:cropRatio(e), maxSide:e.photoSide, remote:!ph.local }).then(function(r){
+      if(!r || r === 'skip') return;
+      var nph = { uploading:true, name:ph.name || '사진' };
+      e.photos.splice(i, 1, nph);
+      photoChanged(e);
+      uploadPhoto(e, nph, nph.name, Promise.resolve(r));
+    }, function(){ toast('이 사진은 여기서 자를 수 없습니다. 원본 파일을 [+ 사진 추가]로 다시 올리면서 잘라 주세요.', true); });
+  }
+
+  // 기본 사진(사이트 안 파일)을 잘라서 올린 사진으로 쓴다 — 표지 · 사이트 사진에서 사진을 올리지 않았을 때
+  function cropDefault(e, src){
+    if(e.photos.length) return;
+    cropPhoto(src, { ratio:cropRatio(e), maxSide:e.photoSide }).then(function(r){
+      if(!r || r === 'skip') return;
+      var ph = { uploading:true, name:src.split('/').pop() };
+      e.photos.push(ph);
+      photoChanged(e);
+      uploadPhoto(e, ph, ph.name, Promise.resolve(r));
+    }, function(){ toast('기본 사진을 열지 못했습니다.', true); });
+  }
+
+  // 자르기 창의 처음 비율: 사이트 사진은 그 자리의 PC 화면 비율, 표지는 16:9, 공지 · 갤러리는 원본 그대로
+  function cropRatio(e){
+    if(e.board === 'photo' && e.info && e.info.shape) return e.info.shape[0];
+    if(e.board === 'hero') return 16 / 9;
+    return 0;
   }
 
   // 긴 변을 maxSide로 줄이고 JPEG로 바꾼다. 투명한 부분은 흰색으로 채운다.
@@ -1012,6 +1071,119 @@
       img.onerror = function(){ reject(new Error('decode')); };
       img.src = url;
     });
+  }
+
+  /* ---------- 사진 자르기 (확대 · 축소 · 위치) ----------
+     틀(고른 비율) 안에서 사진을 끌어 옮기고, 아래 막대 · 마우스 휠 · 두 손가락으로 확대 · 축소한다. [적용]을 누르면 틀 안쪽만
+     잘라 긴 변 maxSide 이하 JPEG로 만든다. 결과: { blob, w, h, preview } · 'skip'([그대로 쓰기]) · null(취소).
+     opts.remote: 드라이브 사진(다른 주소)이라 crossOrigin으로 불러 본다 — 막히면 reject */
+  var CROP_RATIOS = [['16:9', 16/9], ['3:2', 3/2], ['4:3', 4/3], ['1:1', 1], ['3:4', 3/4], ['원본', 0]];
+  function cropPhoto(src, opts){
+    return new Promise(function(resolve, reject){
+      var img = new Image();
+      if(opts.remote) img.crossOrigin = 'anonymous';
+      img.onerror = function(){ reject(new Error('load')); };
+      img.onload = function(){ openCrop(img, opts, resolve); };
+      img.src = src;
+    });
+  }
+  function openCrop(img, opts, done){
+    var iw = img.naturalWidth, ih = img.naturalHeight;
+    var st = { ratio:opts.ratio || iw / ih, zoom:1, x:0, y:0, fw:0, fh:0, base:1 };
+    var frame = h('div', { class:'fr' }), pic = h('img', { src:img.src, alt:'', draggable:'false' });
+    frame.appendChild(pic);
+    var zoomIn = h('input', { type:'range', min:'1', max:'4', step:'0.01', value:'1', 'aria-label':'확대' });
+    var info = h('span', { class:'hint' });
+    var ratioBtns = h('div', { class:'ratios' });
+    var choices = [];
+    if(opts.ratio && !CROP_RATIOS.some(function(r){ return Math.abs(r[1] - opts.ratio) < 0.01; })) choices.push(['이 자리', opts.ratio]);
+    choices = choices.concat(CROP_RATIOS);
+    choices.forEach(function(c){
+      var b = h('button', { type:'button', class:'mg-btn sm', text:c[0], onclick:function(){ setRatio(c[1] || iw / ih); mark(b); } });
+      ratioBtns.appendChild(b);
+      if(Math.abs((c[1] || iw / ih) - st.ratio) < 0.01 && !ratioBtns.querySelector('.on')) b.classList.add('on');
+    });
+    function mark(b){ [].forEach.call(ratioBtns.children, function(x){ x.classList.toggle('on', x === b); }); }
+
+    var box = h('div', { class:'mg-modal mg-crop', role:'dialog', 'aria-label':'사진 자르기' }, [h('div', { class:'in' }, [
+      h('h2', { text:'사진 자르기' }),
+      h('p', { class:'hint', text:'사진을 끌어 옮기고, 아래 막대 · 마우스 휠 · 두 손가락으로 확대 · 축소하세요. 노란 틀 안쪽만 남습니다.' }),
+      ratioBtns, frame,
+      h('div', { class:'zoom' }, [h('span', { text:'－' }), zoomIn, h('span', { text:'＋' }), info]),
+      h('div', { class:'acts' }, [
+        h('button', { type:'button', class:'mg-btn', text:'취소', onclick:function(){ close(null); } }),
+        opts.skip ? h('button', { type:'button', class:'mg-btn', text:'자르지 않고 그대로 쓰기', onclick:function(){ close('skip'); } }) : null,
+        h('button', { type:'button', class:'mg-btn pri', text:'적용', onclick:apply })
+      ])
+    ])]);
+    document.body.appendChild(box);
+    function close(v){ window.removeEventListener('resize', layout); box.parentNode.removeChild(box); done(v); }
+
+    function layout(){
+      var maxW = Math.min(760, window.innerWidth - 80), maxH = Math.max(200, window.innerHeight - 330);
+      st.fw = Math.min(maxW, maxH * st.ratio); st.fh = st.fw / st.ratio;
+      frame.style.width = st.fw + 'px'; frame.style.height = st.fh + 'px';
+      st.base = Math.max(st.fw / iw, st.fh / ih);
+      draw();
+    }
+    function draw(){
+      var sc = st.base * st.zoom, w = iw * sc, hh = ih * sc;
+      st.x = Math.min(0, Math.max(st.fw - w, st.x)); st.y = Math.min(0, Math.max(st.fh - hh, st.y));
+      pic.style.width = w + 'px'; pic.style.height = hh + 'px';
+      pic.style.transform = 'translate(' + st.x + 'px,' + st.y + 'px)';
+      var cw = Math.round(st.fw / sc), ch = Math.round(st.fh / sc);
+      info.textContent = cw + ' × ' + ch + 'px' + (Math.max(cw, ch) < 1200 ? ' · 작아서 흐릴 수 있음' : '');
+      info.classList.toggle('warn', Math.max(cw, ch) < 1200);
+    }
+    // 확대 · 축소는 틀 가운데(휠은 마우스 자리)를 기준으로
+    function zoomTo(z, cx, cy){
+      z = Math.min(4, Math.max(1, z));
+      if(cx == null){ cx = st.fw / 2; cy = st.fh / 2; }
+      var k = z / st.zoom;
+      st.x = cx - (cx - st.x) * k; st.y = cy - (cy - st.y) * k; st.zoom = z;
+      zoomIn.value = String(z); draw();
+    }
+    function setRatio(r){
+      var sc = st.base * st.zoom, mx = (st.fw / 2 - st.x) / sc, my = (st.fh / 2 - st.y) / sc;   // 지금 가운데(사진 좌표)를 지킨다
+      st.ratio = r; layout();
+      sc = st.base * st.zoom; st.x = st.fw / 2 - mx * sc; st.y = st.fh / 2 - my * sc; draw();
+    }
+    zoomIn.addEventListener('input', function(){ zoomTo(Number(zoomIn.value)); });
+    frame.addEventListener('wheel', function(ev){
+      ev.preventDefault();
+      var r = frame.getBoundingClientRect();
+      zoomTo(st.zoom * (ev.deltaY < 0 ? 1.08 : 1 / 1.08), ev.clientX - r.left, ev.clientY - r.top);
+    }, { passive:false });
+    var pts = {}, last = null;
+    frame.addEventListener('pointerdown', function(ev){ frame.setPointerCapture(ev.pointerId); pts[ev.pointerId] = [ev.clientX, ev.clientY]; last = null; });
+    frame.addEventListener('pointermove', function(ev){
+      if(!pts[ev.pointerId]) return;
+      var prev = pts[ev.pointerId]; pts[ev.pointerId] = [ev.clientX, ev.clientY];
+      var ids = Object.keys(pts);
+      if(ids.length === 1){ st.x += ev.clientX - prev[0]; st.y += ev.clientY - prev[1]; draw(); return; }
+      var a = pts[ids[0]], b = pts[ids[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]);   // 두 손가락 — 벌리면 확대
+      if(last){ var r = frame.getBoundingClientRect(); zoomTo(st.zoom * d / last, (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top); }
+      last = d;
+    });
+    ['pointerup', 'pointercancel'].forEach(function(t){ frame.addEventListener(t, function(ev){ delete pts[ev.pointerId]; last = null; }); });
+
+    function apply(){
+      var sc = st.base * st.zoom;
+      var sx = -st.x / sc, sy = -st.y / sc, sw = st.fw / sc, sh = st.fh / sc;
+      var out = Math.min(1, opts.maxSide / Math.max(sw, sh));
+      var c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(sw * out)); c.height = Math.max(1, Math.round(sh * out));
+      var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+      try{
+        c.toBlob(function(blob){
+          if(!blob){ toast('자르지 못했습니다. 다시 해 주세요.', true); return; }
+          close({ blob:blob, w:c.width, h:c.height, preview:URL.createObjectURL(blob) });
+        }, 'image/jpeg', 0.88);
+      }catch(err){ toast('이 사진은 여기서 자를 수 없습니다. 원본 파일을 다시 올리면서 잘라 주세요.', true); close(null); }
+    }
+    layout();
   }
 
   function blobToBase64(blob){

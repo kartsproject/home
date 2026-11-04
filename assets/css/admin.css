@@ -206,3 +206,19 @@ main.mg-in{padding:34px 0 120px}
 @media(max-width:800px){
   .mg-pos-in{grid-template-columns:1fr}
 }
+
+/* ---------- 사진 자르기 (확대 · 축소 · 위치, 2026-11-04) ---------- */
+.mg-crop .in{background:#fff;padding:24px 26px 22px;max-width:calc(100vw - 40px);max-height:calc(100vh - 40px);overflow:auto}
+.mg-crop h2{font-size:19px;font-weight:700;letter-spacing:-.03em}
+.mg-crop .hint{display:block;font-size:13.5px;color:var(--gray);margin-top:6px}
+.mg-crop .ratios{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 12px}
+.mg-crop .ratios .on{background:var(--ink);border-color:var(--ink);color:#fff}
+.mg-crop .fr{position:relative;overflow:hidden;margin:0 auto;background:#1b1b1b;cursor:grab;touch-action:none;user-select:none;
+  box-shadow:0 0 0 3px #F5B800}
+.mg-crop .fr:active{cursor:grabbing}
+.mg-crop .fr img{position:absolute;left:0;top:0;max-width:none;pointer-events:none;transform-origin:0 0}
+.mg-crop .zoom{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.mg-crop .zoom input{flex:1;min-width:160px;accent-color:var(--teal)}
+.mg-crop .zoom .hint{margin:0;flex-basis:100%}
+.mg-crop .zoom .hint.warn{color:#B42B38}
+.mg-crop .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
