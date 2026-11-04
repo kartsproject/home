@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T15:12:45+09:00",
+  "updatedAt": "2026-11-04T15:13:14+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -271,6 +271,11 @@
     },
     "music": {
       "fileId": "12pQfuODwUcZPUjV2V4d0zahPRZ984Awc",
+      "w": 1920,
+      "h": 1080
+    },
+    "art": {
+      "fileId": "11xvkuK9vZ1X1avzOwVk42HVFaVfRP1bK",
       "w": 1920,
       "h": 1080
     }
