@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-30T11:54:26+09:00",
+  "updatedAt": "2026-11-04T13:38:44+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -151,7 +151,7 @@
       "field": "trad",
       "photos": [
         {
-          "fileId": "1sfAIeyB9u4F4aLpzPW71v0OtYHoN0ghM",
+          "fileId": "1ScKBAhfY81tZN55YOLPZ3XR5c8Vf7chH",
           "w": 1600,
           "h": 1011
         }
@@ -166,7 +166,7 @@
       "field": "",
       "photos": [
         {
-          "fileId": "15q8Jpo--pynUJJ67dc6Lvju-hZvPzbL5",
+          "fileId": "1rl5yADwKAelTMM9_CdeeDVDiDtFOd7Wj",
           "w": 1600,
           "h": 1011
         }
@@ -181,7 +181,7 @@
       "field": "art",
       "photos": [
         {
-          "fileId": "12ILmHcpiXpgPeDas0MU63MEOEFlTw5tj",
+          "fileId": "1YGYGhzUtrqNR8jq_VLiR3oMZnXU3DU2o",
           "w": 1600,
           "h": 1011
         }
@@ -196,7 +196,7 @@
       "field": "music",
       "photos": [
         {
-          "fileId": "1fWB-xv4doyWWYljrgyXIoU24N7ZGQrbP",
+          "fileId": "1FenWcNesGGDon8FedqZmN4pTr6IkfmGm",
           "w": 1600,
           "h": 1200
         }
@@ -211,7 +211,7 @@
       "field": "trad",
       "photos": [
         {
-          "fileId": "1zxlsU5_oCyuzbPvs1N-dqUPwCElWKfd6",
+          "fileId": "1DIzcxY31FExTrOrZ6MAgJ9f7KgOWwC8i",
           "w": 1600,
           "h": 1011
         }
@@ -226,7 +226,7 @@
       "field": "art",
       "photos": [
         {
-          "fileId": "19JH71Kq3knfdeiayojAToWpQ3Pw2V09z",
+          "fileId": "1LY_9od9XWxYt5jvNGIiK_AOtydM1r12T",
           "w": 1600,
           "h": 1011
         }
@@ -241,7 +241,7 @@
       "field": "music",
       "photos": [
         {
-          "fileId": "14RTQALrlTXkfpOG6yS1X3WcvDos5aPJR",
+          "fileId": "1v7fujNz0zQePJNHnh9Vg-qZysYir_T42",
           "w": 1600,
           "h": 1200
         }
@@ -256,42 +256,14 @@
       "field": "dance",
       "photos": [
         {
-          "fileId": "18ZyALBQBnPi_uRz1L5Q-QopUrEp3w73R",
+          "fileId": "1VAMEdaAs0VU69HV_NyiJgo22NzJ6_49i",
           "w": 1600,
           "h": 902
         }
       ]
     }
   ],
-  "hero": {
-    "dance": {
-      "fileId": "1d-RROPDk7x5NGDTLTp4NkllsiItpPliJ",
-      "w": 2400,
-      "h": 1164,
-      "fg": {
-        "fileId": "13IHye6195XQwSkDPptDqsCfLYBFnRT88"
-      },
-      "depth": {
-        "x": 62.7,
-        "y": 55.3
-      }
-    },
-    "art": {
-      "fileId": "1Tk_cR9zRR4SAdujYZBqvzH-tCQuIINv-",
-      "w": 2400,
-      "h": 1800
-    },
-    "trad": {
-      "fileId": "1KFu4tjPvrN0o8wcVZjq2qE2hHRa6neYK",
-      "w": 1920,
-      "h": 1080
-    }
-  },
-  "heroVideo": {
-    "trad": {
-      "src": "hero/A-00025.mp4",
-      "w": 1920,
-      "h": 1080
-    }
-  }
+  "hero": {},
+  "heroVideo": {},
+  "photos": {}
 }
