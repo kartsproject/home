@@ -79,15 +79,18 @@ function buildPublicPosts_() {
     var video = attachmentsOf_(r['글ID'], '동영상', attachments, false)[0];
     if (video) heroVideo[slot] = video;
   });
+  // 사이트 사진 자리: 바꾼 자리만 { step1: { fileId, w, h, pos }, … } (Photos.js, WBS 15). 없는 자리는 화면의 기본 사진
+  var photos = buildPublicPhotos_(attachments);
   return {
-    compareKey: JSON.stringify({ notices: notices, press: press, gallery: gallery, hero: hero, heroVideo: heroVideo }),
+    compareKey: JSON.stringify({ notices: notices, press: press, gallery: gallery, hero: hero, heroVideo: heroVideo, photos: photos }),
     posts: {
       updatedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX"),
       notices: notices,
       press: press,
       gallery: gallery,
       hero: hero,
-      heroVideo: heroVideo
+      heroVideo: heroVideo,
+      photos: photos
     }
   };
 }

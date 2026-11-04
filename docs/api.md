@@ -84,6 +84,7 @@
 | `press` | 「언론홍보」 전체(비공개 포함) + 관리용 값 (2026-10-14) |
 | `gallery` | 「갤러리」 전체 + `photos` + `course` · `field`(과정 · 분야 코드, 2026-10-16 — `sheet-schema.md` 「갤러리 과정 · 분야」) |
 | `hero` | 「표지」 4칸 `{ id, slot, label, photos(0~1장), cutouts(누끼 0~1장), videos(동영상 0~1개 `{ src, w, h, attachmentId, name, size }`), depth(2.5D 켬), center({x, y} %), updatedBy, updatedAt }` (2026-10-14, 누끼 · 2.5D는 2026-10-15, 동영상은 2026-10-16 2안) |
+| `photos` | 「사진」 30자리 `{ id, slot, label, photos(0~1장), pos({x, y} % 또는 null), updatedBy, updatedAt }` (2026-11-04 WBS 15). 「사진」 탭이 없거나 자리가 빠졌으면 이때 만든다(잠금 안에서) |
 | `categories` | 공지 분류 목록 (「설정」) |
 | `limits` | 업로드 형식 · 크기 · 개수 한도 (`sheet-schema.md` 4절) — 화면이 미리 막는 데 쓴다. 표지 사진을 줄일 크기 `heroPhotoSide`(2400), 누끼 크기 한도 `cutoutBytes`(8MB), 표지 동영상 `videoBytes`(20MB) · `videoPartBytes`(조각 크기) · `videoTypes`도 여기 |
 | `lastPublish` | 마지막 발행 결과 `{ ok, at }` — 실패 상태면 화면이 [다시 반영] 버튼을 보인다 |
@@ -129,10 +130,10 @@
 | 요청 필드 | 설명 |
 |---|---|
 | `action` · `token` | |
-| `board` | `notice` · `press` · `gallery` · `hero` |
-| `id` | 고칠 글ID. 새 글이면 빈 값 → 관문이 만든다. **표지는 늘 칸 ID(`H-dance` 등)** — 새로 만들 수 없음 |
-| `post` | 공지: `category` · `title` · `body` · `date` · `pinned` · `photoPosition` · `photoLink` · `visibility` / 언론홍보: `source` · `title` · `date` · `url` · `visibility` / 갤러리: `title` · `desc` · `date` · `visibility` · `course`(과정 코드 `workshop` · `mentoring` · `camp` · `""`) · `field`(분야 코드 `dance` · `music` · `art` · `trad` · `""`=공통). 시트에는 `워크숍 · 무용`처럼 쓰고, `course` · `field`가 모두 `""`이면 지정 안 함(빈칸). **둘 다 보내지 않으면 기존 값 유지** — 분야 칸이 없는 1안 관리자 화면이 저장해도 지워지지 않게. 하나만 보내거나, 목록에 없는 값 · 문자열이 아닌 값이거나, `course`가 `""`인데 `field`가 있으면 `INVALID_INPUT` (2026-10-16 WBS 8.10, 그 전 8.5의 `field` 하나만 보내는 요청도 이제 `INVALID_INPUT`) / 표지: `depth`(2.5D 입체 효과 켬, true/false) · `center`(`{ x, y }` 0~100 %, 누끼 인물 영역의 가운데 — 누끼가 없으면 `null`) |
-| `photos` | 첨부ID 배열 — **이 순서가 화면 순서**. 언론홍보는 빈 배열, 표지는 0~1개(빈 배열이면 기본 사진으로) |
+| `board` | `notice` · `press` · `gallery` · `hero` · `photo`(사이트 사진 자리, 2026-11-04) |
+| `id` | 고칠 글ID. 새 글이면 빈 값 → 관문이 만든다. **표지는 늘 칸 ID(`H-dance` 등)**, **사이트 사진은 늘 자리 ID(`S-step1` 등)** — 새로 만들 수 없음 |
+| `post` | 공지: `category` · `title` · `body` · `date` · `pinned` · `photoPosition` · `photoLink` · `visibility` / 언론홍보: `source` · `title` · `date` · `url` · `visibility` / 갤러리: `title` · `desc` · `date` · `visibility` · `course`(과정 코드 `workshop` · `mentoring` · `camp` · `""`) · `field`(분야 코드 `dance` · `music` · `art` · `trad` · `""`=공통). 시트에는 `워크숍 · 무용`처럼 쓰고, `course` · `field`가 모두 `""`이면 지정 안 함(빈칸). **둘 다 보내지 않으면 기존 값 유지** — 분야 칸이 없는 1안 관리자 화면이 저장해도 지워지지 않게. 하나만 보내거나, 목록에 없는 값 · 문자열이 아닌 값이거나, `course`가 `""`인데 `field`가 있으면 `INVALID_INPUT` (2026-10-16 WBS 8.10, 그 전 8.5의 `field` 하나만 보내는 요청도 이제 `INVALID_INPUT`) / 표지: `depth`(2.5D 입체 효과 켬, true/false) · `center`(`{ x, y }` 0~100 %, 누끼 인물 영역의 가운데 — 누끼가 없으면 `null`) / 사이트 사진: `pos`(`{ x, y }` 0~100 % 보이는 위치, `null`이면 기본 위치) |
+| `photos` | 첨부ID 배열 — **이 순서가 화면 순서**. 언론홍보는 빈 배열, 표지 · 사이트 사진은 0~1개(빈 배열이면 기본 사진으로) |
 | `files` | 첨부ID 배열 (공지만) |
 | `cutouts` | 누끼 첨부ID 배열 (표지만, 0~1개). `depth`가 true면 1개여야 하고 원본(`photos`)과 가로 · 세로가 같아야 한다. 아니면 `INVALID_INPUT` |
 | `videos` | 동영상 첨부ID 배열 (표지만, 0~1개, 2026-10-16 2안). 있으면 `photos`(대기 사진)가 있어야 하고 `depth`는 false여야 한다(아니면 `INVALID_INPUT`). 새로 붙는 동영상은 시트를 고치기 **전에** 영상 저장소(`MEDIA_REPO`)의 `hero/{첨부ID}.mp4`로 커밋하고, 실패하면 아무것도 바꾸지 않고 `MEDIA_FAILED`. 빠진 동영상은 저장소에서 지우고(이력에는 남음) 드라이브 조각은 휴지통으로. **보내지 않으면**(1안 관리자 화면) 기존 동영상을 두되, 사진을 빼거나 `depth`를 켜면 뺀다 |
@@ -156,7 +157,7 @@
 |---|---|
 | `action` · `token` · `board` · `id` | |
 
-글 행을 지우고, 첨부 파일의 공유를 끊어 휴지통으로 보내고, 발행한다. 응답 `data`: `published`. **표지 칸은 지울 수 없다**(`INVALID_INPUT`) — 사진을 빼려면 `save`에 빈 `photos`.
+글 행을 지우고, 첨부 파일의 공유를 끊어 휴지통으로 보내고, 발행한다. 응답 `data`: `published`. **표지 칸 · 사이트 사진 자리는 지울 수 없다**(`INVALID_INPUT`) — 사진을 빼려면 `save`에 빈 `photos`.
 
 ### 3-7. publish
 

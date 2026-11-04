@@ -106,10 +106,11 @@
 .mn-r .mn-ph{order:2}
 .mn-r .mn-tx{justify-self:end;width:min(360px,100%);margin-right:6px}
 .mn-ph{display:block;aspect-ratio:747/420;overflow:hidden;background:#222}
-.mn-ph i{display:block;width:100%;height:100%;background-size:cover;background-position:center;transition:transform .8s cubic-bezier(.22,1,.36,1)}
-.mn-jy > div:nth-of-type(1) .mn-ph i{background-image:var(--img-step1)}
-.mn-jy > div:nth-of-type(2) .mn-ph i{background-image:var(--img-step2)}
-.mn-jy > div:nth-of-type(3) .mn-ph i{background-image:var(--img-step3);background-position:center 70%}
+.mn-ph i{display:block;width:100%;height:100%;background-size:cover;background-position:var(--photo-pos,center);transition:transform .8s cubic-bezier(.22,1,.36,1)}
+/* --photo · --photo-pos: 관리자 페이지 「사이트 사진」에서 바꾼 사진 · 위치 (photos.js, WBS 15). 없으면 기본 사진 */
+.mn-jy > div:nth-of-type(1) .mn-ph i{background-image:var(--photo,var(--img-step1))}
+.mn-jy > div:nth-of-type(2) .mn-ph i{background-image:var(--photo,var(--img-step2))}
+.mn-jy > div:nth-of-type(3) .mn-ph i{background-image:var(--photo,var(--img-step3));background-position:var(--photo-pos,center 70%)}
 .mn-ph:hover i,.mn-step:focus-within .mn-ph i{transform:scale(1.04)}
 .mn-tx{padding-top:10px}
 .mn-tx h3{margin-top:12px;font-size:32px;font-weight:700;line-height:1.3;letter-spacing:-.045em}
@@ -124,7 +125,7 @@
 .mn-path .mn-dot{stroke:var(--yel);stroke-width:18px;stroke-dasharray:none}
 
 /* ============ 모집 띠 — 사진 + 흰 반투명 판 ============ */
-#recruit{height:430px;background:#222 var(--img-p4) center 35%/cover no-repeat}
+#recruit{height:430px;background:#222 var(--photo,var(--img-p4)) var(--photo-pos,center 35%)/cover no-repeat}
 #recruit .mn-in{height:100%}
 .mn-rc-pn{position:absolute;right:0;top:50px;bottom:50px;display:flex;flex-direction:column;align-items:flex-start;width:min(645px,100%);padding:48px 52px;
   background:rgba(255,255,255,.88);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -203,7 +204,8 @@
   .mn-step + .mn-step{margin-top:56px}
   /* 모집 띠: 사진(220) 아래로 흰 판이 이어진다 */
   #recruit{height:auto;background:#fff}
-  #recruit::before{content:"";display:block;height:220px;background:#222 var(--img-p4) center 35%/cover no-repeat}
+  #recruit::before{content:"";display:block;height:220px;background:#222 var(--photo,var(--img-p4)) var(--photo-pos,center 35%)/cover no-repeat}
+  #recruit.photo-focus{box-shadow:none}   /* 사진 자리 표시는 사진 칸(::before)에만 — common.css */
   .mn-rc-pn{position:static;width:auto;padding:36px 0 8px;background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
   .mn-rc-pn h2{font-size:26px}
   .mn-rc-pn .lnk{margin-top:24px}

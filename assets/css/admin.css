@@ -185,3 +185,24 @@ main.mg-in{padding:34px 0 120px}
   .mg-row{grid-template-columns:62px 1fr;padding:14px 12px}
   .mg-row .m{grid-column:2;text-align:left}
 }
+
+/* ---------- 사이트 사진 (WBS 15) ---------- */
+.mg-tabs{overflow-x:auto;scrollbar-width:none;max-width:100%}
+.mg-tabs button{white-space:nowrap}
+.mg-ph-group{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:34px 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.mg-ph-group:first-of-type{margin-top:6px}
+.mg-ph-group h3{font-size:18px;font-weight:700;letter-spacing:-.03em}
+.mg-cards.photo .th{aspect-ratio:3/2}
+.mg-cards.photo .th.none{background:#E8E9E6}
+.mg-pos-in{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px;align-items:start;margin-top:8px}
+.mg-pos .pick{position:relative;display:inline-block;max-width:100%;cursor:crosshair;touch-action:none;user-select:none;line-height:0;vertical-align:top}
+.mg-pos .pick img{display:block;max-width:100%;max-height:520px;width:auto;height:auto;pointer-events:none}
+.mg-pos .dot{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border:3px solid #fff;border-radius:50%;
+  box-shadow:0 0 0 2px rgba(0,0,0,.55),inset 0 0 0 2px rgba(0,0,0,.35);pointer-events:none}
+.mg-pos .pv{display:flex;flex-direction:column;gap:14px}
+.mg-pos figure{margin:0}
+.mg-pos .fr{display:block;width:100%;background:#222 center/cover no-repeat}
+.mg-pos figcaption{font-size:13px;color:var(--gray-lt);margin-top:5px}
+@media(max-width:800px){
+  .mg-pos-in{grid-template-columns:1fr}
+}

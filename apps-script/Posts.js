@@ -2,6 +2,7 @@
  * 게시글 목록·저장·삭제. docs/api.md 3-3 · 3-5 · 3-6, docs/sheet-schema.md 2-1 ~ 2-3 · 2-7 · 2-8.
  * 공지(N-0001) · 언론홍보(P-0001) · 갤러리(G-0001) · 표지(H-dance 등)는 같은 흐름으로 처리하고, 차이는 BOARDS_와 검증 함수에만 둔다.
  * 표지는 칸이 고정(fixed)이라 새로 만들거나 지우지 않고, 사진 한 장(+ 2.5D용 누끼 한 장 또는 동영상 한 개)만 바꾼다 (Setup.js HERO_SLOTS_).
+ * 사이트 사진 자리(S-step1 등, WBS 15)도 고정이고 사진 한 장 + 보이는 위치만 바꾼다 (Photos.js PHOTO_SLOTS_).
  */
 
 var BOARDS_ = {
@@ -11,24 +12,31 @@ var BOARDS_ = {
              maxPhotos: function () { return 0; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } },
   gallery: { tab: '갤러리',   prefix: 'G', validate: function (p) { return validateGallery_(p); },
              maxPhotos: function () { return LIMITS_.galleryPhotos; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } },
-  hero:    { tab: '표지', fixed: true, validate: function (p) { return validateHero_(p); },
-             maxPhotos: function () { return 1; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 1; }, maxVideos: function () { return 1; } }
+  hero:    { tab: '표지', fixed: true, hero: true, validate: function (p) { return validateHero_(p); },
+             maxPhotos: function () { return 1; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 1; }, maxVideos: function () { return 1; } },
+  photo:   { tab: '사진', fixed: true, ensure: function () { ensurePhotoSlots_(); }, validate: function (p) { return validatePhotoSlot_(p); },
+             maxPhotos: function () { return 1; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } }
 };
 
 function handleList_(req) {
   var auth = requireAuth_(req);
   if (!auth.ok) return jsonResponse_(false, auth.error, null);
 
+  // 「사진」 탭은 관문을 새로 배포한 뒤 처음 목록을 열 때 만든다 — setup을 다시 돌리지 않아도 되게 (Photos.js)
+  if (photoSlotsMissing_()) withLock_(function () { ensurePhotoSlots_(); return null; });
+
   var attachments = readTab_('첨부');
   var notices = readTab_('공지').map(function (r) { return noticeFromRow_(r, attachments, true); });
   var press = readTab_('언론홍보').map(function (r) { return pressFromRow_(r, true); });
   var gallery = readTab_('갤러리').map(function (r) { return galleryFromRow_(r, attachments, true); });
   var hero = readTab_('표지').map(function (r) { return heroFromRow_(r, attachments); });
+  var photos = readPhotoTab_().map(function (r) { return photoSlotFromRow_(r, attachments); });
   return jsonResponse_(true, null, {
     notices: sortNotices_(notices),
     press: sortByDate_(press),
     gallery: sortByDate_(gallery),
     hero: hero,
+    photos: photos,
     categories: getCategories_(),
     limits: LIMITS_,
     lastPublish: getLastPublish_()
@@ -49,6 +57,7 @@ function handleSave_(req) {
   if (photoIds.length > board.maxPhotos() || fileIds.length > board.maxFiles() || cutoutIds.length > board.maxCutouts() || videoIds.length > board.maxVideos()) return jsonResponse_(false, 'FILE_REJECTED', null);
 
   return withLock_(function () {
+    if (board.ensure) board.ensure();
     var rows = readTab_(board.tab);
     var existing = null;
     if (req.id) {
@@ -60,7 +69,7 @@ function handleSave_(req) {
     var attachments = readTab_('첨부');
     var byId = {};
     attachments.forEach(function (a) { byId[a['첨부ID']] = a; });
-    if (board.fixed) {
+    if (board.hero) {
       cutoutIds = checkHeroDepth_(fields, photoIds, cutoutIds, ownId, attachments, byId);
       if (!cutoutIds) return jsonResponse_(false, 'INVALID_INPUT', null);
       // 동영상을 모르는 화면(1안 관리자 페이지)은 videos를 보내지 않는다 — 기존 동영상을 그대로 두되, 사진을 빼거나 2.5D를 켜면 뺀다
@@ -90,7 +99,7 @@ function handleSave_(req) {
       return jsonResponse_(false, 'MEDIA_FAILED', null);
     }
 
-    // 새 글 번호는 검증을 모두 통과한 뒤에 받는다(실패한 저장이 번호를 쓰지 않게). 표지 칸은 늘 기존 행이다.
+    // 새 글 번호는 검증을 모두 통과한 뒤에 받는다(실패한 저장이 번호를 쓰지 않게). 표지 칸 · 사진 자리는 늘 기존 행이다.
     var id = ownId || nextId_(board.prefix, 4, rows.map(function (r) { return r['글ID']; }));
     if (board.fixed) fields['칸'] = existing['칸'];
 

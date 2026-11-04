@@ -111,7 +111,7 @@ body.menu-open #allmenu{opacity:1;pointer-events:auto}
 #sv .in{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:end;gap:26px 40px;padding:70px 0 56px}
 #sv h1{font-size:68px;font-weight:800;line-height:1.1;letter-spacing:-.05em}
 #sv .desc{justify-self:end;padding-bottom:10px;font-size:17px;color:var(--gray);letter-spacing:-.02em;text-align:right}
-#sv::after{content:"";display:block;height:360px;background:#222 var(--sv-img) var(--sv-pos,center) / cover no-repeat}
+#sv::after{content:"";display:block;height:360px;background:#222 var(--photo,var(--sv-img)) var(--photo-pos,var(--sv-pos,center)) / cover no-repeat}
 #sv[data-page="about"]{--sv-img:url("../img/hero-trad.jpg");--sv-pos:center 62%}
 #sv[data-page="programs"]{--sv-img:url("../img/hero-music.jpg");--sv-pos:center 55%}
 #sv[data-page="recruit"]{--sv-img:url("../img/p1.jpg")}
@@ -752,3 +752,8 @@ html.zv-open{overflow:hidden}
   .wk-fw.c5 h3{font-size:20px}
   .wk-fw.c5 p{font-size:15px}
 }
+
+/* ===== 사이트 사진 자리 표시 — 관리자 페이지 「페이지에서 보기」(주소 ?photo=자리, photos.js · WBS 15) ===== */
+.photo-focus{outline:5px solid #F5B800;outline-offset:-5px}
+#sv.photo-focus,#recruit.photo-focus{outline:none}
+#sv.photo-focus::after,#recruit.photo-focus,#recruit.photo-focus::before{box-shadow:inset 0 0 0 5px #F5B800}

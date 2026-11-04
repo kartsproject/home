@@ -16,8 +16,64 @@
     { id:'notice',  tab:'공지사항',  name:'공지',        add:'+ 새 공지' },
     { id:'press',   tab:'언론홍보',  name:'언론홍보 글', add:'+ 새 기사' },
     { id:'gallery', tab:'갤러리',    name:'앨범',        add:'+ 새 앨범' },
-    { id:'hero',    tab:'표지 사진', name:'표지 사진',   add:null }
+    { id:'hero',    tab:'표지 사진', name:'표지 사진',   add:null },
+    { id:'photo',   tab:'사이트 사진', name:'사이트 사진', add:null }
   ];
+  /* 사이트 사진 자리 (WBS 15) — 관문 PHOTO_SLOTS_(apps-script/Photos.js) · 페이지의 data-photo와 같은 이름. 페이지 순서 = 메뉴 순서.
+     def: 기본 사진(HTML · CSS에 적힌 것 — 바꾸면 여기도), 없으면 「사진 준비 중」 칸. pos: 기본 사진의 보이는 위치(없으면 가운데).
+     shape: 사이트에서 보이는 가로 ÷ 세로 [PC, 모바일] — 위치를 고를 때 미리보기 틀 (2026-11-04 1440 · 390 화면에서 잰 값).
+     tab: 워크숍 분야 탭 (주소 #music 등) */
+  var BAND = [4, 1.77], CARD3 = [0.97, 1.5], CARD45 = [0.88, 1.18], FIELD = [1.14, 1.13];
+  var PHOTO_PAGES = [
+    { name:'메인', page:'index.html', slots:[
+      { slot:'step1', name:'여정 STEP 01 · 워크숍', def:'assets/img/p2.jpg', shape:[1.78, 1.46] },
+      { slot:'step2', name:'여정 STEP 02 · 심화 멘토링', def:'assets/img/p3.jpg', shape:[1.78, 1.46] },
+      { slot:'step3', name:'여정 STEP 03 · 겨울캠프', def:'assets/img/hero-trad.jpg', pos:[50, 70], shape:[1.78, 1.46] },
+      { slot:'recruit', name:'모집 및 선발 띠', def:'assets/img/p4.jpg', pos:[50, 35], shape:[3.35, 1.77] }
+    ] },
+    { name:'사업소개', page:'about.html', slots:[
+      { slot:'sv-about', name:'위 사진 띠', def:'assets/img/hero-trad.jpg', pos:[50, 62], shape:BAND },
+      { slot:'ab-music', name:'네 분야 · 음악', def:'assets/img/p2.jpg', shape:FIELD },
+      { slot:'ab-dance', name:'네 분야 · 무용', def:'assets/img/p1.jpg', shape:FIELD },
+      { slot:'ab-trad', name:'네 분야 · 전통예술', def:'assets/img/p4.jpg', shape:FIELD },
+      { slot:'ab-art', name:'네 분야 · 미술', def:'assets/img/p3.jpg', shape:FIELD }
+    ] },
+    { name:'워크숍', page:'programs.html', slots:[
+      { slot:'sv-programs', name:'위 사진 띠', def:'assets/img/hero-music.jpg', pos:[50, 55], shape:BAND },
+      { slot:'mu1', tab:'music', name:'음악 01 · 전공별 1:1 레슨', def:'assets/img/music-lesson.jpg', pos:[50, 45], shape:CARD3 },
+      { slot:'mu2', tab:'music', name:'음악 02 · 마스터클래스 · 특강', def:'assets/img/music-class.jpg', shape:CARD3 },
+      { slot:'mu3', tab:'music', name:'음악 03 · 연주회', def:'assets/img/hero-music.jpg', pos:[65, 50], shape:CARD3 },
+      { slot:'da1', tab:'dance', name:'무용 01 · 발레 클라스', def:'assets/img/p1.jpg', pos:[50, 40], shape:CARD45 },
+      { slot:'da2', tab:'dance', name:'무용 02 · 발레 레퍼토리', def:'assets/img/dance-stage.jpg', pos:[62, 50], shape:CARD45 },
+      { slot:'da3', tab:'dance', name:'무용 03 · 발레 클라스의 역사', shape:CARD45 },
+      { slot:'da4', tab:'dance', name:'무용 04 · 피지컬 트레이닝', shape:CARD45 },
+      { slot:'tr1', tab:'trad', name:'전통예술 01 · 전공 실기', shape:CARD45 },
+      { slot:'tr2', tab:'trad', name:'전통예술 02 · 전공 심화', shape:CARD45 },
+      { slot:'tr3', tab:'trad', name:'전통예술 03 · 신체·음악 표현', shape:CARD45 },
+      { slot:'tr4', tab:'trad', name:'전통예술 04 · 소리 탐색 및 창작', shape:CARD45 },
+      { slot:'tr5', tab:'trad', name:'전통예술 05 · 현장 체험', def:'assets/img/hero-trad.jpg', pos:[50, 60], shape:CARD45 },
+      { slot:'ar1', tab:'art', name:'미술 01 · 관찰과 탐구', shape:CARD45 },
+      { slot:'ar2', tab:'art', name:'미술 02 · 예술가 특강 및 창작 실습', def:'assets/img/art-studio.jpg', pos:[60, 50], shape:CARD45 },
+      { slot:'ar3', tab:'art', name:'미술 03 · 주제 탐색 및 작품 구상', shape:CARD45 },
+      { slot:'ar4', tab:'art', name:'미술 04 · 개별 작품 제작', def:'assets/img/p3.jpg', shape:CARD45 },
+      { slot:'ar5', tab:'art', name:'미술 05 · 작품 발표 및 공유', def:'assets/img/art-show.jpg', shape:CARD45 }
+    ] },
+    { name:'모집 및 선발', page:'recruit.html', slots:[
+      { slot:'sv-recruit', name:'위 사진 띠', def:'assets/img/p1.jpg', shape:BAND }
+    ] },
+    { name:'심화 멘토링', page:'mentoring.html', slots:[
+      { slot:'sv-mentoring', name:'위 사진 띠', def:'assets/img/p3.jpg', shape:BAND }
+    ] },
+    { name:'겨울캠프', page:'camp.html', slots:[
+      { slot:'sv-camp', name:'위 사진 띠', def:'assets/img/hero-trad.jpg', pos:[50, 0], shape:BAND }
+    ] }
+  ];
+  function photoInfo(slot){
+    var hit = null;
+    PHOTO_PAGES.forEach(function(g){ g.slots.forEach(function(s){ if(s.slot === slot) hit = Object.assign({ pageName:g.name, page:g.page }, s); }); });
+    return hit;
+  }
+  function photoHref(info){ return info.page + '?photo=' + info.slot + (info.tab ? '#' + info.tab : ''); }
   /* 표지 기본 사진 — main.css의 --img-hero-*와 맞출 것. 올린 사진이 없으면 사이트는 이 사진을, 이것도 없으면 그 칸을 건너뛴다 */
   var HERO_DEFAULT = { music:'assets/img/hero-music.jpg', trad:'assets/img/hero-trad.jpg' };
   /* 표지 동영상이 올라가는 영상 전용 저장소(GitHub Pages) — main.js의 MEDIA_BASE와 맞출 것. 관문은 경로(hero/A-00123.mp4)만 준다 (2안 WBS 8.6) */
@@ -208,7 +264,7 @@
     view.textContent = '';
     var items = itemsOf(S.tab), board = boardOf(S.tab);
     var tabs = h('div', { class:'mg-tabs' }, BOARDS.map(function(b){
-      var n = b.id === 'hero' ? itemsOf('hero').filter(function(x){ return x.photos.length; }).length + ' / ' + itemsOf('hero').length : String(itemsOf(b.id).length);
+      var n = b.id === 'hero' || b.id === 'photo' ? itemsOf(b.id).filter(function(x){ return x.photos.length; }).length + ' / ' + itemsOf(b.id).length : String(itemsOf(b.id).length);
       return h('button', { type:'button', class:S.tab === b.id ? 'on' : null, onclick:function(){ S.tab = b.id; renderList(); } },
         [b.tab, h('span', { class:'n', text:n })]);
     }));
@@ -218,6 +274,7 @@
     ]));
 
     if(S.tab === 'hero'){ view.appendChild(heroCards(items)); return; }
+    if(S.tab === 'photo'){ view.appendChild(photoCards(items)); return; }
     if(!items.length){ view.appendChild(h('p', { class:'mg-empty', text:'아직 글이 없습니다.' })); return; }
 
     if(S.tab === 'press'){
@@ -259,7 +316,7 @@
   function visBadge(v){ return h('span', { class:'badge ' + (v === '공개' ? 'on' : 'off'), text:v }); }
   function boardOf(id){ return BOARDS.filter(function(b){ return b.id === id; })[0]; }
   function itemsOf(id){
-    var d = S.data, list = (id === 'notice' ? d.notices : id === 'press' ? d.press : id === 'gallery' ? d.gallery : d.hero) || [];
+    var d = S.data, list = (id === 'notice' ? d.notices : id === 'press' ? d.press : id === 'gallery' ? d.gallery : id === 'photo' ? d.photos : d.hero) || [];
     /* 표지 칸은 화면(main.js SLOTS)과 같은 분야 순서로 보여 준다 — 관문 · 시트의 칸 순서는 그대로 (분야 순서 2026-10-21, WBS 9.10) */
     if(id === 'hero') list = list.slice().sort(function(a, b){ return HERO_ORDER.indexOf(a.slot) - HERO_ORDER.indexOf(b.slot); });
     return list;
@@ -290,6 +347,46 @@
     return box;
   }
 
+  /* 사이트 사진 — 페이지별 자리. 올린 사진 > 기본 사진 > 사진 준비 중. 관문이 아직 이 기능을 모르면(새로 배포 전) d.photos가 없다 */
+  function photoState(slot, info){
+    var pos = slot.pos ? [slot.pos.x, slot.pos.y] : slot.photos.length ? [50, 50] : info.pos || [50, 50];
+    if(slot.photos.length) return { src:Board.photoUrl(slot.photos[0].fileId, 640), text:'바꾼 사진', cls:'on', pos:pos };
+    if(info.def) return { src:info.def, text:slot.pos ? '기본 사진 · 위치 조정' : '기본 사진', cls:'def', pos:pos };
+    return { src:null, text:'사진 준비 중', cls:'off', pos:pos };
+  }
+  function photoCards(items){
+    var box = h('div', null, [
+      h('p', { class:'mg-note', text:'사이트 곳곳에 들어간 사진입니다(메인 첫 화면 표지는 「표지 사진」 탭, 소식 · 프로그램 페이지 사진 줄은 「갤러리」 탭). 자리를 눌러 사진을 바꾸거나 보이는 위치를 고르세요. 사진을 빼면 처음 사진(기본 사진)으로 돌아갑니다.' })
+    ]);
+    if(!S.data.photos){
+      box.appendChild(h('p', { class:'mg-empty', text:'관문(Apps Script)을 새로 배포하면 쓸 수 있습니다. 담당자에게 알려 주세요.' }));
+      return box;
+    }
+    var bySlot = {};
+    items.forEach(function(s){ bySlot[s.slot] = s; });
+    PHOTO_PAGES.forEach(function(g){
+      var slots = g.slots.filter(function(i){ return bySlot[i.slot]; });
+      if(!slots.length) return;
+      box.appendChild(h('div', { class:'mg-ph-group' }, [
+        h('h3', { text:g.name }),
+        h('a', { class:'mg-btn sm', href:g.page, target:'_blank', rel:'noopener', text:'페이지 열기 ↗' })
+      ]));
+      box.appendChild(h('div', { class:'mg-cards photo' }, slots.map(function(info){
+        var s = bySlot[info.slot], st = photoState(s, info);
+        var th = h('span', { class:'th' + (st.src ? '' : ' none') }, [h('span', { class:'badge ' + st.cls, text:st.text })]);
+        if(st.src){ th.style.backgroundImage = 'url("' + st.src + '")'; th.style.backgroundPosition = st.pos[0] + '% ' + st.pos[1] + '%'; }
+        return h('button', { type:'button', class:'mg-card', onclick:function(){ openEditor('photo', s); } }, [
+          th,
+          h('span', { class:'tx' }, [
+            h('span', { class:'t', text:info.name, style:'display:block' }),
+            h('span', { class:'m', text:(s.photos.length || s.pos) && s.updatedAt ? '바꾼 때 ' + s.updatedAt.slice(0,16).replace('T',' ') + ' · ' + s.updatedBy : ' ', style:'display:block' })
+          ])
+        ]);
+      })));
+    });
+    return box;
+  }
+
   /* ---------- 작성 화면 ---------- */
   function todayKst(){ return new Date(Date.now() + 9*3600e3).toISOString().slice(0,10); }
 
@@ -309,8 +406,8 @@
       files: post && post.files ? post.files.map(copyAtt) : [],
       cutouts: post && post.cutouts ? post.cutouts.map(copyAtt) : [],
       videos: post && post.videos ? post.videos.map(copyAtt) : [],
-      maxPhotos: board === 'notice' ? lim.noticePhotos : board === 'hero' ? 1 : lim.galleryPhotos,
-      photoSide: board === 'hero' ? (lim.heroPhotoSide || 2400) : PHOTO_MAX_SIDE
+      maxPhotos: board === 'notice' ? lim.noticePhotos : board === 'hero' || board === 'photo' ? 1 : lim.galleryPhotos,
+      photoSide: board === 'hero' || board === 'photo' ? (lim.heroPhotoSide || 2400) : PHOTO_MAX_SIDE
     };
     renderEditor();
     history.pushState({ adEdit:1 }, '');
@@ -349,6 +446,7 @@
     ]));
 
     if(e.board === 'hero'){ renderHeroEditor(wrap, e); view.appendChild(wrap); return; }
+    if(e.board === 'photo'){ renderPhotoEditor(wrap, e); view.appendChild(wrap); return; }
 
     wrap.appendChild(h('h2', { text:(e.id ? '' : '새 ') + boardOf(e.board).name + (e.id ? ' 수정' : '') }));
 
@@ -476,6 +574,84 @@
     ]));
   }
 
+  // 사이트 사진 한 자리 — 사진 한 장 + 보이는 위치. 자리는 고정이라 삭제 버튼이 없다 (WBS 15)
+  function renderPhotoEditor(wrap, e){
+    var p = e.post, info = photoInfo(p.slot) || { slot:p.slot, name:p.label, pageName:'', page:'index.html', shape:[1.5, 1.5] };
+    e.info = info;
+    wrap.appendChild(h('h2', { text:'사이트 사진 — ' + (info.pageName ? info.pageName + ' · ' : '') + info.name }));
+    wrap.appendChild(h('p', { class:'mg-note' }, [
+      info.def ? '사진을 올리면 이 자리의 기본 사진 대신 보입니다. 사진을 빼고 저장하면 기본 사진으로 돌아갑니다. '
+               : '지금은 「사진 준비 중」으로 비어 있는 자리입니다. 사진을 올리면 그 자리에 보이고, 빼면 다시 비어 보입니다. ',
+      '학생 얼굴이 크게 나오는 사진은 피해 주세요. ',
+      h('a', { href:photoHref(info), target:'_blank', rel:'noopener', text:'사이트에서 이 자리 보기 ↗' })
+    ]));
+    wrap.appendChild(photoField(e, '사진', '이 자리는 화면에 따라 잘려 보입니다. 아래 「보이는 위치」 미리보기로 확인하세요.'));
+    var posBox = h('div', { class:'fld mg-pos', id:'posFld' });
+    wrap.appendChild(posBox);
+    drawPos(e, posBox);
+    if(info.def) wrap.appendChild(h('div', { class:'fld' }, [
+      h('span', { class:'lb', text:'기본 사진 (올린 사진이 없을 때 보임)' }),
+      h('img', { class:'mg-hero-def', src:info.def, alt:'', style:'aspect-ratio:auto' })
+    ]));
+    wrap.appendChild(h('div', { class:'mg-actions' }, [
+      (e.photos.length || p.pos) ? h('button', { type:'button', class:'mg-btn warn', text:info.def ? '기본 사진 · 위치로 되돌리기' : '비우기 (사진 준비 중)', onclick:function(){
+        e.photos = []; p.pos = null; markDirty(); drawPhotos(null, e); drawPos(e); toast('저장하면 ' + (info.def ? '기본 사진으로' : '빈 자리로') + ' 돌아갑니다.');
+      } }) : null,
+      h('div', { class:'r' }, [
+        h('button', { type:'button', class:'mg-btn', text:'취소', onclick:function(){ if(confirmLeave()) closeEditor(); } }),
+        h('button', { type:'button', class:'mg-btn pri', text:'저장', onclick:save })
+      ])
+    ]));
+  }
+
+  // 보이는 위치 — 사진을 누르거나 끌어 가운데 둘 곳을 고른다. 사이트와 같은 방식(object-position · background-position %)으로 PC · 모바일 틀에 미리 보여 준다
+  function drawPos(e, box){
+    box = box || $('posFld');
+    if(!box || !e.info) return;
+    box.textContent = '';
+    var p = e.post, info = e.info, ph = e.photos[0];
+    var src = ph ? (ph.local || (ph.fileId && Board.photoUrl(ph.fileId, 1200))) : info.def;
+    box.appendChild(h('span', { class:'lb' }, ['보이는 위치', h('span', { class:'hint', text:'사진을 누르거나 끌어서, 잘려도 꼭 보여야 할 곳(인물 · 악기 등)을 고르세요.' })]));
+    if(!src || (ph && ph.error)){
+      box.appendChild(h('p', { class:'hint', text:ph && ph.uploading ? '사진을 올리는 중입니다…' : '사진을 올리면 고를 수 있습니다.' }));
+      return;
+    }
+    var cur = p.pos ? [p.pos.x, p.pos.y] : ph ? [50, 50] : info.pos || [50, 50];
+    var dot = h('i', { class:'dot' });
+    var pick = h('div', { class:'pick' }, [h('img', { src:src, alt:'', draggable:'false' }), dot]);
+    var shapes = [['PC', info.shape[0]], ['모바일', info.shape[1]]];
+    var frames = shapes.map(function(sh){
+      var f = h('span', { class:'fr' });
+      f.style.aspectRatio = String(sh[1]);
+      f.style.maxWidth = Math.round(240 * sh[1]) + 'px';   // 틀 높이 240px 안쪽 — 세로로 긴 칸도 비율 그대로
+      f.style.backgroundImage = 'url("' + src + '")';
+      return h('figure', null, [f, h('figcaption', { text:sh[0] })]);
+    });
+    function show(xy){
+      dot.style.left = xy[0] + '%'; dot.style.top = xy[1] + '%';
+      frames.forEach(function(fig){ fig.firstChild.style.backgroundPosition = xy[0] + '% ' + xy[1] + '%'; });
+    }
+    function at(ev){
+      var r = pick.getBoundingClientRect();
+      var x = Math.min(100, Math.max(0, (ev.clientX - r.left) / r.width * 100)), y = Math.min(100, Math.max(0, (ev.clientY - r.top) / r.height * 100));
+      p.pos = { x:Math.round(x), y:Math.round(y) }; markDirty(); show([p.pos.x, p.pos.y]); note.textContent = posText();
+    }
+    var down = false;
+    pick.addEventListener('pointerdown', function(ev){ down = true; pick.setPointerCapture(ev.pointerId); at(ev); });
+    pick.addEventListener('pointermove', function(ev){ if(down) at(ev); });
+    pick.addEventListener('pointerup', function(){ down = false; });
+    pick.addEventListener('pointercancel', function(){ down = false; });
+    function posText(){ return p.pos ? '가로 ' + p.pos.x + '% · 세로 ' + p.pos.y + '%' : ph ? '가운데' : '기본 위치'; }
+    var note = h('span', { class:'hint', text:posText() });
+    box.appendChild(h('div', { class:'mg-pos-in' }, [
+      pick,
+      h('div', { class:'pv' }, frames.concat([h('p', { class:'syntax' }, [note, ' ',
+        h('button', { type:'button', class:'mg-btn sm', text:ph ? '가운데로' : '기본 위치로', onclick:function(){ p.pos = null; markDirty(); drawPos(e); } })
+      ])]))
+    ]));
+    show(cur);
+  }
+
   function field(id, label, max, make, hint){
     var input = make();
     var count = max ? h('p', { class:'count' }) : null;
@@ -591,6 +767,7 @@
 
   // 원본을 빼거나 새로 올리면 누끼를 빼고 2.5D를 끈다 — 새 사진 위에 예전 인물이 겹치지 않게 (2026-10-15 사용자 결정)
   function photoChanged(e){
+    if(e.board === 'photo'){ e.post.pos = null; drawPos(e); return; }   // 새 사진에는 예전 위치가 맞지 않는다
     if(e.board !== 'hero') return;
     if(e.cutouts.length) toast('원본 사진이 바뀌어 누끼 사진을 뺐습니다. 2.5D를 쓰려면 새 원본의 누끼를 올려 주세요.');
     e.cutouts = []; e.post.depth = false;
@@ -804,7 +981,7 @@
       e.photos.push(ph);
       return function(){
         return shrinkPhoto(file, e.photoSide).then(function(r){
-          ph.local = r.preview; ph.w = r.w; ph.h = r.h; drawPhotos(null, e);
+          ph.local = r.preview; ph.w = r.w; ph.h = r.h; drawPhotos(null, e); drawPos(e);
           return blobToBase64(r.blob).then(function(b64){
             return api('upload', { kind:'photo', name:file.name.replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
           });
@@ -812,7 +989,7 @@
           ph.attachmentId = d.attachmentId; ph.fileId = d.fileId; ph.size = d.size; ph.uploading = false; markDirty();
         }, function(err){
           ph.uploading = false; ph.error = err && err.code ? errMsg(err) : '이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.';
-        }).then(function(){ if(S.edit === e){ drawPhotos(null, e); drawDepth(e); } });
+        }).then(function(){ if(S.edit === e){ drawPhotos(null, e); drawDepth(e); drawPos(e); } });
       };
     });
     drawPhotos(null, e);
@@ -927,6 +1104,9 @@
         photos:e.photos.map(function(a){ return a.attachmentId; }), cutouts:e.cutouts.map(function(a){ return a.attachmentId; }),
         videos:e.videos.map(function(a){ return a.attachmentId; }), files:[]
       }, newVideo ? '저장하고 사이트에 반영하는 중…\n동영상이 있어 30초 정도 걸릴 수 있습니다.' : null);
+    }
+    if(e.board === 'photo'){
+      return send({ board:'photo', id:e.id, post:{ pos:p.pos || null }, photos:e.photos.map(function(a){ return a.attachmentId; }), files:[] });
     }
     if(e.board === 'press' && !(p.source || '').trim()) return fail('언론사를 입력해 주세요.');
     if(!p.title.trim()) return fail('제목을 입력해 주세요.');
