@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T17:35:10+09:00",
+  "updatedAt": "2026-11-04T17:37:28+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -430,13 +430,9 @@
       "h": 1080
     },
     "ar5": {
-      "fileId": "11o9tuM985zIjVfIINv3L2HnoM4jQZFuz",
-      "w": 750,
-      "h": 1000,
-      "pos": {
-        "x": 50,
-        "y": 40
-      }
+      "fileId": "1BaFwov_Fg_3yedzHQncKc-CMw1QcwyGJ",
+      "w": 2400,
+      "h": 2182
     },
     "sv-recruit": {
       "fileId": "1NKv-3HfVK8xF5uIgybKacs7yoCiOaR68",
