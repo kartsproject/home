@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T15:15:28+09:00",
+  "updatedAt": "2026-11-04T15:18:17+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -289,6 +289,15 @@
       "pos": {
         "x": 5,
         "y": 61
+      }
+    },
+    "step2": {
+      "fileId": "15i9zVeFkFUEdif8cIlXnPDl5WoiDXLgB",
+      "w": 2400,
+      "h": 1350,
+      "pos": {
+        "x": 45,
+        "y": 71
       }
     }
   }
