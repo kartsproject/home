@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T16:00:46+09:00",
+  "updatedAt": "2026-11-04T16:05:45+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -278,6 +278,11 @@
       "fileId": "11xvkuK9vZ1X1avzOwVk42HVFaVfRP1bK",
       "w": 1920,
       "h": 1080
+    },
+    "trad": {
+      "fileId": "1128vA-1v0QByCCvUajda4i-CBmznaYEK",
+      "w": 2400,
+      "h": 1800
     }
   },
   "heroVideo": {},
@@ -296,10 +301,154 @@
       "w": 1455,
       "h": 817
     },
+    "step3": {
+      "fileId": "1ziCFjPp_GAz8Ez57jm1_VP-4iT3DcQjo",
+      "w": 1600,
+      "h": 901,
+      "pos": {
+        "x": 50,
+        "y": 70
+      }
+    },
     "recruit": {
       "fileId": "14hWtaJZgKlkp0p3QgaRku7vQoxDSQ7VU",
       "w": 2400,
       "h": 716
+    },
+    "sv-about": {
+      "fileId": "1RfiJkfRztYNOMid7lO9K7bxfmQMBv1Me",
+      "w": 2000,
+      "h": 1126,
+      "pos": {
+        "x": 50,
+        "y": 45
+      }
+    },
+    "ab-music": {
+      "fileId": "1cyIoK9YGWhOs5tGTGCQoerFNfh5X6Q_u",
+      "w": 900,
+      "h": 675
+    },
+    "ab-dance": {
+      "fileId": "1jFjp8W-LoINzeRgdjKME2YODQGd_QRXc",
+      "w": 900,
+      "h": 675
+    },
+    "ab-trad": {
+      "fileId": "17qxtAzSdUEAj4AFHV6K285bZJemEGNBW",
+      "w": 900,
+      "h": 675
+    },
+    "ab-art": {
+      "fileId": "1mgtDDB73Rj92_mFexGlJtSV5HO3bIPEE",
+      "w": 900,
+      "h": 675
+    },
+    "sv-programs": {
+      "fileId": "137fFR8Hml3-ZQTq1fkULoZXDejOGG0ep",
+      "w": 2000,
+      "h": 1500,
+      "pos": {
+        "x": 50,
+        "y": 40
+      }
+    },
+    "mu1": {
+      "fileId": "118gJH8090RnXyC-vlo8auHSbZ9KX4Oh4",
+      "w": 1000,
+      "h": 563
+    },
+    "mu2": {
+      "fileId": "1aOjIjll1dudjzqlUmjBeOe3iG3UgEQXd",
+      "w": 1000,
+      "h": 563
+    },
+    "mu3": {
+      "fileId": "19tuBj2Uk_5DDtz0Ed2brkVCfgdVqO_1x",
+      "w": 1000,
+      "h": 750
+    },
+    "da1": {
+      "fileId": "1hRd6plDNloI0KopvIOCou4g-0WlnExSa",
+      "w": 1000,
+      "h": 750
+    },
+    "da2": {
+      "fileId": "1_0pL51zxhMUekerAlm54iGM98agIAuNb",
+      "w": 1000,
+      "h": 564,
+      "pos": {
+        "x": 50,
+        "y": 45
+      }
+    },
+    "da3": {
+      "fileId": "18FvCuCYYy-64zaHtHmFddHzpXzCEDDFS",
+      "w": 1000,
+      "h": 563
+    },
+    "da4": {
+      "fileId": "1AxxLWXDvHT5xgPgCjg7JrkKgQxTy8BU5",
+      "w": 1000,
+      "h": 750
+    },
+    "tr1": {
+      "fileId": "1XS30UYlhZIgFYrQhsF_gOwwbU6D-8xIo",
+      "w": 1000,
+      "h": 750
+    },
+    "tr2": {
+      "fileId": "1ouVhcfogmAfH9EZlvthRwAvFAfASVral",
+      "w": 1000,
+      "h": 632
+    },
+    "tr3": {
+      "fileId": "1heXRQZ0TZ0ODd5W_tUn0hBeqCWrs8zJh",
+      "w": 750,
+      "h": 1000,
+      "pos": {
+        "x": 50,
+        "y": 30
+      }
+    },
+    "tr4": {
+      "fileId": "16iUwsIlgwHBp61Wz3x27GIrvkhx4Ts1z",
+      "w": 750,
+      "h": 1000
+    },
+    "tr5": {
+      "fileId": "105wrlFXjw4ksmEt7RFchlKZf5VE2i2-X",
+      "w": 1000,
+      "h": 632
+    },
+    "ar1": {
+      "fileId": "1LcNqmkpkvyLnjsTjNKdy8Da1tlp4vsEw",
+      "w": 1000,
+      "h": 750
+    },
+    "ar2": {
+      "fileId": "1QldFahPtIfa2rbJ6pEd6Vm3ufpXOWmf8",
+      "w": 1000,
+      "h": 752
+    },
+    "ar3": {
+      "fileId": "1NV5HNhr4eCnAFlNFC0_j_CUF9F6NyxZs",
+      "w": 1000,
+      "h": 632
+    },
+    "ar4": {
+      "fileId": "1M3gHHs6PBVbMewY7paU8CYMPJKxAXScW",
+      "w": 1000,
+      "h": 750
+    },
+    "ar5": {
+      "fileId": "11o9tuM985zIjVfIINv3L2HnoM4jQZFuz",
+      "w": 750,
+      "h": 1000,
+      "pos": {
+        "x": 50,
+        "y": 40
+      }
     },
     "sv-recruit": {
       "fileId": "1xXgLHrOfNpCC_dRCvMotzEPBFvWKtQAD",
@@ -308,6 +457,24 @@
       "pos": {
         "x": 62,
         "y": 17
+      }
+    },
+    "sv-mentoring": {
+      "fileId": "1kaNngGzu-t7H_dWZNgpisL7dX40Z3RCw",
+      "w": 2000,
+      "h": 1500,
+      "pos": {
+        "x": 50,
+        "y": 45
+      }
+    },
+    "sv-camp": {
+      "fileId": "19P4OWKCEwPMUt4dpscLBeS45_tg428-s",
+      "w": 2000,
+      "h": 1500,
+      "pos": {
+        "x": 50,
+        "y": 50
       }
     }
   },
@@ -322,5 +489,6 @@
         }
       ]
     }
-  }
+  },
+  "photoMode": "attached"
 }
