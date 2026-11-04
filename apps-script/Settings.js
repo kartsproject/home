@@ -34,7 +34,7 @@ var LIMITS_ = {
   link: 500,
   noticePhotos: 10,
   noticeFiles: 10,
-  guideFiles: 5,      // 모집요강 한 연도에 붙이는 파일(요강 · 지원서 양식 등)
+  guideFiles: 1,      // 모집요강 한 연도에 파일 하나 — 사이트에는 「{연도} 모집요강 내려받기」 단추 하나만 (2026-11-04 사용자 결정)
   guideTitle: 100,
   galleryPhotos: 50,
   heroPhotoSide: 2400,   // 표지 사진은 넓은 화면용이라 올리기 전 긴 변을 더 크게 (공지 · 갤러리는 화면이 1600으로 줄임)

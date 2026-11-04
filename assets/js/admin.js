@@ -353,14 +353,14 @@
 
   /* 모집요강 — 연도마다 한 줄 (WBS 17.4). 관문이 아직 이 기능을 모르면(새로 배포 전) d.guides가 없다 */
   function guideRows(items){
-    var box = h('div', null, [h('p', { class:'mg-note', text:'연도마다 모집요강 파일(PDF · 한글 등)을 올리면 「모집 및 선발」 페이지의 그 연도 탭에 「모집요강 내려받기」가 나옵니다. 비공개로 두면 사이트에 보이지 않습니다. 사이트에 그 연도 탭이 없으면(예: 2028) 담당자에게 탭 추가를 요청하세요.' })]);
+    var box = h('div', null, [h('p', { class:'mg-note', text:'연도마다 모집요강 파일(PDF) 하나를 올리면 「모집 및 선발」 페이지의 그 연도 탭에 「모집요강 내려받기」 단추가 나옵니다. 비공개로 두면 사이트에 보이지 않습니다. 사이트에 그 연도 탭이 없으면(예: 2028) 담당자에게 탭 추가를 요청하세요.' })]);
     if(!S.data.guides){ box.appendChild(h('p', { class:'mg-empty', text:'관문(Apps Script)을 새로 배포하면 쓸 수 있습니다. 담당자에게 알려 주세요.' })); return box; }
     if(!items.length){ box.appendChild(h('p', { class:'mg-empty', text:'아직 올린 모집요강이 없습니다. [+ 새 연도]를 눌러 올려 주세요.' })); return box; }
     box.appendChild(h('div', { class:'mg-rows' }, items.map(function(g){
       return h('button', { type:'button', class:'mg-row', onclick:function(){ openEditor('guide', g); } }, [
         h('span', { class:'badges' }, [visBadge(g.visibility)]),
-        h('span', { class:'t' }, [h('small', { text:g.year + '년' }), g.title || g.year + ' 모집요강']),
-        h('span', { class:'m', text:g.files.length ? '파일 ' + g.files.length + '개' : '파일 없음 · 사이트에 안 보임' })
+        h('span', { class:'t' }, [h('small', { text:g.year + '년' }), g.year + ' 모집요강']),
+        h('span', { class:'m', text:g.files.length ? g.files[0].name : '파일 없음 · 사이트에 안 보임' })
       ]);
     })));
     return box;
@@ -432,7 +432,7 @@
       cutouts: post && post.cutouts ? post.cutouts.map(copyAtt) : [],
       videos: post && post.videos ? post.videos.map(copyAtt) : [],
       maxPhotos: board === 'notice' ? lim.noticePhotos : board === 'hero' || board === 'photo' ? 1 : lim.galleryPhotos,
-      maxFiles: board === 'guide' ? (lim.guideFiles || 5) : lim.noticeFiles,
+      maxFiles: board === 'guide' ? (lim.guideFiles || 1) : lim.noticeFiles,
       photoSide: board === 'hero' || board === 'photo' ? (lim.heroPhotoSide || 2400) : PHOTO_MAX_SIDE
     };
     renderEditor();
@@ -623,9 +623,6 @@
         }))
       ])
     ]));
-    wrap.appendChild(field('f-title', '제목 (선택)', lim.guideTitle || 100, function(){
-      return h('input', { id:'f-title', type:'text', value:p.title, placeholder:'비우면 「' + (p.year || '2026') + ' 모집요강」', maxlength:String(lim.guideTitle || 100), oninput:bind('title') });
-    }, '내려받기 상자 위에 보이는 이름'));
     wrap.appendChild(fileField(e, lim));
     wrap.appendChild(h('div', { class:'mg-actions' }, [
       e.id ? h('button', { type:'button', class:'mg-btn warn', text:'삭제', onclick:removePost }) : null,
@@ -1268,7 +1265,7 @@
     box = box || $('fileFld'); lim = lim || S.data.limits;
     if(!box) return;
     box.textContent = '';
-    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? '모집 및 선발 페이지의 이 연도 탭에서 방문자가 내려받습니다. 위에서부터 차례로 보입니다.' : '방문자가 내려받을 수 있습니다' })]));
+    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? 'PDF 한 개. 모집 및 선발 페이지의 이 연도 탭에 「' + (e.post.year || '') + ' 모집요강 내려받기」 단추로 나옵니다(파일 이름은 보이지 않음).' : '방문자가 내려받을 수 있습니다' })]));
     if(e.files.length){
       box.appendChild(h('div', { class:'files' }, e.files.map(function(f, i){
         var move = function(to){ e.files.splice(to, 0, e.files.splice(i, 1)[0]); markDirty(); drawFiles(null, e); };
@@ -1340,7 +1337,7 @@
       if(!/^20[2-9]\d$/.test(year)) return fail('연도를 네 자리로 입력해 주세요. 예: 2026');
       if((S.data.guides || []).some(function(g){ return g.year === year && g.id !== e.id; })) return fail(year + '년 모집요강이 이미 있습니다. 목록에서 그 연도를 눌러 고쳐 주세요.');
       if(!e.files.length && p.visibility === '공개' && !confirm('파일이 없어 사이트에는 보이지 않습니다. 그래도 저장할까요?')) return;
-      return send({ board:'guide', id:e.id, post:{ year:year, title:(p.title || '').trim(), visibility:p.visibility }, photos:[], files:e.files.map(function(a){ return a.attachmentId; }) });
+      return send({ board:'guide', id:e.id, post:{ year:year, title:p.title || '', visibility:p.visibility }, photos:[], files:e.files.map(function(a){ return a.attachmentId; }) });
     }
     if(e.board === 'photo'){
       return send({ board:'photo', id:e.id, post:{ pos:p.pos || null }, photos:e.photos.map(function(a){ return a.attachmentId; }), files:[] });

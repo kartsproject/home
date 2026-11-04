@@ -2,7 +2,7 @@
    2026 K예술영재 프로젝트 — recruit.js
    모집 및 선발 페이지의 「모집요강 내려받기」(WBS 17.4). 관리자 페이지 「모집요강」 탭에서 연도별로 올린 파일이
    data/posts.json의 guides에 { "2026": { title, files:[{ fileId, name, size }] } }로 나온다.
-   연도 탭 안의 <section class="rc-guide" data-guide-year="2026">을 채우고, 파일이 없으면 숨긴 채로 둔다.
+   연도 탭 안의 <p class="rc-guide" data-guide-year="2026">에 내려받기 단추 하나를 넣고, 파일이 없으면 숨긴 채로 둔다.
    ▣ 운영진이 입력한 값(제목 · 파일명)은 textContent로만 넣는다 (CLAUDE.md 보안 5).
    ============================================================ */
 (function(){
@@ -16,22 +16,18 @@
     return e;
   }
 
+  // 파일 이름은 보이지 않고 연도마다 「{연도} 모집요강 내려받기」 단추 하나 (2026-11-04 사용자 요청)
   Board.load().then(function(d){
     var guides = (d && d.guides) || {};
     boxes.forEach(function(box){
-      var year = box.getAttribute('data-guide-year'), g = guides[year];
-      if(!g || !g.files || !g.files.length) return;
-      box.appendChild(el('h3', null, g.title || year + ' 모집요강'));
-      var ul = el('ul');
-      g.files.forEach(function(f){
-        var li = el('li'), a = el('a');
-        a.href = Board.fileUrl(f.fileId);
-        a.appendChild(el('span', 'nm', f.name));
-        if(f.size) a.appendChild(el('span', 'sz', Board.formatSize(f.size)));
-        a.appendChild(el('span', 'dl', '내려받기'));
-        li.appendChild(a); ul.appendChild(li);
-      });
-      box.appendChild(ul);
+      var year = box.getAttribute('data-guide-year'), g = guides[year], f = g && g.files && g.files[0];
+      if(!f) return;
+      var a = el('a', 'rc-dl');
+      a.href = Board.fileUrl(f.fileId);
+      a.appendChild(el('span', null, year + ' 모집요강 내려받기'));
+      a.appendChild(el('span', 'ic', '↓'));
+      a.setAttribute('aria-label', year + ' 모집요강 내려받기 (' + Board.formatSize(f.size || 0) + ')');
+      box.appendChild(a);
       box.hidden = false;
     });
   });
