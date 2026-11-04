@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T17:07:02+09:00",
+  "updatedAt": "2026-11-04T17:08:47+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -345,13 +345,9 @@
       "h": 675
     },
     "sv-programs": {
-      "fileId": "137fFR8Hml3-ZQTq1fkULoZXDejOGG0ep",
-      "w": 2000,
-      "h": 1500,
-      "pos": {
-        "x": 50,
-        "y": 40
-      }
+      "fileId": "1XWIXb9GHv-qLdWv1ixf7vhqt3izpboxj",
+      "w": 2400,
+      "h": 655
     },
     "mu1": {
       "fileId": "118gJH8090RnXyC-vlo8auHSbZ9KX4Oh4",
