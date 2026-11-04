@@ -265,3 +265,70 @@ var SITEMAP = [
     if(h) open(h,false);
   });
 })();
+
+/* ---------- 줄바꿈 단위 (2026-11-04 사용자 요청) ----------
+   되도록 줄이 바뀌지 않게, 바뀔 때는 어절 · 문장 · 내용 묶음 단위로.
+   · 어절: body의 word-break:keep-all (common.css) — 낱말 가운데서 끊지 않는다
+   · 묶음: 괄호 (…), 날짜(2026. 5. 18.(월)), 「…」는 안의 띄어쓰기를 붙임표 없는 공백(NBSP)으로 바꿔 한 줄에 둔다(15자까지)
+   · 나열 기호: 「음악 · 무용」 「기악 — 피아노」 「1. 1. ~ 12. 31.」의 · — ~ 는 앞말에 붙여 줄 머리에 오지 않게
+   · 문장: 문장이 둘 이상인 글은 문장마다 .ln-s(inline-block)로 감싸, 넘칠 때 문장 앞에서 먼저 줄이 바뀐다
+   운영진이 쓴 글(공지 본문 · 목록 · 갤러리 등 board.js · news.js · program-photos.js가 넣는 것)은 건드리지 않는다.
+   글자는 textContent · DOM으로만 다룬다(innerHTML 없음). */
+(function(){
+  var SEL = 'main p, main dd, main dt, main li > h3, main h2, main h3, main b, #sv .desc, #sv h1, footer p';
+  var SENTENCE = 'P,DD';                                  // 문장 단위로 감쌀 칸
+  var INLINE = /^(B|EM|STRONG|A|SMALL|I|U|SPAN|MARK|BR)$/;
+  var SKIP = '[data-board],.post-body,.mn-nw-list,.pg-photos,.zv,.rc-guide,.nw-list,[data-photo]';
+  var NB = ' ';
+
+  function simple(el){
+    if(el.closest(SKIP)) return false;
+    return [].every.call(el.querySelectorAll('*'), function(c){ return INLINE.test(c.tagName) && !c.classList.contains('ln-s'); });
+  }
+  function glue(s){
+    return s
+      .replace(/ ([·—~→])(?= )/g, NB + '$1')                                       // 나열 기호 · 화살표는 앞말에
+      // 짧은 꾸밈말은 뒷말에(「한 해」 「네 분야」 「약 25명」), 의존 명사 · 범위 말은 앞말에(「분야 간」 「6월 중」 「5분 내외」 「실기 동영상 등」)
+      .replace(/(^|[\s(「])(한|두|세|네|각|첫|새|매|총|약|전체) (?=[가-힣0-9])/g, '$1$2' + NB)
+      .replace(/([가-힣0-9]) (간|등|중|외|이내|내외|이상|이하|정도|무렵)(?=[\s.,)」]|$)/g, '$1' + NB + '$2')
+      .replace(/\d{4}\. ?\d{1,2}\. ?\d{1,2}\.(\([월화수목금토일]\))?/g, function(m){ return m.replace(/ /g, NB); })   // 날짜
+      .replace(/\([^()]{1,15}\)|「[^」]{1,15}」/g, function(m){ return m.replace(/ /g, NB); });                       // 괄호 · 낫표
+  }
+  // 문장 끝: 글자 · 닫는 괄호 뒤의 . ! ? 다음 띄어쓰기(숫자 뒤 마침표 = 날짜 · 번호는 빼고)
+  var END = /([가-힣A-Za-z)」』’”"%])([.!?]) +(?=\S)/g;
+
+  function sentences(el){
+    var text = el.textContent;
+    END.lastIndex = 0;
+    if(!END.test(text)) return;
+    var nodes = [].slice.call(el.childNodes), groups = [[]];
+    nodes.forEach(function(n){
+      if(n.nodeType === 3){
+        var parts = n.data.split(/((?:[가-힣A-Za-z)」』’”"%])[.!?]) +(?=\S)/), cur = '';
+        // split은 [앞, 끝두글자, 뒤, …] — 끝두글자를 앞 조각에 붙여 문장을 닫는다
+        for(var i = 0; i < parts.length; i++){
+          if(i % 2 === 1){ groups[groups.length - 1].push(document.createTextNode(cur + parts[i])); groups.push([]); cur = ''; }
+          else cur = parts[i];
+        }
+        if(cur) groups[groups.length - 1].push(document.createTextNode(cur));
+      }else if(n.nodeName === 'BR'){ groups[groups.length - 1].push(n); }
+      else groups[groups.length - 1].push(n);
+    });
+    groups = groups.filter(function(g){ return g.length; });
+    if(groups.length < 2) return;
+    el.textContent = '';
+    groups.forEach(function(g, i){
+      if(i) el.appendChild(document.createTextNode(' '));
+      var s = document.createElement('span'); s.className = 'ln-s';
+      g.forEach(function(n){ s.appendChild(n); });
+      el.appendChild(s);
+    });
+  }
+
+  [].forEach.call(document.querySelectorAll(SEL), function(el){
+    if(!simple(el)) return;
+    var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), t;
+    while((t = w.nextNode())) t.data = glue(t.data);
+    if(SENTENCE.indexOf(el.tagName) > -1 && !el.querySelector('br')) sentences(el);
+  });
+})();

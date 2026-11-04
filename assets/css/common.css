@@ -766,3 +766,10 @@ html.zv-open{overflow:hidden}
 #y2027 .rc-guide{margin:0 0 28px;text-align:center}
 /* 단계 아래 날짜 (2026 모집 공고 기준) */
 .rc-steps p{margin-top:8px;font-size:15px;line-height:1.6;color:var(--gray);letter-spacing:-.02em}
+
+/* ===== 줄바꿈 단위 (2026-11-04 — common.js 「줄바꿈 단위」와 함께) =====
+   제목 · 짧은 글은 줄 길이를 고르게(balance — 두세 줄이면 가운데쯤 구 단위에서 나뉜다), 긴 글(공지 본문)은 마지막 줄에 한 낱말만 남지 않게(pretty).
+   문장 묶음(.ln-s)은 넘칠 때 문장 앞에서 바뀐다 */
+h1,h2,h3,h4,.kick,.p1-ld,.mn-lead,p,dd,li,figcaption{text-wrap:balance}
+.post-body,.post-body *{text-wrap:pretty}
+.ln-s{display:inline-block;max-width:100%}
