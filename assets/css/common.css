@@ -112,11 +112,11 @@ body.menu-open #allmenu{opacity:1;pointer-events:auto}
 #sv h1{font-size:68px;font-weight:800;line-height:1.1;letter-spacing:-.05em}
 #sv .desc{justify-self:end;padding-bottom:10px;font-size:17px;color:var(--gray);letter-spacing:-.02em;text-align:right}
 #sv::after{content:"";display:block;height:360px;background:#222 var(--photo,var(--sv-img)) var(--photo-pos,var(--sv-pos,center)) / cover no-repeat}
-#sv[data-page="about"]{--sv-img:url("../img/hero-trad.jpg");--sv-pos:center 62%}
-#sv[data-page="programs"]{--sv-img:url("../img/hero-music.jpg");--sv-pos:center 55%}
-#sv[data-page="recruit"]{--sv-img:url("../img/p1.jpg")}
-#sv[data-page="mentoring"]{--sv-img:url("../img/p3.jpg")}
-#sv[data-page="camp"]{--sv-img:url("../img/hero-trad.jpg");--sv-pos:center top}
+#sv[data-page="about"]{--sv-img:url("../img/real/sv-about.jpg");--sv-pos:center 45%}
+#sv[data-page="programs"]{--sv-img:url("../img/real/sv-programs.jpg");--sv-pos:center 40%}
+#sv[data-page="recruit"]{--sv-img:url("../img/real/sv-recruit.jpg");--sv-pos:center 55%}
+#sv[data-page="mentoring"]{--sv-img:url("../img/real/sv-mentoring.jpg");--sv-pos:center 45%}
+#sv[data-page="camp"]{--sv-img:url("../img/real/sv-camp.jpg");--sv-pos:center 50%}
 #sv[data-page="news"]::after{content:none}
 
 /* ---------- 경로 표시 — 하위 머리 맨 위, 작은 회색 · 지금 페이지만 검정 ---------- */

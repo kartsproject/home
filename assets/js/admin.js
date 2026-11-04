@@ -24,48 +24,49 @@
      shape: 사이트에서 보이는 가로 ÷ 세로 [PC, 모바일] — 위치를 고를 때 미리보기 틀 (2026-11-04 1440 · 390 화면에서 잰 값).
      tab: 워크숍 분야 탭 (주소 #music 등) */
   var BAND = [4, 1.77], CARD3 = [0.97, 1.5], CARD45 = [0.88, 1.18], FIELD = [1.14, 1.13];
+  var R = 'assets/img/real/';   /* 운영 사진(실사진, WBS 16.1) — preview4와 같은 사진 · 위치 */
   var PHOTO_PAGES = [
     { name:'메인', page:'index.html', slots:[
-      { slot:'step1', name:'여정 STEP 01 · 워크숍', def:'assets/img/p2.jpg', shape:[1.78, 1.46] },
-      { slot:'step2', name:'여정 STEP 02 · 심화 멘토링', def:'assets/img/p3.jpg', shape:[1.78, 1.46] },
-      { slot:'step3', name:'여정 STEP 03 · 겨울캠프', def:'assets/img/hero-trad.jpg', pos:[50, 70], shape:[1.78, 1.46] },
-      { slot:'recruit', name:'모집 및 선발 띠', def:'assets/img/p4.jpg', pos:[50, 35], shape:[3.35, 1.77] }
+      { slot:'step1', name:'여정 STEP 01 · 워크숍', def:R + 'step1.jpg', shape:[1.78, 1.46] },
+      { slot:'step2', name:'여정 STEP 02 · 심화 멘토링', def:R + 'step2.jpg', pos:[50, 30], shape:[1.78, 1.46] },
+      { slot:'step3', name:'여정 STEP 03 · 겨울캠프', def:R + 'step3.jpg', pos:[50, 70], shape:[1.78, 1.46] },
+      { slot:'recruit', name:'모집 및 선발 띠', def:R + 'band.jpg', pos:[50, 35], shape:[3.35, 1.77] }
     ] },
     { name:'사업소개', page:'about.html', slots:[
-      { slot:'sv-about', name:'위 사진 띠', def:'assets/img/hero-trad.jpg', pos:[50, 62], shape:BAND },
-      { slot:'ab-music', name:'네 분야 · 음악', def:'assets/img/p2.jpg', shape:FIELD },
-      { slot:'ab-dance', name:'네 분야 · 무용', def:'assets/img/p1.jpg', shape:FIELD },
-      { slot:'ab-trad', name:'네 분야 · 전통예술', def:'assets/img/p4.jpg', shape:FIELD },
-      { slot:'ab-art', name:'네 분야 · 미술', def:'assets/img/p3.jpg', shape:FIELD }
+      { slot:'sv-about', name:'위 사진 띠', def:R + 'sv-about.jpg', pos:[50, 45], shape:BAND },
+      { slot:'ab-music', name:'네 분야 · 음악', def:R + 'ab-music.jpg', shape:FIELD },
+      { slot:'ab-dance', name:'네 분야 · 무용', def:R + 'ab-dance.jpg', shape:FIELD },
+      { slot:'ab-trad', name:'네 분야 · 전통예술', def:R + 'ab-trad.jpg', shape:FIELD },
+      { slot:'ab-art', name:'네 분야 · 미술', def:R + 'ab-art.jpg', shape:FIELD }
     ] },
     { name:'워크숍', page:'programs.html', slots:[
-      { slot:'sv-programs', name:'위 사진 띠', def:'assets/img/hero-music.jpg', pos:[50, 55], shape:BAND },
-      { slot:'mu1', tab:'music', name:'음악 01 · 전공별 1:1 레슨', def:'assets/img/music-lesson.jpg', pos:[50, 45], shape:CARD3 },
-      { slot:'mu2', tab:'music', name:'음악 02 · 마스터클래스 · 특강', def:'assets/img/music-class.jpg', shape:CARD3 },
-      { slot:'mu3', tab:'music', name:'음악 03 · 연주회', def:'assets/img/hero-music.jpg', pos:[65, 50], shape:CARD3 },
-      { slot:'da1', tab:'dance', name:'무용 01 · 발레 클라스', def:'assets/img/p1.jpg', pos:[50, 40], shape:CARD45 },
-      { slot:'da2', tab:'dance', name:'무용 02 · 발레 레퍼토리', def:'assets/img/dance-stage.jpg', pos:[62, 50], shape:CARD45 },
-      { slot:'da3', tab:'dance', name:'무용 03 · 발레 클라스의 역사', shape:CARD45 },
-      { slot:'da4', tab:'dance', name:'무용 04 · 피지컬 트레이닝', shape:CARD45 },
-      { slot:'tr1', tab:'trad', name:'전통예술 01 · 전공 실기', shape:CARD45 },
-      { slot:'tr2', tab:'trad', name:'전통예술 02 · 전공 심화', shape:CARD45 },
-      { slot:'tr3', tab:'trad', name:'전통예술 03 · 신체·음악 표현', shape:CARD45 },
-      { slot:'tr4', tab:'trad', name:'전통예술 04 · 소리 탐색 및 창작', shape:CARD45 },
-      { slot:'tr5', tab:'trad', name:'전통예술 05 · 현장 체험', def:'assets/img/hero-trad.jpg', pos:[50, 60], shape:CARD45 },
-      { slot:'ar1', tab:'art', name:'미술 01 · 관찰과 탐구', shape:CARD45 },
-      { slot:'ar2', tab:'art', name:'미술 02 · 예술가 특강 및 창작 실습', def:'assets/img/art-studio.jpg', pos:[60, 50], shape:CARD45 },
-      { slot:'ar3', tab:'art', name:'미술 03 · 주제 탐색 및 작품 구상', shape:CARD45 },
-      { slot:'ar4', tab:'art', name:'미술 04 · 개별 작품 제작', def:'assets/img/p3.jpg', shape:CARD45 },
-      { slot:'ar5', tab:'art', name:'미술 05 · 작품 발표 및 공유', def:'assets/img/art-show.jpg', shape:CARD45 }
+      { slot:'sv-programs', name:'위 사진 띠', def:R + 'sv-programs.jpg', pos:[50, 40], shape:BAND },
+      { slot:'mu1', tab:'music', name:'음악 01 · 전공별 1:1 레슨', def:R + 'mu1.jpg', shape:CARD3 },
+      { slot:'mu2', tab:'music', name:'음악 02 · 마스터클래스 · 특강', def:R + 'mu2.jpg', shape:CARD3 },
+      { slot:'mu3', tab:'music', name:'음악 03 · 연주회', def:R + 'mu3.jpg', shape:CARD3 },
+      { slot:'da1', tab:'dance', name:'무용 01 · 발레 클라스', def:R + 'da1.jpg', shape:CARD45 },
+      { slot:'da2', tab:'dance', name:'무용 02 · 발레 레퍼토리', def:R + 'da2.jpg', pos:[50, 45], shape:CARD45 },
+      { slot:'da3', tab:'dance', name:'무용 03 · 발레 클라스의 역사', def:R + 'da3.jpg', shape:CARD45 },
+      { slot:'da4', tab:'dance', name:'무용 04 · 피지컬 트레이닝', def:R + 'da4.jpg', shape:CARD45 },
+      { slot:'tr1', tab:'trad', name:'전통예술 01 · 전공 실기', def:R + 'tr1.jpg', shape:CARD45 },
+      { slot:'tr2', tab:'trad', name:'전통예술 02 · 전공 심화', def:R + 'tr2.jpg', shape:CARD45 },
+      { slot:'tr3', tab:'trad', name:'전통예술 03 · 신체·음악 표현', def:R + 'tr3.jpg', pos:[50, 30], shape:CARD45 },
+      { slot:'tr4', tab:'trad', name:'전통예술 04 · 소리 탐색 및 창작', def:R + 'tr4.jpg', shape:CARD45 },
+      { slot:'tr5', tab:'trad', name:'전통예술 05 · 현장 체험', def:R + 'tr5.jpg', shape:CARD45 },
+      { slot:'ar1', tab:'art', name:'미술 01 · 관찰과 탐구', def:R + 'ar1.jpg', shape:CARD45 },
+      { slot:'ar2', tab:'art', name:'미술 02 · 예술가 특강 및 창작 실습', def:R + 'ar2.jpg', shape:CARD45 },
+      { slot:'ar3', tab:'art', name:'미술 03 · 주제 탐색 및 작품 구상', def:R + 'ar3.jpg', shape:CARD45 },
+      { slot:'ar4', tab:'art', name:'미술 04 · 개별 작품 제작', def:R + 'ar4.jpg', shape:CARD45 },
+      { slot:'ar5', tab:'art', name:'미술 05 · 작품 발표 및 공유', def:R + 'ar5.jpg', pos:[50, 40], shape:CARD45 }
     ] },
     { name:'모집 및 선발', page:'recruit.html', slots:[
-      { slot:'sv-recruit', name:'위 사진 띠', def:'assets/img/p1.jpg', shape:BAND }
+      { slot:'sv-recruit', name:'위 사진 띠', def:R + 'sv-recruit.jpg', pos:[50, 55], shape:BAND }
     ] },
     { name:'심화 멘토링', page:'mentoring.html', slots:[
-      { slot:'sv-mentoring', name:'위 사진 띠', def:'assets/img/p3.jpg', shape:BAND }
+      { slot:'sv-mentoring', name:'위 사진 띠', def:R + 'sv-mentoring.jpg', pos:[50, 45], shape:BAND }
     ] },
     { name:'겨울캠프', page:'camp.html', slots:[
-      { slot:'sv-camp', name:'위 사진 띠', def:'assets/img/hero-trad.jpg', pos:[50, 0], shape:BAND }
+      { slot:'sv-camp', name:'위 사진 띠', def:R + 'sv-camp.jpg', shape:BAND }
     ] }
   ];
   function photoInfo(slot){
@@ -75,7 +76,7 @@
   }
   function photoHref(info){ return info.page + '?photo=' + info.slot + (info.tab ? '#' + info.tab : ''); }
   /* 표지 기본 사진 — main.css의 --img-hero-*와 맞출 것. 올린 사진이 없으면 사이트는 이 사진을, 이것도 없으면 그 칸을 건너뛴다 */
-  var HERO_DEFAULT = { music:'assets/img/hero-music.jpg', trad:'assets/img/hero-trad.jpg' };
+  var HERO_DEFAULT = { music:'assets/img/real/hero-music.jpg', dance:'assets/img/real/hero-dance.jpg', trad:'assets/img/real/hero-trad.jpg', art:'assets/img/real/hero-art.jpg' };   /* 실사진 (WBS 16.1) */
   /* 표지 동영상이 올라가는 영상 전용 저장소(GitHub Pages) — main.js의 MEDIA_BASE와 맞출 것. 관문은 경로(hero/A-00123.mp4)만 준다 (2안 WBS 8.6) */
   var MEDIA_BASE = 'https://kartsproject.github.io/home-media/';
   /* 갤러리 앨범 과정 · 분야 — 관문 GALLERY_COURSES_ · GALLERY_FIELDS_(Setup.js)와 같은 코드. 프로그램 페이지가 이 코드로 공개 앨범 사진을 모은다.

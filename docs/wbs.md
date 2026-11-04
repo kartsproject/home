@@ -290,6 +290,17 @@
 | 15.3 | 관리자 「사이트 사진」 탭 — 페이지별 자리 카드, 사진 바꾸기 · 빼기, 보이는 위치(PC · 모바일 미리보기), 사이트에서 이 자리 보기 | `assets/js/admin.js` · admin.css | 완료 (2026-11-04 가짜 관문으로 1280 · 390) |
 | 15.4 | 관문 새 버전 배포 — 자동 배포(`.github/workflows/gateway.yml`: main의 `apps-script/`가 바뀌면 clasp push + 기존 배포를 새 버전으로, 관문 주소 그대로) | 저장소 Secrets `CLASPRC_JSON` · `GAS_SCRIPT_ID` | 대기 — 사용자가 Secrets 두 개를 넣은 뒤 Actions 「Gateway」를 한 번 실행. 배포 전에는 탭에 「관문을 새로 배포하면 쓸 수 있습니다」. **자동 배포를 쓰는 동안 PC에서 따로 clasp push하지 않는다** |
 
+### 16. 새 구글 계정으로 다시 셋팅 (2026-11-04 사용자 — 홍보 · 아카이빙 둘 다, 저장소 · 주소는 그대로)
+
+순서 안내: `docs/setup-new-account.md` (두 저장소에 같은 문서).
+
+| ID | 작업 | 산출물 | 상태 |
+|---|---|---|---|
+| 16.1 | preview4 실사진을 운영 기본 사진으로 — 표지 4 · 여정 3 · 모집 띠 · 위 사진 띠 5 · 사업소개 4 · 워크숍 카드 17 (「사진 준비 중」 없음) | `assets/img/real/` · main.css · common.css · about.html · programs.html · admin.js 기본 사진 | 완료 (2026-11-04) |
+| 16.2 | 이전 도구 — 첨부를 새 계정 드라이브로 복사(`moveAttachments`, 표지 첨부는 옮기지 않음) · 설정 점검(`checkSetup`) · 발행 기본 위치 main | `apps-script/Migrate.js` · `CheckSetup.js` · Setup.js | 완료 (관문 흉내 시험) |
+| 16.3 | 자동 배포 — 새 프로젝트에 배포가 아직 없으면 코드만 올리고 안내 | `.github/workflows/gateway.yml` | 완료 |
+| 16.4 | 사용자 셋팅 — 시트 사본 · Secrets · setup · 토큰 · 첨부 옮기기 · 웹앱 배포 · 새 관문 주소 반영 | 안내서 1~5단계 | 대기 (사용자) |
+
 ## 4. 진행 순서
 
 ```
