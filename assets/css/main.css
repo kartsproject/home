@@ -82,7 +82,7 @@
 .h-tabs button.on{font-size:30px;font-weight:700;opacity:1;margin-bottom:4px}
 .h-tabs button:focus-visible{outline:2px solid #fff;outline-offset:4px}
 /* 주최 · 주관 + 흰색 기관 로고 (10.13 파일 · alt 그대로) */
-.h-logos{position:absolute;right:0;bottom:60px;display:flex;align-items:center;gap:26px;font-size:13px;font-weight:600}
+.h-logos{position:absolute;right:0;bottom:60px;display:flex;align-items:center;gap:32px;font-size:13px;font-weight:600}
 .h-lg{display:flex;align-items:center;gap:10px;white-space:nowrap}
 .h-lg b{font-weight:600}
 .h-lg img{display:block;width:auto}

@@ -92,13 +92,13 @@ var SITEMAP = [
   }).join('');
   var allmenu = '<div class="inner"><div class="cols">'+cols+'</div>'+snsLinks('am-sns')+'</div>';
 
-  /* 푸터 (WBS 11.3 시안 1) — 검정 띠: 왼쪽 이름 · 주최 · 주관, 오른쪽 문의 · 운영 · SNS 아이콘, 아래 © */
+  /* 푸터 (WBS 11.3 시안 1) — 검정 띠: 왼쪽 이름 · 기관 로고 두 개(2026-11-04), 오른쪽 문의 · 운영 · SNS 아이콘, 아래 © */
   var footer =
   '<div class="inner ft-in">'+
     '<div class="ft-top">'+
       '<div class="ft-info">'+
         '<p class="ft-name">'+SITE.brand+'</p>'+
-        '<p class="ft-org">주최 '+SITE.host+' · 주관 '+SITE.org+'</p>'+
+        '<p class="ft-org"><img src="assets/img/logo-mcst-w.png" alt="'+SITE.host+'" class="lg-mcst"><img src="assets/img/logo-kriga-w.png" alt="'+SITE.org+'" class="lg-kriga"></p>'+   /* 「주최」「주관」 글자 대신 로고(2026-11-04) */
       '</div>'+
       '<dl class="ft-dl">'+
         '<div><dt>문의</dt><dd><a href="mailto:'+SITE.mail+'" data-site="mail">'+SITE.mail+'</a></dd></div>'+
