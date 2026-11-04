@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T14:54:23+09:00",
+  "updatedAt": "2026-11-04T15:12:45+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -264,6 +264,11 @@
     }
   ],
   "hero": {
+    "dance": {
+      "fileId": "178YnF_sSX_bYy6wZu6iBw7q6XDHylvNq",
+      "w": 1920,
+      "h": 1080
+    },
     "music": {
       "fileId": "12pQfuODwUcZPUjV2V4d0zahPRZ984Awc",
       "w": 1920,
