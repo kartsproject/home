@@ -240,7 +240,7 @@ body.menu-open #allmenu{opacity:1;pointer-events:auto}
 .rc-card dt{font-size:14px;color:var(--gray);letter-spacing:-.02em}
 .rc-card dd{margin-top:6px;font-size:17px;font-weight:700;letter-spacing:-.02em}
 .rc-card dd+dt{margin-top:22px}
-.rc-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.rc-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}   /* 모집 공고 · 지원 접수 · 선발 (2026-11-04 반 배정 삭제) */
 .rc-steps li{background:var(--cream);border-radius:12px;padding:30px 24px}
 .rc-steps .no{display:block;font-size:14px;font-weight:700;color:var(--coral);letter-spacing:.02em}
 .rc-steps b{display:block;margin-top:10px;font-size:19px;font-weight:700;letter-spacing:-.03em}
