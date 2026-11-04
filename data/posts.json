@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T17:18:33+09:00",
+  "updatedAt": "2026-11-04T17:21:50+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -395,13 +395,9 @@
       "h": 632
     },
     "tr3": {
-      "fileId": "1heXRQZ0TZ0ODd5W_tUn0hBeqCWrs8zJh",
-      "w": 750,
-      "h": 1000,
-      "pos": {
-        "x": 50,
-        "y": 30
-      }
+      "fileId": "1M3Z1ZDIcRNhuoNdPMnhoBrSdmo5sAe6v",
+      "w": 891,
+      "h": 810
     },
     "tr4": {
       "fileId": "16iUwsIlgwHBp61Wz3x27GIrvkhx4Ts1z",
