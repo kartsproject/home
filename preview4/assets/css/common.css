@@ -1,0 +1,757 @@
+@charset "utf-8";
+/* ============================================================
+   2026 K예술영재 프로젝트 — common.css
+   전 페이지 공통: 토큰 / 리셋 / 헤더 / 전체메뉴 / 서브비주얼 /
+                  탭 / 본문 공통 컴포넌트 / 푸터
+   디자인 레퍼런스: 대한민국발레축제(bafeko.com)
+   ============================================================ */
+
+:root{
+  /* ---- 이미지 (여기만 교체하면 전 페이지 반영) ---- */
+  --none:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,0));
+  --img-sub-about   :var(--none);   /* 서브비주얼 : 사업소개   → url("assets/img/sub-about.jpg") */
+  --img-sub-programs:var(--none);   /* 서브비주얼 : 프로그램 */
+  --img-sub-course  :var(--none);   /* 서브비주얼 : 심화과정 */
+  --img-sub-news    :var(--none);   /* 서브비주얼 : 소식·아카이브 */
+
+  /* ---- 컬러 ---- */
+  --teal:#176C86;  --teal-dp:#0F4A5C;  --teal-lt:#E7F0F3;
+  --cream:#FAF9F5; --ink:#212326;
+  --coral:#E84958;
+  --gray:#5A6065;  --gray-lt:#6B7075;
+  --line:#DDDDDD;  --line-lt:#EAEAEA;
+  --yel:#F2C230;  --dash:#DAD7D0;   /* 시안1(WBS 11) — 노랑은 머리글 낙서 · 낱말 밑줄 · 지금 메뉴 · 점선 끝 점에만, 점선은 손그림 길 */
+
+  /* ---- 레이아웃 ---- */
+  --inner:1540px; --hd:72px;   /* 머리 72px · 본문 폭 1440 기준 1290 (WBS 11.3 시안 1) */
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  font-size:18px;color:var(--ink);background:#fff;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+li{list-style:none}
+table{border-collapse:collapse;width:100%}
+button{font-family:inherit}
+.inner{width:min(var(--inner),calc(100% - 150px));margin:0 auto}
+/* 글꼴은 Pretendard 하나 (WBS 11.3 시안 1) — 예전 서체 · 영문 글꼴 이름표는 본문 글꼴을 그대로 */
+.blind{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+section[id]{scroll-margin-top:var(--hd)}
+
+/* ---------- scroll reveal ---------- */
+[data-rv]{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
+[data-rv].on{opacity:1;transform:none}
+[data-rv][data-d="1"]{transition-delay:.10s}[data-rv][data-d="2"]{transition-delay:.20s}
+[data-rv][data-d="3"]{transition-delay:.30s}[data-rv][data-d="4"]{transition-delay:.40s}
+
+/* ============ HEADER (WBS 11.3 시안 1) ============
+   모든 페이지(메인 포함) 늘 흰 띠 72px · 아래 옅은 줄. 왼쪽 「☰ MENU」(전체메뉴) · 가운데 이름(누르면 첫 화면) · 오른쪽 메뉴 4개(지금 페이지는 노란 밑칠).
+   메인 표지 위 투명 머리 · 밝기에 따른 머리 색 바꾸기는 쓰지 않는다. 768px 이하는 이름 + 오른쪽 ☰만 */
+#header{position:fixed;top:0;left:0;width:100%;height:var(--hd);z-index:100;background:#fff;border-bottom:1px solid var(--line-lt)}
+#header .hd-in{position:relative;height:100%;display:flex;align-items:center;justify-content:space-between}
+.ham{display:flex;align-items:center;gap:12px;padding:8px 0;background:none;border:0;cursor:pointer;color:var(--ink);font-size:13px;font-weight:600;letter-spacing:.02em}
+.ham:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+.ham-i{position:relative;display:block;flex:none;width:22px;height:14px}
+.ham-i span{position:absolute;left:0;width:100%;height:2px;background:currentColor;transition:transform .3s,opacity .3s}
+.ham-i span:nth-child(1){top:0}
+.ham-i span:nth-child(2){top:6px}
+.ham-i span:nth-child(3){top:12px}
+body.menu-open .ham-i span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+body.menu-open .ham-i span:nth-child(2){opacity:0}
+body.menu-open .ham-i span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+/* 이름 — 굵은 「K예술영재 프로젝트」, 머리 가운데 (위의 작은 2026은 2026-10-28 차장님 피드백으로 뺌) */
+.logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;line-height:1;color:var(--ink);white-space:nowrap}
+.logo .nm{display:block;width:auto;height:40px}   /* 로고 그림(K예술영재) — 세로 40, 가로는 비율대로(약 130) */
+#header .hd-r{display:flex;align-self:stretch}
+#header nav{position:relative;display:flex}
+#gnb{display:flex;gap:32px;height:100%}
+/* 머리 SNS (2026-10-23 사용자 결정 A안) — 메뉴 오른쪽에 옅은 세로줄(26px 띄움) → 아이콘 4개, 오른쪽 끝 = 본문 폭 끝. 1100px 이하는 전체메뉴 안(.am-sns) */
+.hd-sns{position:relative;display:flex;align-items:center;gap:16px;margin-left:26px;padding-left:26px;color:var(--ink)}
+.hd-sns::before{content:"";position:absolute;left:0;top:50%;width:1px;height:18px;margin-top:-9px;background:#D5D5D5}
+.hd-sns a{display:block;color:inherit;transition:opacity .25s}
+.hd-sns a:hover,.hd-sns a:focus-visible{opacity:.6}
+.hd-sns svg{display:block;width:20px;height:20px}
+#gnb > li{position:relative;display:flex;align-items:center}
+#gnb > li > a{position:relative;z-index:0;display:block;padding:6px 0;font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.02em;transition:opacity .25s}
+#gnb > li > a:hover{opacity:.6}
+#gnb > li.on > a::after{content:"";position:absolute;left:-2px;right:-2px;bottom:4px;height:7px;background:var(--yel);border-radius:4px;z-index:-1}
+/* ---------- 머리 메뉴 판 (common.js · WBS 8.12 → 11.3) ----------
+   PC(1101px 이상)에서 메뉴 줄에 마우스를 올리거나 Tab으로 들어가면 #header.nav-open — 머리 바로 아래 전체 폭 흰 판(.gnb-panel, 높이 --gnb-panel-h)이
+   옅은 아래 줄과 함께 내려오고(그림자 없음), 메뉴마다 목록(.gnb-list)이 그 글자 가운데 밑에 놓인다 */
+.gnb-panel{position:fixed;left:0;right:0;top:var(--hd);height:var(--gnb-panel-h,0);background:#fff;border-bottom:1px solid var(--line-lt);
+  opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .3s,visibility .3s,transform .35s cubic-bezier(.22,1,.36,1)}
+.gnb-list{position:absolute;left:50%;top:100%;z-index:2;padding:20px 0 22px;text-align:center;transform:translate(-50%,-8px);
+  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s,transform .35s cubic-bezier(.22,1,.36,1)}
+.gnb-list a{display:block;padding:9px 12px;font-size:15px;font-weight:500;color:var(--gray);white-space:nowrap;letter-spacing:-.02em;transition:color .2s}
+.gnb-list a:hover,.gnb-list a:focus-visible{color:var(--ink);text-decoration:underline;text-underline-offset:5px;outline:none}
+.gnb-list a[aria-current="page"]{color:var(--ink);font-weight:700}
+#header.nav-open .gnb-panel,#header.nav-open .gnb-list{opacity:1;visibility:visible}
+#header.nav-open .gnb-panel{transform:none}
+#header.nav-open .gnb-list{transform:translateX(-50%)}
+
+/* ---------- 전체메뉴 (☰ MENU) — 머리 아래 흰 판, 메뉴 이름 · 하위 항목 ---------- */
+#allmenu{position:fixed;left:0;right:0;top:var(--hd);bottom:0;z-index:90;background:#fff;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .4s ease}
+body.menu-open #allmenu{opacity:1;pointer-events:auto}
+#allmenu .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;width:100%;padding:70px 0 50px}
+#allmenu h3{padding-bottom:16px;border-bottom:2px solid var(--ink);font-size:26px;font-weight:800;letter-spacing:-.04em}
+#allmenu ul{margin-top:12px}
+#allmenu li a{display:block;padding:11px 0;font-size:17px;color:var(--gray);letter-spacing:-.02em;transition:color .25s}
+#allmenu li a:hover,#allmenu li a:focus-visible{color:var(--ink);text-decoration:underline;text-underline-offset:5px}
+/* 전체메뉴 안 SNS — 1100px 이하에서만 (푸터에도 있음) */
+.am-sns{display:none;gap:28px;padding-bottom:40px;color:var(--ink)}
+.am-sns a{display:block;color:inherit;transition:opacity .25s}
+.am-sns a:hover,.am-sns a:focus-visible{opacity:.6}
+.am-sns svg{display:block;width:24px;height:24px}
+
+/* ============ 하위 페이지 머리 (WBS 11.3 시안 1) ============
+   흰 바탕: 경로(#crumb) → 큰 제목(왼쪽) · 설명 한 줄(오른쪽 아래), 그 아래 전체 폭 사진 띠(높이 360px, 그림자 · 둥근 모서리 없음).
+   사진은 페이지마다 --sv-img · --sv-pos 한 줄로 바꾼다. 소식은 사진 띠 없음 */
+#sv{--sv-img:none;padding-top:var(--hd);background:#fff}
+#sv .in{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:end;gap:26px 40px;padding:70px 0 56px}
+#sv h1{font-size:68px;font-weight:800;line-height:1.1;letter-spacing:-.05em}
+#sv .desc{justify-self:end;padding-bottom:10px;font-size:17px;color:var(--gray);letter-spacing:-.02em;text-align:right}
+#sv::after{content:"";display:block;height:360px;background:#222 var(--sv-img) var(--sv-pos,center) / cover no-repeat}
+#sv[data-page="about"]{--sv-img:url("../img/real/sv-about.jpg");--sv-pos:center 45%}
+#sv[data-page="programs"]{--sv-img:url("../img/real/sv-programs.jpg");--sv-pos:center 40%}
+#sv[data-page="recruit"]{--sv-img:url("../img/real/sv-recruit.jpg");--sv-pos:center 55%}
+#sv[data-page="mentoring"]{--sv-img:url("../img/real/sv-mentoring.jpg");--sv-pos:center 45%}
+#sv[data-page="camp"]{--sv-img:url("../img/real/sv-camp.jpg");--sv-pos:center 50%}
+#sv[data-page="news"]::after{content:none}
+
+/* ---------- 경로 표시 — 하위 머리 맨 위, 작은 회색 · 지금 페이지만 검정 ---------- */
+#crumb{grid-column:1 / -1}
+#crumb ol{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--gray-lt);letter-spacing:-.01em}
+#crumb ol > li+li::before{content:"›";margin-right:8px}
+#crumb ol > li:last-child{color:var(--ink);font-weight:600}
+#crumb a:hover,#crumb a:focus-visible{color:var(--ink)}
+#crumb ol > li.crumb-menu{position:relative;display:flex;align-items:center}
+/* 경로 표시 「프로그램 ▾」 (common.js · WBS 8.9) — 누르면 밑에 목록, 바깥 · Esc로 닫힘 */
+.crumb-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:4px 0;font:inherit;color:inherit;cursor:pointer;transition:color .25s}
+.crumb-btn:hover,.crumb-btn[aria-expanded="true"]{color:var(--ink)}
+.crumb-btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* ▾ 글자는 작은 글씨에서 점처럼 보여 선으로 그린 꺾쇠(∨)로 보인다 */
+.crumb-caret{display:block;width:6px;height:6px;margin-top:-3px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;
+  font-size:0;transform:rotate(45deg);transition:transform .25s,margin-top .25s}
+.crumb-btn[aria-expanded="true"] .crumb-caret{transform:rotate(225deg);margin-top:3px}
+.crumb-sub{position:absolute;left:-14px;top:calc(100% + 10px);z-index:70;min-width:168px;padding:8px 0;background:#fff;border:1px solid var(--line)}
+.crumb-sub[hidden]{display:none}
+.crumb-sub a{display:block;padding:11px 20px;font-size:15px;font-weight:400;color:var(--ink);white-space:nowrap;letter-spacing:-.02em;transition:background .2s}
+.crumb-sub a:hover,.crumb-sub a:focus-visible{background:#F4F2EC;outline:none}
+.crumb-sub a[aria-current="page"]{font-weight:700}
+
+/* ---------- 하위 탭 — 흰 바탕 · 옅은 아래 줄 · 높이 72px, 글자 18px 회색, 지금 탭은 검정 굵게 + 노란 밑칠 ---------- */
+#tabs{position:sticky;top:var(--hd);z-index:50;background:#fff;border-bottom:1px solid var(--line-lt)}
+#tabs ul{display:flex;gap:44px;margin:0 -4px;padding:0 4px;overflow-x:auto;scrollbar-width:none}
+#tabs ul::-webkit-scrollbar{display:none}
+#tabs button{position:relative;z-index:0;height:72px;padding:0;background:none;border:0;font-size:18px;font-weight:600;color:var(--gray-lt);
+  cursor:pointer;white-space:nowrap;letter-spacing:-.02em;transition:color .25s}
+#tabs button::after{content:"";position:absolute;left:-3px;right:-3px;top:calc(50% + 1px);height:9px;background:var(--yel);border-radius:5px;z-index:-1;
+  transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+#tabs button:hover{color:var(--ink)}
+#tabs button.on{color:var(--ink);font-weight:700}
+#tabs button.on::after{transform:none}
+/* 워크숍 분야 탭 — 작은 번호(01 …) + 20px (시안 .ftab). 번호는 CSS 숫자: 탭 글자가 경로 표시 끝 칸에 그대로 쓰이므로 HTML에 넣지 않는다 */
+#tabs.wk-tabs ul{gap:56px;counter-reset:wk}
+#tabs.wk-tabs button{height:84px;font-size:20px}
+#tabs.wk-tabs button::before{counter-increment:wk;content:counter(wk,decimal-leading-zero);display:inline-block;margin-right:8px;font-size:11px;font-weight:600}
+#tabs.wk-tabs button.on{font-weight:800}
+#tabs.wk-tabs button::after{left:18px;height:10px}
+
+/* ============ 본문 공통 컴포넌트 ============ */
+.panel{display:none;padding:90px 0 0}   /* 아래 여백은 푸터 위 여백(150px)이 맡음 */
+.panel.on{display:block}
+
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;gap:12px;padding:16px 34px;border:1px solid var(--teal);background:var(--teal);color:#fff;
+  font-size:16px;font-weight:600;letter-spacing:-.02em;cursor:pointer;transition:background .3s,color .3s}
+.btn:hover{background:var(--teal-dp);border-color:var(--teal-dp)}
+.btn.ghost{background:none;color:var(--teal)}
+.btn.ghost:hover{background:var(--teal);color:#fff}
+.btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+
+/* 게시판 리스트 */
+.bbs{border-top:2px solid var(--ink)}
+.bbs li a{display:flex;align-items:center;gap:24px;padding:24px 8px;border-bottom:1px solid var(--line-lt);transition:background .3s}
+.bbs li a:hover{background:var(--cream)}
+.bbs .cat{flex:0 0 auto;font-size:12.5px;font-weight:600;color:var(--teal);border:1px solid var(--teal);padding:5px 12px;letter-spacing:-.02em}
+.bbs .t{flex:1;font-size:17px;font-weight:500;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bbs .d{flex:0 0 auto;font-size:14px;color:var(--gray-lt)}
+.bbs li a.empty{cursor:pointer}  /* 내용 없는 공지: 반응은 같고 이동만 없음 */
+/* 언론홍보: 언론사는 분류 자리, 제목 바로 뒤에 새 창 표시 */
+.bbs .press .cat{min-width:86px;text-align:center}   /* 언론사 이름 길이가 달라도 제목 시작 위치를 맞춘다 */
+.bbs .press .t{flex:0 1 auto}
+.bbs .press.empty .ext{visibility:hidden}   /* 자리는 남겨 날짜를 오른쪽에 둔다 */
+.bbs .press .ext{flex:0 0 auto;margin:0 auto 0 -14px;font-size:14px;color:var(--gray-lt)}
+.paging{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:50px}
+.paging button{width:40px;height:40px;display:grid;place-items:center;font-size:15px;color:var(--gray);border:1px solid var(--line);background:#fff;cursor:pointer}
+.paging button:hover{border-color:var(--teal);color:var(--teal)}
+.paging button.on{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700;cursor:default}
+/* 글이 없음 · 불러오기 실패 (board.js MSG) */
+.bd-msg{border-top:2px solid var(--ink);border-bottom:1px solid var(--line-lt);padding:70px 0;text-align:center;font-size:16px;color:var(--gray-lt);letter-spacing:-.02em}
+
+/* 갤러리 */
+.gal{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.gal figure{position:relative}
+.gal .th{display:block;width:100%;border:0;padding:0;aspect-ratio:4/3;background:linear-gradient(150deg,#1E6C7E,#0B2F38);overflow:hidden}
+.gal button.th{cursor:pointer}
+.gal button.th::after{content:"";position:absolute;inset:0}  /* 제목·설명을 눌러도 열리게 칸 전체로 넓힘 */
+.gal button.th:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+.gal .th img,.gal .th .ph{display:block;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.22,1,.36,1)}
+.gal .th .ph{background:inherit}  /* 사진 없는 앨범: 그라디언트 칸도 같이 커진다 */
+.gal figure.empty{cursor:pointer}
+.gal figure:hover .th img,.gal figure:hover .th .ph{transform:scale(1.07)}
+.gal figcaption{margin-top:14px;font-size:16px;font-weight:600;letter-spacing:-.02em}
+.gal .m{font-size:13.5px;color:var(--gray-lt);margin-top:5px}
+
+/* 프로그램 페이지 갤러리 사진 줄 (program-photos.js) — 메인 WORKSHOP 칸과 같은 모양. 사진이 없으면 칸째 숨김 */
+.pg-photos{margin-top:70px}
+.pg-photos[hidden]{display:none}
+.pg-arrows{display:flex;gap:10px}
+.pg-arrows button{width:44px;height:44px;border-radius:50%;border:0;background:var(--teal);color:#fff;font-size:16px;cursor:pointer;
+  display:grid;place-items:center;transition:background .3s,transform .3s}
+.pg-arrows button:hover{background:var(--teal-dp);transform:translateY(-2px)}
+.pg-rail{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}
+.pg-rail::-webkit-scrollbar{display:none}
+.pg-item{position:relative;flex:0 0 calc((100% - 60px)/4);min-width:250px;scroll-snap-align:start}
+.pg-item .th{display:block;width:100%;border:0;padding:0;aspect-ratio:292/262;overflow:hidden;background:#DDE3E6;cursor:pointer}
+.pg-item .th::after{content:"";position:absolute;inset:0}  /* 제목·설명을 눌러도 열리게 칸 전체로 넓힘 */
+.pg-item .th:focus-visible{outline:3px solid var(--teal);outline-offset:-3px}
+.pg-item img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.22,1,.36,1)}
+.pg-item:hover img{transform:scale(1.07)}
+.pg-item figcaption{margin-top:16px;font-size:16px;font-weight:700;letter-spacing:-.02em}
+.pg-item .m{font-size:13.5px;color:var(--gray-lt);margin-top:5px}
+
+/* ============ 4차 시안 (WBS 9절) — 모집 및 선발 · 워크숍 음악 · 겨울캠프 ============ */
+
+/* 모집 및 선발 — 연도 단추(#tabs 탭 코드를 그대로 쓰고 둥근 단추 모양만 바꿈) */
+#tabs.yr-tabs{margin-top:44px;padding:20px 0;border-bottom:0}
+#tabs.yr-tabs ul{gap:10px;overflow:visible}
+#tabs.yr-tabs button{min-width:112px;height:48px;padding:0 28px;border:1px solid var(--teal);border-radius:999px;background:#fff;
+  font-size:17px;font-weight:700;color:var(--teal);transition:background .25s,color .25s}
+#tabs.yr-tabs button::after{content:none}
+#tabs.yr-tabs button:hover{background:var(--teal-lt)}
+#tabs.yr-tabs button.on{background:var(--teal);color:#fff}
+#tabs.yr-tabs ~ main .panel{padding-top:44px}
+.rc-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:40px}
+.rc-card{border:1px solid var(--line);border-radius:16px;padding:40px 28px 36px}
+.rc-card h3{font-size:22px;font-weight:700;color:var(--teal);letter-spacing:-.03em}
+.rc-card dl{margin-top:24px}
+.rc-card dt{font-size:14px;color:var(--gray);letter-spacing:-.02em}
+.rc-card dd{margin-top:6px;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.rc-card dd+dt{margin-top:22px}
+.rc-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.rc-steps li{background:var(--cream);border-radius:12px;padding:30px 24px}
+.rc-steps .no{display:block;font-size:14px;font-weight:700;color:var(--coral);letter-spacing:.02em}
+.rc-steps b{display:block;margin-top:10px;font-size:19px;font-weight:700;letter-spacing:-.03em}
+.rc-period{margin-top:30px;font-size:16px;color:var(--gray);letter-spacing:-.02em}
+.rc-wait{font-size:17px;color:var(--gray);letter-spacing:-.02em}
+
+/* 겨울캠프 — 아이콘 카드 4장 · 함께 지내는 캠프 */
+.cp-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.cp-card{border:1px solid var(--line);border-radius:16px;padding:32px 28px 36px}
+.cp-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--teal-lt);color:var(--teal)}
+.cp-ic svg{display:block;width:22px;height:22px}
+.cp-card h4{margin-top:28px;font-size:21px;font-weight:700;letter-spacing:-.03em}
+.cp-card p{margin-top:14px;font-size:16px;line-height:1.75;color:var(--gray);letter-spacing:-.02em}
+
+/* ============ FOOTER (WBS 11.3 시안 1) ============
+   검정 띠, 위 여백 150px: 왼쪽 이름 · 주최 · 주관, 오른쪽 세 칸(문의 · 운영 · SNS 아이콘), 아래 줄 © */
+#footer{margin-top:150px;padding:60px 0 40px;background:#111;color:#bbb;font-size:13px;line-height:1.9}
+.ft-top{display:flex;justify-content:space-between;gap:30px 60px;flex-wrap:wrap}
+.ft-name{margin-bottom:14px;color:#fff;font-size:18px;font-weight:800;letter-spacing:-.03em}
+.ft-org{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px}   /* 기관 흰색 로고 두 개 (2026-11-04) */
+.ft-org img{display:block;width:auto}
+.ft-org .lg-mcst{height:24px}
+.ft-org .lg-kriga{height:20px}
+.ft-dl{display:grid;grid-template-columns:repeat(3,200px);gap:30px}
+.ft-dl dt{font-size:12px;color:#888}
+.ft-dl dd{color:#ddd;letter-spacing:-.01em}
+.ft-dl a:hover,.ft-dl a:focus-visible{color:#fff;text-decoration:underline;text-underline-offset:3px}
+.ft-sns{display:flex;gap:16px;margin-top:6px}
+.ft-sns a{display:block;color:#ddd;transition:color .25s}
+.ft-sns a:hover,.ft-sns a:focus-visible{color:#fff}
+.ft-sns svg{display:block;width:20px;height:20px}
+.ft-copy{margin-top:40px;padding-top:24px;border-top:1px solid #2a2a2a;font-size:12px;color:#888}
+/* 맨 위로 · 맨 아래로 — 검정 원 · 흰 화살표 */
+.top{position:fixed;right:28px;bottom:86px;width:48px;height:48px;border-radius:50%;background:#111;color:#fff;border:0;
+  cursor:pointer;z-index:60;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s;font-size:16px}
+.top.on{opacity:1;pointer-events:auto}
+.top:hover{transform:translateY(-3px)}
+/* 맨 아래로 — 맨 위로 단추 바로 아래 (2026-10-21, 사용자: ↑ 위 · ↓ 아래) */
+.go-end{position:fixed;right:28px;bottom:28px;width:48px;height:48px;border-radius:50%;background:#111;color:#fff;border:0;
+  cursor:pointer;z-index:60;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s;font-size:16px}
+.go-end.on{opacity:1;pointer-events:auto}
+.go-end:hover{transform:translateY(3px)}
+
+/* ============ 게시글 (board.js — 관리자 미리보기 · 방문자 화면 공용) ============ */
+.post{border-top:2px solid var(--ink)}
+.post-head{padding:30px 0 26px;border-bottom:1px solid var(--line)}
+.post-cat{display:inline-block;font-size:12.5px;font-weight:600;color:var(--teal);border:1px solid var(--teal);padding:4px 11px;letter-spacing:-.02em}
+.post-title{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1.4;margin-top:14px}
+.post-date{font-size:14px;color:var(--gray-lt);margin-top:10px}
+.post-photos{display:grid;gap:16px;margin-top:36px}
+.post-photos img{width:auto;max-width:100%;height:auto;margin:0 auto}
+.post-body{font-size:17px;line-height:1.95;color:#3A3F44;letter-spacing:-.02em;margin-top:36px;overflow-wrap:anywhere}
+.post-body a{color:var(--teal);text-decoration:underline;text-underline-offset:3px}
+.post-body strong{font-weight:700;color:var(--ink)}
+.em-key{color:var(--teal);font-weight:600}
+.em-warn{color:#C8323F;font-weight:600}
+.post-files{margin-top:44px;background:var(--cream);padding:22px 26px}
+.post-files h4{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.post-files li a{display:flex;flex-wrap:wrap;gap:4px 8px;padding:8px 0;font-size:15.5px;letter-spacing:-.02em}
+.post-files li a:hover .nm{text-decoration:underline;text-underline-offset:3px}
+.post-files .sz{color:var(--gray-lt)}
+.post-zoom{display:block;max-width:100%;margin:0 auto;border:0;padding:0;background:none;cursor:zoom-in}
+.post-foot{margin-top:56px;padding-top:34px;border-top:1px solid var(--line);text-align:center}
+
+/* ============ 사진 확대 보기 (board.js viewer) — 관리자 화면의 .lb(칸 제목)와 겹치지 않게 .zv ============ */
+html.zv-open{overflow:hidden}
+.zv{position:fixed;inset:0;z-index:200;background:rgba(14,14,13,.96)}
+.zv[hidden]{display:none}
+.zv-stage{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;padding:72px 96px 56px}
+.zv-img{width:auto;height:auto;max-width:100%;max-height:calc(100% - 44px);min-height:0;object-fit:contain}
+.zv-cap{color:#fff;font-size:15px;line-height:1.6;margin-top:16px;letter-spacing:-.02em;text-align:center}
+.zv-num{position:absolute;top:26px;left:30px;color:rgba(255,255,255,.72);font-size:15px;letter-spacing:.06em}
+.zv button{position:absolute;border:0;background:none;color:#fff;cursor:pointer;opacity:.75;transition:opacity .25s;line-height:1}
+.zv button:hover,.zv button:focus-visible{opacity:1}
+.zv button:focus-visible{outline:2px solid #fff;outline-offset:-4px}
+.zv-x{top:12px;right:16px;width:56px;height:56px;font-size:40px}
+.zv-prev,.zv-next{top:50%;transform:translateY(-50%);width:72px;height:110px;font-size:60px}
+.zv-prev{left:12px}
+.zv-next{right:12px}
+
+/* ============ 시안 1 소식 · 모집 (WBS 12.2 · 12.3) ============
+   흰 바탕 · 검정 글자 · 노랑은 마우스 올림 · 강조만, 그림자 없음. 위 2안 모양(청록 테두리 이름표 · 쪽 번호 등)을 이 구역에서 덮어쓴다 */
+/* 탭 제목(.p1-h 글자 그대로) → 걸러 보기 → 목록 */
+.nw-h{margin-bottom:30px}
+/* 걸러 보기 단추 (news.js picker) — 묶음(연도 · 과정 · 분야)을 가로 한 줄 오른쪽 정렬(7차 피드백), 묶음 사이 옅은 세로줄(머리 「메뉴 │ SNS」와 같은 1×18 #D5D5D5).
+   세로줄은 묶음 오른쪽 끝에 두고, 넘치면 묶음째 다음 줄로 — 줄 끝 묶음의 세로줄은 .pick 바깥(오른쪽 -25px)에 놓여 잘린다 */
+.pick{overflow:hidden;margin:-4px -4px 26px;padding:4px}
+.pick[hidden]{display:none}
+.pick-in{display:flex;flex-wrap:wrap;justify-content:flex-end;row-gap:14px;margin-right:-49px}
+.pick-g{position:relative;display:flex;align-items:center;gap:14px;min-width:0;margin-right:24px;padding-right:25px}
+.pick-g::before{content:"";position:absolute;right:0;top:50%;width:1px;height:18px;margin-top:-9px;background:#D5D5D5}
+.pick-n{flex:none;font-size:13px;font-weight:700;color:var(--gray-lt);letter-spacing:-.01em}
+.pick-b{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+/* 알약 단추 — 고른 것 검정 바탕 흰 글자, 나머지 옅은 테두리, 마우스 올리면 노랑. 모집 연도 단추(#tabs.yr-tabs)도 같은 모양 */
+.pick-b button,#tabs.yr-tabs button{flex:none;height:36px;min-width:0;padding:0 16px;border:1px solid #D5D5D5;border-radius:999px;background:#fff;
+  font-size:14.5px;font-weight:600;color:var(--ink);letter-spacing:-.02em;white-space:nowrap;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.pick-b button:hover,#tabs.yr-tabs button:hover{background:var(--yel);border-color:var(--yel);color:var(--ink)}
+.pick-b button[aria-pressed="true"],#tabs.yr-tabs button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600;cursor:default}
+.pick-b button[aria-pressed="true"]:not(:first-child){cursor:pointer}   /* 눌린 단추를 다시 누르면 꺼진다(「전체」는 그대로) */
+.pick-b button:focus-visible,#tabs.yr-tabs button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* 공지 · 언론홍보 목록 — 메인 「소식」 줄과 같은 모양: 위 2px 검정 줄, 분류(굵은 작은 글자) · 제목 · 날짜, 마우스 올리면 제목 밑줄 */
+.bbs li a{gap:20px;padding:24px 4px;font-size:17px;font-weight:500;letter-spacing:-.02em;transition:none}
+.bbs li a:hover{background:none}
+.bbs li a:hover .t{text-decoration:underline;text-underline-offset:4px}
+.bbs li a:focus-visible{outline:2px solid var(--ink);outline-offset:-2px}
+.bbs .cat{flex:0 0 96px;padding:0;border:0;font-size:13px;font-weight:700;color:var(--ink)}
+.bbs .t{flex:1 1 auto;min-width:0;font-size:17px}
+.bbs .d{margin-left:auto;font-size:14px;color:var(--gray-lt)}
+.bbs .press .cat{flex:0 0 auto;min-width:96px;text-align:left}   /* 언론사 이름이 길면 칸이 늘어난다 */
+.bbs .press .ext{margin:0 auto 0 -12px;font-size:13px}
+/* 쪽 번호 — 동그라미, 지금 쪽 검정 */
+.paging{gap:4px}
+.paging button{border:0;border-radius:50%;background:none;color:var(--gray);transition:background .2s,color .2s}
+.paging button:hover{background:var(--yel);color:var(--ink)}
+.paging button.on{background:var(--ink);color:#fff}
+.paging button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* 공지 글 보기 (관리자 미리보기도 같은 모양) — 분류는 굵은 작은 글자, 본문 링크 검정 밑줄, {강조:}는 검정 굵게 + 노란 밑칠 */
+.post-head{padding:34px 0 28px}
+.post-cat{padding:0;border:0;font-size:13px;font-weight:700;color:var(--ink)}
+.post-title{margin-top:10px;font-size:30px;letter-spacing:-.045em}
+.post-body{color:#333}
+.post-body a{color:var(--ink)}
+.em-key{color:var(--ink);font-weight:700;background:linear-gradient(transparent 60%,rgba(242,194,48,.6) 0)}
+.post-files{border-radius:16px;background:#F4F2EC}
+.post-foot .btn.ghost{height:48px;padding:0 36px;border:1px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);font-size:15.5px}
+.post-foot .btn.ghost:hover{background:var(--yel);border-color:var(--yel);color:var(--ink)}
+.post-foot .btn.ghost:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* 갤러리 — 4열, 사진 칸 위 오른쪽 아래에 흰 알약 이름표(과정 · 분야). 이름표는 사진 칸과 같은 격자 칸에 겹쳐 사진이 커져도 제자리 */
+.gal{gap:44px 24px}
+.gal figure{display:grid;grid-template-columns:minmax(0,1fr);align-content:start}
+.gal .th{grid-area:1 / 1;background:linear-gradient(150deg,#F4F2EC,#DAD7D0)}
+.gal button.th:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.gal-tag{grid-area:1 / 1;align-self:end;justify-self:end;position:relative;z-index:1;max-width:calc(100% - 24px);margin:0 12px 12px 0;padding:5px 12px;
+  border-radius:999px;background:#fff;color:var(--ink);font-size:12.5px;font-weight:700;line-height:1.4;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.gal figcaption{margin-top:16px;font-size:17px;font-weight:700;letter-spacing:-.03em}
+.gal .m{margin-top:6px;font-size:14px}
+
+/* ---------- 모집 및 선발 — 리드(.p1-lead) · 분야 카드 4장 · 단계(구역 틀 .p1-sec) ---------- */
+#tabs.yr-tabs ul{gap:6px}
+.rc-cards{gap:20px;margin-top:70px}
+.rc-card{border-radius:20px;padding:36px 30px 34px}
+.rc-card h3{font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.045em}
+.rc-card dt{font-size:13px;font-weight:700;color:var(--gray-lt)}
+/* 단계 — 사업소개 운영 흐름과 같은 모양: 큰 번호, 위에 노란 점 + 다음 점까지 손그림 물결 점선 */
+.rc-steps{--wave:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 24' preserveAspectRatio='none'%3E%3Cpath d='M0 12 C30 -2 70 26 100 12' fill='none' stroke='%23DAD7D0' stroke-width='3.5' stroke-dasharray='10 10' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  gap:22px;padding-top:56px}
+.rc-steps li{position:relative;z-index:0;padding:0;border-radius:0;background:none}
+.rc-steps li::before{content:"";position:absolute;left:0;top:-36px;width:16px;height:16px;border-radius:50%;background:var(--yel)}
+.rc-steps li::after{content:"";position:absolute;left:8px;top:-40px;z-index:-1;width:calc(100% + 22px);height:24px;background:var(--wave) no-repeat 0 0 / 100% 100%}
+.rc-steps li:last-child::after{width:calc(100% - 8px)}
+.rc-steps .no{font-size:44px;font-weight:800;line-height:1;color:var(--ink);letter-spacing:-.04em}
+.rc-steps b{margin-top:12px;font-size:19px;letter-spacing:-.04em}
+.rc-period{margin-top:40px;font-size:15px}
+.rc-wait{padding:70px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line-lt);text-align:center;font-size:16px;color:var(--gray-lt)}
+
+@media(max-width:1100px){
+  /* 걸러 보기 — 묶음마다 한 줄 오른쪽 정렬, 넘치는 단추는 옆으로 밀기(스크롤 막대 숨김).
+     이름 앞 auto 여백으로 오른쪽에 붙인다 — 넘치면 여백이 0이 되어 왼쪽부터 밀 수 있다(flex-end는 넘친 앞쪽이 잘려 못 밂) */
+  .pick{margin-bottom:22px}
+  .pick-in{flex-direction:column;flex-wrap:nowrap;row-gap:10px;margin-right:0}
+  .pick-g{gap:12px;margin-right:0;padding-right:0}
+  .pick-n{margin-left:auto}
+  .pick-g::before{content:none}
+  .pick-b{flex-wrap:nowrap;margin:-4px;padding:4px;overflow-x:auto;scrollbar-width:none}
+  .pick-b::-webkit-scrollbar{display:none}
+  /* 목록 — 분류 · 날짜를 제목 위 한 줄로(메인 「소식」과 같음) */
+  .bbs li a{flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:18px 2px}
+  .bbs .cat,.bbs .press .cat{flex:1 0 auto;order:1;min-width:0}
+  .bbs .d{order:2}
+  .bbs .t,.bbs .press .t{order:3;flex:1 0 calc(100% - 30px);white-space:normal;font-size:16px}
+  .bbs .press .ext{order:4;margin:0}
+  .post-title{font-size:24px}
+  .rc-cards{margin-top:50px}
+  .rc-steps{gap:34px 30px;padding-top:0}
+  .rc-steps li::before,.rc-steps li::after{content:none}
+}
+@media(max-width:768px){
+  .gal{gap:34px 16px}
+  .rc-steps .no{font-size:34px}
+}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:1280px){
+  .inner{width:calc(100% - 60px)}
+  .gal{grid-template-columns:repeat(3,1fr)}
+  .pg-item{flex:0 0 calc((100% - 40px)/3)}
+}
+@media(max-width:1100px){
+  :root{--pad-sec:80px}
+  .am-sns{display:flex}
+  #allmenu .cols{grid-template-columns:repeat(2,1fr);gap:30px 24px;padding-top:40px}
+  #allmenu h3{font-size:22px}
+  .panel{padding-top:60px}
+  .gal{grid-template-columns:repeat(2,1fr)}
+  .rc-cards,.rc-steps,.cp-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  .gal{grid-template-columns:1fr}
+  .pg-item{flex:0 0 78%;min-width:0}
+  .bbs li a{flex-wrap:wrap;gap:10px}
+  .bbs .t,.bbs .press .t{flex:1 0 100%;white-space:normal}
+  .bbs .press .ext{display:none}
+  .zv-stage{padding:64px 12px 72px}
+  .zv-prev,.zv-next{top:auto;bottom:8px;transform:none;width:60px;height:60px;font-size:44px}
+  .rc-cards,.cp-cards{grid-template-columns:1fr}
+}
+
+/* ============ 시안1 공통 부품 (WBS 11.2, 레퍼런스 ① · 시안 docs/private/v2/ref1/) ============
+   손그림 모양은 assets/img/doodles.svg의 symbol(#loop · #scr · #sq)을 <svg><use href="assets/img/doodles.svg#…"/></svg>로 씀 */
+/* 작은 머리글 — 글자 뒤 노란 붓 낙서. <span class="kick"><svg aria-hidden="true"><use href="assets/img/doodles.svg#scr"/></svg>STEP 01</span> */
+.kick{position:relative;z-index:0;display:inline-block;font-size:12px;font-weight:700;letter-spacing:.06em;padding:14px 4px 0 2px;color:var(--ink)}
+.kick svg{position:absolute;left:-4px;top:2px;width:72px;height:28px;z-index:-1;overflow:visible}
+/* 고리 화살표 링크 — <a class="lnk" href="…">워크숍 보기<svg aria-hidden="true"><use href="assets/img/doodles.svg#loop"/></svg></a> */
+.lnk{display:inline-flex;align-items:center;gap:14px;font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+.lnk svg{width:48px;height:22px;flex:none;overflow:visible;transition:transform .25s}
+.lnk:hover svg,.lnk:focus-visible svg{transform:translateX(6px)}
+/* 낱말 노란 밑줄 — <em class="mark">가능성</em> */
+.mark{font-style:normal;position:relative;z-index:0}
+.mark::after{content:"";position:absolute;left:-4px;right:-4px;bottom:4px;height:.32em;background:var(--yel);opacity:.55;border-radius:8px;z-index:-1;transform:rotate(-1deg)}
+
+/* ============ 시안 1 하위 페이지 (WBS 11.3) — 사업소개 ab- · 워크숍 음악 wk-, 구역 틀 p1- ============
+   흰 바탕 · 검정 글자 · 회색 설명 · 노랑(머리글 낙서 · 낱말 밑줄 · 점선 끝 점). 아이콘 원 · 알약 · 둥근 카드 · 그림자 없음, 단계는 손그림 점선(--dash) */
+/* 손그림 물결 점선 한 칸 — 단계마다 자기 점에서 다음 점까지(가로 길이는 칸 폭을 따라 늘고, 점선 굵기 · 간격은 그대로) */
+.ab-cy,.wk-fw{--wave:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 24' preserveAspectRatio='none'%3E%3Cpath d='M0 12 C30 -2 70 26 100 12' fill='none' stroke='%23DAD7D0' stroke-width='3.5' stroke-dasharray='10 10' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E")}
+/* 구역 = 왼쪽 제목 칸(300px) + 오른쪽 내용. 제목 아래 짧은 회색 문장(.p1-ld)은 시안에 있는 것만 */
+.p1-sec{display:grid;grid-template-columns:300px minmax(0,1fr);gap:60px;margin-top:110px}
+.p1-sec:first-child{margin-top:20px}
+.p1-h h2{font-size:30px;font-weight:700;line-height:1.3;letter-spacing:-.045em}
+.p1-ld{margin-top:14px;font-size:15px;line-height:1.7;color:var(--gray);letter-spacing:-.02em}
+/* 리드 — 큰 문장(왼쪽) + 설명(오른쪽) */
+.p1-lead{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:80px;margin-top:20px}
+.p1-lead h2{font-size:44px;font-weight:700;line-height:1.35;letter-spacing:-.05em}
+.p1-lead .kick + h2{margin-top:14px}
+.p1-lead p{font-size:17px;line-height:1.85;color:var(--gray);letter-spacing:-.02em}
+.p1-lead p + p{margin-top:12px}
+.p1-lead p b{color:var(--ink)}
+
+/* ---------- 사업소개 ---------- */
+/* 사업 개요 — 줄 목록(위 2px 검정 줄 · 줄마다 옅은 줄) */
+.ab-dl{border-top:2px solid var(--ink)}
+.ab-dl > div{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:22px 4px;border-bottom:1px solid var(--line);font-size:17px;line-height:1.6;letter-spacing:-.02em}
+.ab-dl dt{padding-top:2px;font-size:14px;font-weight:700;color:var(--gray-lt)}
+/* 추진 목표 — 오른쪽으로 갈수록 한 칸씩 위(150 · 75 · 0px) 계단, 칸 위 2px 검정 줄, 칸 사이 짧은 점선 */
+.ab-gl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;align-items:start;padding-top:10px}
+.ab-gl > li{position:relative;padding-top:20px;border-top:2px solid var(--ink)}
+.ab-gl > li:nth-child(1){margin-top:150px}
+.ab-gl > li:nth-child(2){margin-top:75px}
+.ab-gl > li + li::before{content:"";position:absolute;left:-40px;top:-2px;width:40px;height:78px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 78'%3E%3Cpath d='M2 76 C22 76 18 2 38 2' fill='none' stroke='%23C9C5BC' stroke-width='3' stroke-dasharray='7 7' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat}
+.ab-gl small{font-size:13px;font-weight:700;color:var(--gray-lt)}
+.ab-gl h3{margin-top:10px;font-size:44px;font-weight:800;line-height:1.2;letter-spacing:-.05em}
+.ab-gl p{margin-top:16px;font-size:16px;line-height:1.7;color:#333;letter-spacing:-.02em}
+.ab-gl .ab-pg{margin-top:18px;font-size:14px;font-weight:600;color:var(--gray-lt)}
+.ab-gl .ab-pg b{color:var(--ink)}
+/* 추진 체계 — 가운데 세로 흐름: 주최 → 주관 → 위가 둥근 점선 갈래 → 분야 사진 4장 */
+.ab-og{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ab-lab{font-size:13px;font-weight:700;color:var(--gray-lt)}
+.ab-host img{width:auto;height:40px;margin:0 auto}   /* 「주최」 이름표 삭제(2026-11-04) — 위 여백 없앰 */
+.ab-orgs{display:flex;align-items:center;flex-wrap:wrap;gap:12px 28px}   /* 사업 개요 「기관」 줄: 색 로고 두 개 (2026-11-04) */
+.ab-orgs img{display:block;width:auto}
+.ab-orgs .lg-mcst{height:30px}
+.ab-orgs .lg-kriga{height:22px}
+.ab-vl{width:0;height:56px;margin:18px 0;border-left:3px dashed var(--dash)}
+.ab-main img{width:auto;max-width:100%;height:34px;margin:0 auto}   /* 주관 KRIGA 로고(이름 글자 포함, 2026-10-23) */
+.ab-main .ab-lab{margin-top:0}
+.ab-main h3{margin-top:10px;font-size:28px;font-weight:800;letter-spacing:-.045em}
+.ab-main p{margin-top:8px;font-size:15px;color:var(--gray);letter-spacing:-.02em}
+.ab-br{width:75%;height:34px;margin-top:-18px;border:3px dashed var(--dash);border-bottom:0;border-radius:18px 18px 0 0}
+.ab-fs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;width:100%;text-align:left}
+.ab-fs img{width:100%;height:250px;object-fit:cover}
+.ab-fs b{display:block;margin-top:14px;font-size:20px;font-weight:700;letter-spacing:-.03em}
+/* 운영 흐름 — 다섯 단계 가로, 위에 물결 점선과 단계마다 노란 점, 오른쪽 아래 되돌아가는 고리 */
+.ab-cy{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px;padding-top:56px}
+.ab-cy > li{position:relative;z-index:0}
+.ab-cy > li::before{content:"";position:absolute;left:0;top:-36px;width:16px;height:16px;border-radius:50%;background:var(--yel)}
+.ab-cy > li::after{content:"";position:absolute;left:8px;top:-40px;z-index:-1;width:calc(100% + 22px);height:24px;background:var(--wave) no-repeat 0 0 / 100% 100%}
+.ab-cy > li:last-child::after{width:calc(100% - 8px)}
+.ab-cy em{display:block;font-style:normal;font-size:44px;font-weight:800;line-height:1;letter-spacing:-.04em}
+.ab-cy h3{margin-top:12px;font-size:19px;font-weight:700;letter-spacing:-.04em}
+.ab-cy p{margin-top:10px;font-size:14px;line-height:1.65;color:var(--gray);letter-spacing:-.02em}
+.ab-back{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:34px;font-size:15px;font-weight:700;letter-spacing:-.02em}
+.ab-back svg{flex:none;width:48px;height:22px;overflow:visible;transform:scaleX(-1)}
+/* 연간 로드맵 — 계절 머리 4칸 + 속으로 12칸(1칸 = 봄 첫 달) 위 노란 막대 6줄. --s 시작 칸 · --e 끝 칸(포함 안 함).
+   뒤 세 줄(.ab-end)은 이름 · 설명을 막대 오른쪽 끝에 맞춘다 */
+.ab-rm{position:relative}
+.ab-rm-hd{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.ab-rm-hd li{padding:0 0 14px 4px;border-bottom:2px solid var(--ink);font-size:26px;font-weight:800;letter-spacing:-.04em}
+.ab-rm-bg{position:absolute;left:0;right:0;top:56px;bottom:0;display:grid;grid-template-columns:repeat(4,1fr)}
+.ab-rm-bg span + span{border-left:1px dashed var(--line)}
+.ab-rm ol{position:relative;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));row-gap:30px;padding-top:34px}
+.ab-rm ol li{grid-column:var(--s) / var(--e);padding:0 4px}
+.ab-rm ol li:nth-child(1){grid-row:1;--s:1;--e:5}
+.ab-rm ol li:nth-child(2){grid-row:2;--s:5;--e:7}
+.ab-rm ol li:nth-child(3){grid-row:3;--s:6;--e:8}
+.ab-rm ol li:nth-child(4){grid-row:4;--s:8;--e:11}
+.ab-rm ol li:nth-child(5){grid-row:5;--s:11;--e:12}
+.ab-rm ol li:nth-child(6){grid-row:6;--s:12;--e:13}
+.ab-rm ol li.ab-end{grid-column:1 / var(--e);text-align:right}
+.ab-rm h3{font-size:17px;font-weight:700;letter-spacing:-.04em;white-space:nowrap}
+.ab-bar{display:block;height:12px;margin-top:10px;border-radius:6px;background:var(--yel)}
+.ab-end .ab-bar{width:calc((var(--e) - var(--s)) / (var(--e) - 1) * 100%);margin-left:auto}
+.ab-rm p{margin-top:8px;font-size:14px;color:var(--gray);letter-spacing:-.02em;white-space:nowrap}
+.ab-ss{display:none}
+
+/* ---------- 워크숍 음악 ---------- */
+.wk-lead-tx{padding-top:40px}
+/* 이렇게 배웁니다 — 사진 3장(높이 300), 위에 물결 점선 + 노란 점 */
+.wk-fw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;padding-top:40px}
+.wk-fw > li{position:relative;z-index:0}
+.wk-fw > li::before{content:"";position:absolute;left:0;top:-28px;width:16px;height:16px;border-radius:50%;background:var(--yel)}
+.wk-fw > li::after{content:"";position:absolute;left:8px;top:-32px;z-index:-1;width:calc(100% + 30px);height:24px;background:var(--wave) no-repeat 0 0 / 100% 100%}
+.wk-fw > li:last-child::after{width:calc(100% - 8px)}
+.wk-ph{height:300px;background:#F4F2EC}
+.wk-ph img{width:100%;height:100%;object-fit:cover}
+.wk-ph.empty{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--gray-lt);letter-spacing:-.02em}
+.wk-fw small{display:block;margin-top:22px;font-size:13px;font-weight:700;color:var(--gray-lt)}
+.wk-fw h3{margin-top:6px;font-size:22px;font-weight:700;letter-spacing:-.045em}
+.wk-fw p{margin-top:10px;font-size:15px;line-height:1.65;color:#333;letter-spacing:-.02em}
+/* 교육 포인트 — 이어지는 세 원(150 · 180 · 210px, 검정 2px 테두리, 마지막 원만 노랑으로 채움), 원 사이 점선.
+   원은 높이 210px 칸 바닥에 놓여 가운데가 135 · 120 · 105px — 점선이 그 사이를 잇는다 */
+.wk-ep{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px}
+.wk-ep > li{position:relative}
+.wk-ob{display:flex;align-items:flex-end;height:210px}
+.wk-o{display:flex;align-items:center;justify-content:center;flex:none;border:2px solid var(--ink);border-radius:50%;background:#fff;font-weight:800;letter-spacing:-.04em}
+.wk-ep > li:nth-child(1) .wk-o{width:150px;height:150px;font-size:24px}
+.wk-ep > li:nth-child(2) .wk-o{width:180px;height:180px;font-size:26px}
+.wk-ep > li:nth-child(3) .wk-o{width:210px;height:210px;font-size:28px;background:var(--yel);border-color:var(--yel)}
+.wk-ep > li:not(:last-child)::after{content:"";position:absolute;height:30px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30' preserveAspectRatio='none'%3E%3Cpath d='M0 26 C35 8 65 11 100 11' fill='none' stroke='%23C9C5BC' stroke-width='3' stroke-dasharray='7 7' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat 0 0 / 100% 100%}
+.wk-ep > li:nth-child(1)::after{left:160px;top:109px;width:calc(100% - 140px)}
+.wk-ep > li:nth-child(2)::after{left:190px;top:94px;width:calc(100% - 170px)}
+.wk-ep h3{margin-top:24px;font-size:22px;font-weight:700;letter-spacing:-.045em}
+.wk-ep p{margin-top:10px;font-size:15px;line-height:1.65;color:#333;letter-spacing:-.02em}
+/* 다음 단계 — 위 2px 검정 줄, 큰 글자 링크 두 줄 + 오른쪽 고리 화살표 */
+.wk-nx{border-top:2px solid var(--ink)}
+.wk-nx a{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:30px 4px;border-bottom:1px solid var(--line)}
+.wk-nx b{display:block;font-size:28px;font-weight:700;letter-spacing:-.045em}
+.wk-nx small{display:block;margin-top:6px;font-size:15px;font-weight:500;color:var(--gray);letter-spacing:-.02em}
+.wk-nx svg{flex:none;width:60px;height:26px;overflow:visible;transition:transform .25s}
+.wk-nx a:hover svg,.wk-nx a:focus-visible svg{transform:translateX(6px)}
+
+/* ---------- 시안 1 반응형 — 머리 · 하위 머리 · 탭 · 푸터 · 구역 ---------- */
+@media(max-width:1280px){
+  .p1-sec{grid-template-columns:clamp(220px,21vw,300px) minmax(0,1fr);gap:clamp(40px,4.2vw,60px)}
+  .p1-lead{gap:clamp(48px,5.5vw,80px)}
+  .p1-lead h2,.ab-gl h3{font-size:clamp(34px,3.2vw,44px)}
+  .ft-dl{grid-template-columns:repeat(3,auto)}
+}
+@media(max-width:1200px){
+  #gnb{gap:16px}   /* 메뉴 │ SNS가 가운데 이름에 닿지 않게 메뉴 간격만 줄임 */
+}
+@media(max-width:1100px){
+  #gnb{gap:24px}
+  .hd-sns{display:none}
+  #sv .in{padding:56px 0 44px}
+  #sv h1{font-size:56px}
+  #sv::after{height:300px}
+  /* 왼쪽 제목 칸을 위로 올려 한 줄(제목 → 내용) */
+  .p1-sec{grid-template-columns:minmax(0,1fr);gap:30px;margin-top:80px}
+  .p1-lead{grid-template-columns:minmax(0,1fr);gap:30px}
+  .wk-lead-tx{padding-top:0}
+  /* 계단 · 다섯 단계 · 사진 4장은 세로 또는 2열, 점선은 숨김 */
+  .ab-gl{grid-template-columns:minmax(0,1fr);gap:40px;padding-top:0}
+  .ab-gl > li:nth-child(n){margin-top:0}
+  .ab-gl > li + li::before{content:none}
+  .ab-cy{grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 30px;padding-top:0}
+  .ab-cy > li::before,.ab-cy > li::after{content:none}
+  .ab-br{display:none}
+  .ab-fs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ab-fs img{height:220px}
+  .wk-ph{height:220px}
+  .wk-ob{height:160px}
+  .wk-ep > li:nth-child(1) .wk-o{width:120px;height:120px;font-size:20px}
+  .wk-ep > li:nth-child(2) .wk-o{width:140px;height:140px;font-size:22px}
+  .wk-ep > li:nth-child(3) .wk-o{width:160px;height:160px;font-size:24px}
+  .wk-ep > li:not(:last-child)::after{content:none}
+}
+@media(max-width:900px){
+  #gnb{gap:16px}
+  #gnb > li > a{font-size:14px}
+}
+@media(max-width:768px){
+  /* 머리는 가운데 로고 + 오른쪽 ☰만 */
+  .logo .nm{height:32px}
+  #header nav{display:none}
+  .ham{order:2;margin-left:auto}
+  .ham-t{display:none}
+  #sv .in{grid-template-columns:minmax(0,1fr);gap:18px;padding:40px 0 32px}
+  #sv h1{font-size:40px}
+  #sv .desc{justify-self:start;padding-bottom:0;font-size:15.5px;text-align:left}
+  #sv::after{height:220px}
+  #tabs ul{gap:28px}
+  #tabs button{height:60px;font-size:16px}
+  #tabs.wk-tabs ul{gap:30px}
+  #tabs.wk-tabs button{height:64px;font-size:17px}
+  .ft-top{flex-direction:column}
+  .ft-dl{grid-template-columns:minmax(0,1fr);gap:14px}
+  .p1-sec{margin-top:64px}
+  .p1-h h2{font-size:26px}
+  .p1-lead h2,.ab-gl h3{font-size:30px}
+  .ab-dl > div{grid-template-columns:88px minmax(0,1fr);padding:18px 2px;font-size:16px}
+  .ab-cy{grid-template-columns:minmax(0,1fr);gap:30px}
+  .ab-cy em{font-size:34px}
+  .ab-back{justify-content:flex-start}
+  .ab-fs img{height:150px}
+  .ab-fs b{font-size:17px}
+  /* 로드맵 — 세로 목록: 계절 · 이름 · 짧은 노란 막대(길이 = 칸 수) · 설명 */
+  .ab-rm-hd,.ab-rm-bg{display:none}
+  .ab-rm ol{display:block;padding-top:0;border-top:2px solid var(--ink)}
+  .ab-rm ol li,.ab-rm ol li.ab-end{padding:18px 2px;border-bottom:1px solid var(--line);text-align:left}
+  .ab-ss{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:var(--gray-lt)}
+  .ab-bar,.ab-end .ab-bar{width:calc((var(--e) - var(--s)) * 16px);height:8px;margin:10px 0 0}
+  .ab-rm h3,.ab-rm p{white-space:normal}
+  .wk-fw{grid-template-columns:minmax(0,1fr);gap:44px;padding-top:0}
+  .wk-fw > li::before,.wk-fw > li::after{content:none}
+  .wk-ep{grid-template-columns:minmax(0,1fr);gap:40px}
+  .wk-ob{height:auto}
+  .wk-nx b{font-size:22px}
+  .wk-nx svg{width:48px;height:22px}
+}
+
+/* ============ 시안 1 프로그램 다른 분야 · 심화 멘토링 · 겨울캠프 (WBS 12.4) ============
+   무용 · 전통예술 · 미술 탭과 두 페이지는 음악 탭 틀(.p1-lead → .p1-sec)을 그대로 쓴다 — 운영 개요는 사업소개 줄 목록(.ab-dl), 교육 포인트는 음악 세 원(.wk-ep, 원 안은 번호).
+   여기는 그 밖의 부품: 물결 점선 단계(.p1-st) · 갤러리 사진 줄 · 겨울캠프 카드와 세 칸 */
+/* 단계 — 칸 수만큼 가로(c5 다섯 칸 · c2 두 칸), 위에 물결 점선 + 칸마다 노란 점(음악 「이렇게 배웁니다」와 같은 선) */
+.p1-st{--wave:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 24' preserveAspectRatio='none'%3E%3Cpath d='M0 12 C30 -2 70 26 100 12' fill='none' stroke='%23DAD7D0' stroke-width='3.5' stroke-dasharray='10 10' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
+  --gap:30px;display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:var(--gap);padding-top:40px}
+.p1-st.c5{--n:5;--gap:24px}
+.p1-st.c2{--n:2}
+.p1-st.c4{--n:4;--gap:24px}   /* 무용 커리큘럼(2026-10-28 다섯 → 네 칸) */
+/* 교육 포인트 두 원(무용, 2026-10-28) — 음악 세 원(.wk-ep)의 두 칸판, 마지막 원이 노랑 */
+.wk-ep.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.wk-ep.c2 > li:nth-child(2) .wk-o{background:var(--yel);border-color:var(--yel)}
+.p1-st > li{position:relative;z-index:0}
+.p1-st > li::before{content:"";position:absolute;left:0;top:-28px;width:16px;height:16px;border-radius:50%;background:var(--yel)}
+.p1-st > li::after{content:"";position:absolute;left:8px;top:-32px;z-index:-1;width:calc(100% + var(--gap));height:24px;background:var(--wave) no-repeat 0 0 / 100% 100%}
+.p1-st > li:last-child::after{width:calc(100% - 8px)}
+.p1-st small{display:block;font-size:13px;font-weight:700;color:var(--gray-lt)}
+.p1-st h3{margin-top:6px;font-size:20px;font-weight:700;line-height:1.35;letter-spacing:-.045em}
+.p1-st.c2 h3{font-size:22px}
+.p1-st p{margin-top:10px;font-size:15px;line-height:1.65;color:#333;letter-spacing:-.02em}
+/* 갤러리 사진 줄(program-photos.js) — 오른쪽 칸에 세 장씩, 화살표는 검정 테두리 원(누르면 검정) */
+.pg-photos .p1-h .pg-arrows{margin-top:28px}
+.pg-arrows button{width:48px;height:48px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);font-size:17px;transition:background .25s,color .25s}
+.pg-arrows button:hover,.pg-arrows button:focus-visible{background:var(--ink);color:#fff;transform:none}
+.p1-sec .pg-item{flex-basis:calc((100% - 40px) / 3);min-width:0}
+.pg-item .th{background:#F4F2EC}
+.pg-item .th:focus-visible{outline-color:var(--ink)}
+.pg-item figcaption{font-size:17px}
+/* 겨울캠프 — 둥근 카드 4장(아이콘 원은 옅은 바탕 · 검정 선, 갈라공연만 노랑) · 함께 지내는 캠프 세 칸(칸 위 2px 검정 줄) */
+.cp-ic{background:#F4F2EC;color:var(--ink)}
+.cp-ic.hl{background:var(--yel)}
+.cp-card h3{margin-top:28px;font-size:21px;font-weight:700;letter-spacing:-.03em}
+.cp-st{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+.cp-st li{padding-top:20px;border-top:2px solid var(--ink)}
+.cp-st h3{font-size:20px;font-weight:700;letter-spacing:-.04em}
+.cp-st p{margin-top:10px;font-size:15px;line-height:1.65;color:#333;letter-spacing:-.02em}
+@media(max-width:1280px){
+  .cp-card{padding:28px 22px 30px}
+}
+@media(max-width:1100px){
+  /* 다섯 칸은 세 칸씩 두 줄, 점선은 숨김(두 칸은 그대로) */
+  .p1-st.c5{--n:3;row-gap:40px;padding-top:0}
+  .p1-st.c5 > li::before,.p1-st.c5 > li::after{content:none}
+  .p1-st.c4{--n:2;row-gap:40px;padding-top:0}
+  .p1-st.c4 > li::before,.p1-st.c4 > li::after{content:none}
+  .pg-photos .p1-h{display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .pg-photos .p1-h .pg-arrows{margin-top:0}
+}
+@media(max-width:768px){
+  .p1-st,.p1-st.c5,.p1-st.c4{grid-template-columns:minmax(0,1fr);gap:30px;padding-top:0}
+  .wk-ep.c2{grid-template-columns:minmax(0,1fr)}
+  .p1-st > li::before,.p1-st > li::after{content:none}
+  .cp-st{grid-template-columns:minmax(0,1fr);gap:24px}
+  .pg-arrows button{width:42px;height:42px}
+}
+@media(max-width:640px){
+  .p1-sec .pg-item{flex-basis:78%}
+}
+
+/* ============ 분야별 수정안 (WBS 13, 2026-11-03) ============
+   무용 커리큘럼 — 음악 「이렇게 배웁니다」 사진 카드(.wk-fw)의 네 칸판. 1100 이하 두 칸씩(점선 숨김), 768 이하 한 칸 */
+.wk-fw.c4{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.wk-fw.c4 > li::after{width:calc(100% + 24px)}
+.wk-fw.c4 > li:last-child::after{width:calc(100% - 8px)}
+.wk-fw.c4 .wk-ph{height:240px}
+.wk-fw.c4 h3{font-size:20px;line-height:1.35}
+/* 전통예술 · 미술 — 다섯 칸판(13.9). PC 한 줄, 1100 이하 세 칸씩, 768 이하 한 칸 */
+.wk-fw.c5{grid-template-columns:repeat(5,minmax(0,1fr));gap:20px}
+.wk-fw.c5 > li::after{width:calc(100% + 20px)}
+.wk-fw.c5 > li:last-child::after{width:calc(100% - 8px)}
+.wk-fw.c5 .wk-ph{height:200px}
+.wk-fw.c5 h3{font-size:18px;line-height:1.35}
+.wk-fw.c5 p{font-size:14.5px}
+@media(max-width:1100px){
+  .wk-fw.c4{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:44px;padding-top:0}
+  .wk-fw.c5{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:44px;padding-top:0}
+  .wk-fw.c4 > li::before,.wk-fw.c4 > li::after,.wk-fw.c5 > li::before,.wk-fw.c5 > li::after{content:none}
+  .wk-fw.c4 .wk-ph{height:280px}
+  .wk-fw.c5 .wk-ph{height:220px}
+}
+@media(max-width:768px){
+  .wk-fw.c4,.wk-fw.c5{grid-template-columns:minmax(0,1fr)}
+  .wk-fw.c5 .wk-ph{height:280px}
+  .wk-fw.c5 h3{font-size:20px}
+  .wk-fw.c5 p{font-size:15px}
+}
+
+/* 실사진 미리보기 표시 (미리보기 사본 전용) */
+.pv-badge{position:fixed;left:16px;bottom:16px;z-index:300;padding:6px 12px;border-radius:999px;background:#F2C230;color:#111;font-size:12px;font-weight:700;letter-spacing:-.01em;box-shadow:0 2px 8px rgba(0,0,0,.18);pointer-events:none}

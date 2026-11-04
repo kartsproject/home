@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <!-- 시안1(WBS 11) 손그림 부품 — <svg><use href="assets/img/doodles.svg#loop"/></svg> 처럼 씀 -->
+  <!-- loop: 링크 뒤 고리 화살표(글자색을 따름) -->
+  <symbol id="loop" viewBox="0 0 50 22"><path d="M2 13 C9 13 12 3 20 3 C28 3 28 17 20 17 C12 17 15 7 27 9 C35 10 40 9 46 4 M39 3.5 L46.5 3.5 L45.5 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- scr: 작은 머리글 뒤 노란 붓 낙서 -->
+  <symbol id="scr" viewBox="0 0 80 32"><path d="M5 7 C9 26 30 30 40 17 C45 10 38 4 35 11 C32 19 47 28 62 22 C68 19 72 13 75 6" fill="none" stroke="#F2C230" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <!-- sq: 흐르는 글자 띠의 구분 낙서(글자색을 따름) -->
+  <symbol id="sq" viewBox="0 0 26 18"><path d="M2 12 C6 4 12 3 12 9 C12 15 5 15 8 9 C11 3 19 7 24 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+</svg>

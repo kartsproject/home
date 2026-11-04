@@ -1,0 +1,268 @@
+{
+  "updatedAt": "2026-10-30T11:54:26+09:00",
+  "notices": [
+    {
+      "id": "N-0008",
+      "category": "심화과정",
+      "title": "2026 K예술영재 프로젝트 심화과정 참여 수요조사 안내",
+      "body": "샘플 공지글입니다.",
+      "date": "2026-09-02",
+      "pinned": false,
+      "photoPosition": "top",
+      "photoLink": "",
+      "photos": [],
+      "files": []
+    },
+    {
+      "id": "N-0007",
+      "category": "워크숍",
+      "title": "분야별 워크숍 만족도조사 링크 오픈 안내",
+      "body": "샘플 공지글입니다.",
+      "date": "2026-08-21",
+      "pinned": false,
+      "photoPosition": "top",
+      "photoLink": "",
+      "photos": [],
+      "files": []
+    },
+    {
+      "id": "N-0005",
+      "category": "워크숍",
+      "title": "8월 전통예술 집중 워크숍 운영 일정 안내",
+      "body": "샘플 공지글입니다.",
+      "date": "2026-07-24",
+      "pinned": false,
+      "photoPosition": "top",
+      "photoLink": "",
+      "photos": [],
+      "files": []
+    },
+    {
+      "id": "N-0004",
+      "category": "공지",
+      "title": "2026 K예술영재 프로젝트 참여 학생 반 배정 결과 안내",
+      "body": "샘플 공지글입니다.",
+      "date": "2026-06-30",
+      "pinned": false,
+      "photoPosition": "top",
+      "photoLink": "",
+      "photos": [],
+      "files": []
+    },
+    {
+      "id": "N-0003",
+      "category": "공지",
+      "title": "분야별 정규 워크숍 사전 준비물 안내",
+      "body": "샘플 공지글입니다.",
+      "date": "2026-06-18",
+      "pinned": false,
+      "photoPosition": "top",
+      "photoLink": "",
+      "photos": [],
+      "files": []
+    }
+  ],
+  "press": [
+    {
+      "id": "P-0012",
+      "source": "월간조선",
+      "title": "발레 영재 31명, 광주에서 세계 무대의 무용수들과 3일을 보내다",
+      "date": "2026-10-23",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=71765"
+    },
+    {
+      "id": "P-0011",
+      "source": "월간조선",
+      "title": "보스턴·헝가리·워싱턴 발레단 무용수부터 MIT 미디어아티스트까지… 10월부터 심화 멘토링 본격 돌입...광주에서 시작해 대전까지, 여름 내내 이어진 교육",
+      "date": "2026-10-16",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=71665"
+    },
+    {
+      "id": "P-0010",
+      "source": "월간조선",
+      "title": "영재를 넘어 자신만의 소리를 찾기까지… 국악계 대표 예술가들과 함께한 K예술영재 전통예술 워크숍 열려",
+      "date": "2026-10-16",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=71662"
+    },
+    {
+      "id": "P-0006",
+      "source": "월간조선",
+      "title": "\"코드도 시(詩)다\"…MIT 미디어랩 잭 리버먼, 한국 예술영재들 직접 가르친다",
+      "date": "2026-08-10",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=70995"
+    },
+    {
+      "id": "P-0009",
+      "source": "월간조선",
+      "title": "손열음·김선욱·문지영 키운 김대진, 다시 영재 교육 현장에… K예술영재 프로젝트 음악 워크숍 8월 개막",
+      "date": "2026-08-07",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=70968"
+    },
+    {
+      "id": "P-0008",
+      "source": "월간조선",
+      "title": "가야금·거문고·해금·판소리·연희·타악 영재들, 한예종에서 5개월 여정… 'K예술영재 프로젝트' 전통예술 워크숍 진행 중",
+      "date": "2026-08-02",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=70915"
+    },
+    {
+      "id": "P-0005",
+      "source": "월간조선",
+      "title": "\"범 내려온다\" 안이호부터 국내 최고 해금 명인 정수년까지…K예술영재 프로젝트 전통예술 워크숍 개막",
+      "date": "2026-07-30",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=70903"
+    },
+    {
+      "id": "P-0004",
+      "source": "이투뉴스",
+      "title": "K예술영재 프로젝트, 광주 무용 워크숍 마무리...참가자 전원 겨울 심화캠프 진출",
+      "date": "2026-07-23",
+      "url": "https://www.e2news.com/news/articleView.html?idxno=332571"
+    },
+    {
+      "id": "P-0007",
+      "source": "월간조선",
+      "title": "학생 수가 늘어야 영재도 나온다'… K예술영재 프로젝트, 한국 예술영재 교육의 새 지평 연다",
+      "date": "2026-07-16",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=70727"
+    },
+    {
+      "id": "P-0003",
+      "source": "피앤피뉴스",
+      "title": "K예술영재 프로젝트, 광주 무용 워크숍 17일 개막…3일간 예술영재 성장 프로그램 운영",
+      "date": "2026-07-16",
+      "url": "https://www.gosiweek.com/article/1065594314405811"
+    },
+    {
+      "id": "P-0002",
+      "source": "월간조선",
+      "title": "보스턴발레단·헝가리 국립발레단·워싱턴발레단 무용수가 광주에 모인 이유…한예종, 'K예술영재 프로젝트' 무용 워크숍 17일 개막",
+      "date": "2026-07-15",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=70694"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "G-0008",
+      "title": "심화 멘토링 첫 회차",
+      "desc": "2026.10",
+      "date": "2026-10-01",
+      "course": "mentoring",
+      "field": "trad",
+      "photos": [
+        {
+          "fileId": "1sfAIeyB9u4F4aLpzPW71v0OtYHoN0ghM",
+          "w": 1600,
+          "h": 1011
+        }
+      ]
+    },
+    {
+      "id": "G-0007",
+      "title": "분야별 평가회의",
+      "desc": "2026.09",
+      "date": "2026-09-01",
+      "course": "workshop",
+      "field": "",
+      "photos": [
+        {
+          "fileId": "15q8Jpo--pynUJJ67dc6Lvju-hZvPzbL5",
+          "w": 1600,
+          "h": 1011
+        }
+      ]
+    },
+    {
+      "id": "G-0006",
+      "title": "미술 결과전시",
+      "desc": "2026.08 · 한국과학기술원",
+      "date": "2026-08-01",
+      "course": "workshop",
+      "field": "art",
+      "photos": [
+        {
+          "fileId": "12ILmHcpiXpgPeDas0MU63MEOEFlTw5tj",
+          "w": 1600,
+          "h": 1011
+        }
+      ]
+    },
+    {
+      "id": "G-0005",
+      "title": "앙상블 리허설",
+      "desc": "2026.08 · 서초동캠퍼스",
+      "date": "2026-08-01",
+      "course": "workshop",
+      "field": "music",
+      "photos": [
+        {
+          "fileId": "1fWB-xv4doyWWYljrgyXIoU24N7ZGQrbP",
+          "w": 1600,
+          "h": 1200
+        }
+      ]
+    },
+    {
+      "id": "G-0004",
+      "title": "전통예술 집중 워크숍",
+      "desc": "2026.08 · 석관동캠퍼스",
+      "date": "2026-08-01",
+      "course": "workshop",
+      "field": "trad",
+      "photos": [
+        {
+          "fileId": "1zxlsU5_oCyuzbPvs1N-dqUPwCElWKfd6",
+          "w": 1600,
+          "h": 1011
+        }
+      ]
+    },
+    {
+      "id": "G-0003",
+      "title": "미술 창작 스튜디오",
+      "desc": "2026.08 · 한국과학기술원",
+      "date": "2026-08-01",
+      "course": "workshop",
+      "field": "art",
+      "photos": [
+        {
+          "fileId": "19JH71Kq3knfdeiayojAToWpQ3Pw2V09z",
+          "w": 1600,
+          "h": 1011
+        }
+      ]
+    },
+    {
+      "id": "G-0002",
+      "title": "음악 마스터클래스",
+      "desc": "2026.07 · 서초동캠퍼스",
+      "date": "2026-07-01",
+      "course": "workshop",
+      "field": "music",
+      "photos": [
+        {
+          "fileId": "14RTQALrlTXkfpOG6yS1X3WcvDos5aPJR",
+          "w": 1600,
+          "h": 1200
+        }
+      ]
+    },
+    {
+      "id": "G-0001",
+      "title": "무용 워크숍 현장",
+      "desc": "2026.07 · 광주캠퍼스",
+      "date": "2026-07-01",
+      "course": "workshop",
+      "field": "dance",
+      "photos": [
+        {
+          "fileId": "18ZyALBQBnPi_uRz1L5Q-QopUrEp3w73R",
+          "w": 1600,
+          "h": 902
+        }
+      ]
+    }
+  ],
+  "hero": {},
+  "heroVideo": {}
+}
