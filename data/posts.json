@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T15:26:59+09:00",
+  "updatedAt": "2026-11-04T15:40:50+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -300,6 +300,18 @@
       "fileId": "14hWtaJZgKlkp0p3QgaRku7vQoxDSQ7VU",
       "w": 2400,
       "h": 716
+    }
+  },
+  "guides": {
+    "2026": {
+      "title": "2026 K예술영재 프로젝트 모집 요강",
+      "files": [
+        {
+          "fileId": "1rMSLtbJQuZViOVJsdRnmRfeGu7Tq5XuX",
+          "name": "2026 K예술영재 프로젝트 참가자 모집 공고.pdf",
+          "size": 324499
+        }
+      ]
     }
   }
 }
