@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T17:40:13+09:00",
+  "updatedAt": "2026-11-04T17:42:37+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -445,13 +445,9 @@
       "h": 655
     },
     "sv-camp": {
-      "fileId": "19P4OWKCEwPMUt4dpscLBeS45_tg428-s",
-      "w": 2000,
-      "h": 1500,
-      "pos": {
-        "x": 50,
-        "y": 50
-      }
+      "fileId": "1iEucQdq2bV7mHDa0ZI_Hda1SutKD0MF2",
+      "w": 2400,
+      "h": 655
     }
   },
   "guides": {
