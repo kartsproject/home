@@ -74,14 +74,15 @@ function ensurePhotoSlots_() {
   });
 }
 
-// 페이지 직접 편집(WBS 18)에서 목록 항목을 복제하면 그 항목의 사진 자리는 「원래 자리-x네 글자」(editor.js newSlot)다.
+// 페이지 직접 편집(WBS 18)에서 목록 항목을 복제하면 그 항목의 사진 자리는 「원래 자리-x네 글자」(editor.js newSlot), 더한 구역의 사진은 「sec-x네 글자」다.
 // 그 자리에 처음 사진을 넣을 때(저장 잠금 안) 행을 만들어 돌려준다. 이름이 맞지 않거나 자리가 너무 많으면 null(NOT_FOUND)
 var PHOTO_EXTRA_MAX_ = 200;
 function createPhotoSlot_(id, rows) {
   var m = /^S-([a-z0-9]+(?:-[a-z0-9]+)*)-x[a-z0-9]{4}$/.exec(String(id || ''));
   if (!m || id.length > 50 || rows.length >= PHOTO_SLOTS_.length + PHOTO_EXTRA_MAX_) return null;
   var base = PHOTO_SLOTS_.filter(function (s) { return s.id === 'S-' + m[1]; })[0];
-  writeRow_(PHOTO_TAB_, { '글ID': id, '칸': '페이지 편집 · ' + (base ? base.label : m[1]) + ' (복제)' });
+  // 더한 구역(content.js 「제목 + 사진 + 글」)의 사진 자리는 S-sec-x네 글자
+  writeRow_(PHOTO_TAB_, { '글ID': id, '칸': base ? '페이지 편집 · ' + base.label + ' (복제)' : '페이지 편집 · 더한 구역 사진' });
   return readTab_(PHOTO_TAB_).filter(function (r) { return r['글ID'] === id; })[0] || null;
 }
 

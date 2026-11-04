@@ -106,3 +106,23 @@ html.ed-on .wk-ph.ph-none::after,html.ed-on .mn-ph i.ph-none::after{content:"사
 .mg-crop .zoom .hint{margin:0;flex-basis:100%}
 .mg-crop .zoom .hint.warn{color:#B42B38}
 .mg-crop .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* ---------- 문단 · 구역 더하기 (WBS 18.7) ---------- */
+.ed-add{display:flex;justify-content:center;margin:56px 0 0;padding:14px 0;border:2px dashed rgba(23,108,134,.35);border-radius:4px;background:rgba(231,240,243,.45)}
+.ed-add.band{width:min(var(--inner,1290px),calc(100% - 150px));margin:56px auto 0}
+.ed-add .ed-b{border-style:dashed;border-color:#176C86;color:#176C86;background:#fff;font-size:14px;height:38px;padding:0 18px}
+.ed-add .ed-b:hover{background:#176C86;color:#fff}
+@media(max-width:768px){.ed-add.band{width:calc(100% - 40px)}.ed-add{margin-top:36px}}
+.ed-pick{flex-direction:column;align-items:stretch;gap:6px;width:min(340px,calc(100vw - 12px));padding:12px}
+.ed-pick .lb{font-size:13.5px;padding:0 2px 4px}
+.ed-k{display:block;width:100%;padding:10px 12px;border:1px solid #DDD;background:#fff;text-align:left;cursor:pointer;font:inherit}
+.ed-k:hover{border-color:#176C86;background:#E7F0F3}
+.ed-k b{display:block;font-size:14.5px}
+.ed-k span{display:block;margin-top:2px;font-size:12.5px;color:#5A6065}
+.ed-sec{background:#E7F0F3;border-color:#176C86}
+.ed-sec .lb{font-size:12.5px;padding:0 6px;color:#0F4A5C}
+html.ed-on [data-xs]{box-shadow:0 0 0 1px rgba(23,108,134,.25)}
+html.ed-on [data-xs]:hover{box-shadow:0 0 0 2px rgba(23,108,134,.6)}
+html.ed-on [data-xl] > *:hover{box-shadow:0 0 0 2px rgba(242,194,48,.85)}
+html.ed-on .x-sec .p1-ld:empty,html.ed-on .x-tx p:empty{display:block}
+html.ed-on .x-sec .p1-ld:empty::before{content:"(제목 밑 설명 — 비워 두면 보이지 않음)"}

@@ -9,6 +9,8 @@
   data-et=""        글 안에 그림 · 작은 칸이 섞인 칸 — 글자만 바꾼다(굵게 · 형광 없음)
   data-list="l1"    항목을 더하고 빼고 옮길 수 있는 목록(LISTS). 고친 목록은 pages.<페이지>.l.l1
   data-ei="3"       목록 항목 안의 글자 칸(항목 안에서 하나)
+  data-sec="s4"     구역 자리 — 편집 화면의 「여기에 구역 추가」가 이 구역 바로 뒤에 새 구역을 넣는다(pages.<페이지>.x.s4)
+                    하위 페이지는 탭 칸(.panel > .inner)의 큰 묶음(.p1-lead · .p1-sec · .rc-cards · .rc-wait), 메인은 표지 밑 구역(section)
 
 글자 칸: 낱말이 있는(한글 · 영문 · 숫자) 글을 직접 가진 요소. 안에 b · strong · br · em.mark만 있으면 서식까지 고칠 수 있다.
 이미 붙은 열쇠는 그대로 두고 새 칸에만 다음 번호를 붙인다 — 사이트에 문장을 더한 뒤 다시 돌리면 된다.
@@ -31,6 +33,10 @@ LISTS = {
     'mentoring': ['dl.ab-dl', 'ol.p1-st'],
     'camp': ['div.cp-cards', 'ul.cp-st'],
 }
+
+# 구역 자리: 하위 페이지는 탭 칸의 큰 묶음, 메인은 body 바로 아래 구역(표지 빼고)
+SEC_SEL = '.panel > .inner > .p1-lead, .panel > .inner > .p1-sec, .panel > .inner > .rc-cards, .panel > .inner > .rc-wait'
+SEC_INDEX = ['about', 'journey', 'recruit', 'news']
 
 # 고치지 않는 곳: 머리 · 바닥(common.js가 만든다), 운영진 글이 들어가는 칸, 단추 · 탭, 화면에 안 보이는 제목
 SKIP_TAGS = {'script', 'style', 'svg', 'template', 'noscript', 'button', 'nav', 'header', 'footer', 'select', 'option'}
@@ -142,8 +148,20 @@ def annotate(page, write):
             count += 1
             add(t, [('data-e', 'k%d' % ne)] + ([] if rr else [('data-et', '')]))
 
+    # 구역 자리
+    secs = [soup.find(id=i) for i in SEC_INDEX] if page == 'index' else soup.select(SEC_SEL)
+    secs = [t for t in secs if t is not None]
+    used_s = [int(x[1:]) for x in (t.get('data-sec') for t in soup.select('[data-sec]')) if x and x[1:].isdigit()]
+    ns, new_s = max(used_s or [0]), 0
+    for t in secs:
+        if t.has_attr('data-sec'):
+            continue
+        ns += 1
+        new_s += 1
+        add(t, [('data-sec', 's%d' % ns)])
+
     mixed = [t for r in roots(soup) for t, rr in leaves(r) if not rr and len(own_text(t)) > 1]
-    print('%-10s 새 글자 칸 %3d · 목록 %d개 · 새 항목 칸 %3d' % (page, count, len(lists), sum(1 for _, s in inserts if 'data-ei' in s)))
+    print('%-10s 새 글자 칸 %3d · 목록 %d개 · 새 항목 칸 %3d · 새 구역 자리 %2d' % (page, count, len(lists), sum(1 for _, s in inserts if 'data-ei' in s), new_s))
     for t in mixed:
         print('   ! 글이 둘로 나뉜 칸(앞 글만 고침):', str(t)[:120])
     if write and inserts:

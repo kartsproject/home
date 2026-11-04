@@ -4,6 +4,8 @@
    content.js가 ?edit=1(또는 이 탭에서 편집을 켠 뒤)일 때만 부른다. 방문자 화면에는 이 파일이 오지 않는다.
      글자     눌러서 바로 고친다. 고르고 [굵게] · [형광], [원래대로]는 HTML 처음 글로. 모아서 아래 [저장]
      목록     항목 위 단추로 앞으로 · 뒤로 · 복제 · 삭제 (저장할 때 함께)
+     문단     문단을 누르면 뜨는 [아래에 문단 추가] · [문단 빼기] (WBS 18.7)
+     구역     구역 사이의 [+ 여기에 구역 추가]로 틀(글 · 사진 + 글 · 표 · 카드 · 단계)을 골라 더하고, 더한 구역은 [위로] [아래로] [구역 삭제]
      사진     사진 위 단추로 바꾸기(자르기 창) · 자르기 · 빼기 — 누르면 바로 저장된다(관리자 페이지 「사이트 사진」 · 「표지 사진」과 같은 칸)
    ▣ 저장할 수 있는지는 관문이 요청마다 토큰으로 확인한다. 토큰은 sessionStorage(관리자 페이지와 같은 칸), 기기ID만 localStorage.
    ▣ 운영진이 쓴 글은 textContent · DOM으로만 다룬다(innerHTML 없음 — CLAUDE.md 보안 5). 붙여 넣기는 글자만.
@@ -153,6 +155,8 @@
       '글자: 고칠 글자를 눌러 바로 고칩니다. 글자를 끌어 고른 뒤 위에 뜨는 [굵게] · [형광]을 누르면 서식이 바뀝니다. [원래대로]는 처음 글로 되돌립니다.',
       '줄 나누기: Enter. 붙여 넣으면 글자만 들어갑니다.',
       '목록: 카드 · 단계 · 표 줄 위에 마우스를 올리면 [앞으로] [뒤로] [복제] [삭제] 단추가 나옵니다.',
+      '문단: 문단을 누르면 위에 뜨는 [아래에 문단 추가]로 문단을 더하고, 더한 문단은 [문단 빼기]로 뺍니다.',
+      '구역: 구역 사이의 [+ 여기에 구역 추가]를 누르고 모양(글 · 사진 + 글 · 표 · 카드 · 단계)을 고르면 새 구역이 생깁니다. 더한 구역 위에 마우스를 올리면 [위로] [아래로] [구역 삭제]가 나옵니다.',
       '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(1~2분 뒤 보임).',
       '사진: 사진 위에 마우스를 올리면 [사진 바꾸기] [자르기] [빼기]가 나옵니다. 사진은 누르는 즉시 저장됩니다.',
       '머리 · 바닥 메뉴와 공지 · 갤러리 · 모집요강 파일은 관리자 페이지에서 고칩니다.'
@@ -214,6 +218,7 @@
     par.removeChild(n);
     return sp;
   }
+  var CELLS = '[data-e],[data-ei],[data-ap],[data-xf]';   // 고칠 수 있는 칸: HTML 칸 · 목록 항목 칸 · 더한 문단 · 더한 구역 칸
   function prepare(el){
     if(el.hasAttribute('data-et')){ var sp = wrapText(el); if(sp) setEditable(sp, true); return; }
     C.set(el, C.read(el));   // 문장 묶음 · 붙임 공백(줄바꿈 단위, common.js)을 풀어 고치기 쉽게
@@ -225,6 +230,28 @@
   }
   // 고친 글자 칸이 속한 칸(data-e · data-ei가 붙은 요소)
   function cellOf(ed){ return ed.classList.contains('ed-t') ? ed.parentNode.closest('[data-e],[data-ei]') : ed; }
+  // 문단을 더할 수 있는 칸: 페이지 글자 칸의 문단(p) · 더한 문단 · 더한 구역의 문단
+  function paraCell(cell){
+    if(!cell || cell.tagName !== 'P') return null;
+    if(cell.hasAttribute('data-ap') || cell.getAttribute('data-xf') === 'p') return cell;
+    return cell.hasAttribute('data-e') && !cell.hasAttribute('data-et') ? cell : null;
+  }
+  function addPara(){
+    var cell = cur.ed && paraCell(cellOf(cur.ed));
+    if(!cell) return;
+    var p = cell.getAttribute('data-xf') === 'p' ? C.newPara(cell, {}) : C.newPara(cell, { ap:cell.getAttribute('data-ap') || cell.getAttribute('data-e') });
+    cell.parentNode.insertBefore(p, cell.nextSibling);
+    prepare(p);
+    p.focus();
+    changed();
+  }
+  function removePara(){
+    var cell = cur.ed && cellOf(cur.ed);
+    if(!cell || !(cell.hasAttribute('data-ap') || cell.getAttribute('data-xf') === 'p')) return;
+    if(cell.getAttribute('data-xf') === 'p' && cell.parentNode.querySelectorAll('[data-xf="p"]').length < 2) return toast('구역의 마지막 문단은 뺄 수 없습니다. 글을 비우면 사이트에 보이지 않습니다.', true);
+    cell.parentNode.removeChild(cell);
+    cur.ed = null; changed(); place();
+  }
   function original(cell){
     if(cell.hasAttribute('data-e')) return C.orig[cell.getAttribute('data-e')];
     var item = cell.closest('[data-s]'), box = item && item.parentNode, L = box && C.lists[box.getAttribute('data-list')];
@@ -266,9 +293,11 @@
   var fmtBar = h('div', { class:'ed-tool ed-fmt', hidden:true }, [
     btn('굵게', function(){ format('b'); }, 'fb', '고른 글자를 굵게 (다시 누르면 풀림)'),
     btn('형광', function(){ format('mark'); }, 'fm', '고른 글자에 형광 밑줄 (다시 누르면 풀림)'),
-    btn('원래대로', revert, null, '이 칸을 처음 글로 되돌립니다')
+    btn('원래대로', revert, 'fr', '이 칸을 처음 글로 되돌립니다'),
+    btn('아래에 문단 추가', addPara, 'fa', '이 문단 바로 아래에 새 문단을 더합니다'),
+    btn('문단 빼기', removePara, 'fd warn', '더한 문단을 뺍니다')
   ]);
-  var cur = { ed:null, item:null, photo:null };
+  var cur = { ed:null, item:null, photo:null, sec:null };
 
   document.addEventListener('focusin', function(ev){
     var ed = editRoot(ev.target);
@@ -318,6 +347,8 @@
 
   /* ---------- 목록 항목 ---------- */
   function listOf(item){ var box = item.parentNode; return C.lists[box.getAttribute('data-list')]; }
+  // 항목 수가 바뀐 뒤: HTML 목록은 가로 칸 수, 더한 구역의 목록은 칸 수 · 단계 번호
+  function afterList(box){ if(box.hasAttribute('data-list')) C.cols(C.lists[box.getAttribute('data-list')]); else C.fixAdded(box); }
   function rand4(){ var s = ''; while(s.length < 4) s += 'abcdefghijkmnpqrstuvwxyz23456789'.charAt(Math.floor(Math.random() * 32)); return s; }
   // 복제한 항목의 새 사진 자리: HTML 처음 항목의 자리 + -x네 글자 (관문 createPhotoSlot_가 받아 준다)
   function newSlot(item){
@@ -329,27 +360,28 @@
     var to = dir < 0 ? it.previousElementSibling : it.nextElementSibling;
     if(!to){ toast(dir < 0 ? '맨 앞 항목입니다.' : '맨 뒤 항목입니다.'); return; }
     if(dir < 0) it.parentNode.insertBefore(it, to); else it.parentNode.insertBefore(to, it);
+    afterList(it.parentNode);
     changed(); place();
   }
   function duplicate(){
     var it = cur.item; if(!it) return;
-    var L = listOf(it);
-    if(it.parentNode.children.length >= 60) return toast('항목은 60개까지입니다.', true);
-    var c = it.cloneNode(true), ph = C.photoOf(c), slot = newSlot(it);
+    var box = it.parentNode, tplList = box.hasAttribute('data-list');
+    if(box.children.length >= 60) return toast('항목은 60개까지입니다.', true);
+    var c = it.cloneNode(true), ph = tplList ? C.photoOf(c) : null, slot = ph && newSlot(it);
     if(ph && slot){ ph.setAttribute('data-photo', slot); window.Photos && Photos.clear(ph); }
-    it.parentNode.insertBefore(c, it.nextSibling);
-    C.cols(L);
+    box.insertBefore(c, it.nextSibling);
+    afterList(box);
     changed();
     toast(ph ? '복제했습니다. 새 항목의 사진은 비어 있습니다 — 사진 위 [사진 넣기]로 넣어 주세요.' : '복제했습니다. 글을 고친 뒤 [저장]을 눌러 주세요.');
     setItem(c);
   }
   function removeItem(){
     var it = cur.item; if(!it) return;
-    var L = listOf(it);
-    if(it.parentNode.children.length < 2) return toast('마지막 항목은 지울 수 없습니다. 글을 고쳐 써 주세요.', true);
+    var box = it.parentNode;
+    if(box.children.length < 2) return toast('마지막 항목은 지울 수 없습니다. 글을 고쳐 써 주세요.', true);
     if(!window.confirm('이 항목을 지울까요?\n(저장하기 전이면 [편집 끝내기]로 버릴 수 있습니다)')) return;
-    it.parentNode.removeChild(it);
-    C.cols(L);
+    box.removeChild(it);
+    afterList(box);
     setItem(null); changed();
   }
   var itemBar = h('div', { class:'ed-tool ed-item', hidden:true }, [
@@ -483,14 +515,93 @@
   ]);
   function setPhoto(el){ if(cur.photo === el) return; cur.photo = el; place(); }
 
+  /* ---------- 구역 더하기 (WBS 18.7) ---------- */
+  var KIND_NAMES = { text:'제목 + 글', photo:'제목 + 사진 + 글', table:'제목 + 표 (항목 · 내용)', cards:'제목 + 카드', steps:'제목 + 단계' };
+  var KIND_HINTS = { text:'문단 몇 개로 된 설명', photo:'사진 한 장과 설명', table:'「기간 — 2026년 …」처럼 왼쪽 항목, 오른쪽 내용', cards:'테두리 카드 여러 개(제목 + 설명)', steps:'01 · 02 · 03 순서가 있는 단계' };
+  function sample(k){
+    var two = function(a, b, n){ var r = []; for(var i = 0; i < n; i++) r.push([a, b]); return r; };
+    var sec = { k:k, h:'새 구역 제목', d:'' };
+    if(k === 'text' || k === 'photo') sec.p = ['내용을 입력하세요.'];
+    if(k === 'photo') sec.ph = 'sec-x' + rand4();
+    if(k === 'table') sec.i = two('항목', '내용을 입력하세요.', 2);
+    if(k === 'cards') sec.i = two('카드 제목', '설명을 입력하세요.', 3);
+    if(k === 'steps') sec.i = two('단계 이름', '설명을 입력하세요.', 3);
+    return sec;
+  }
+  // 구역 자리마다(그 자리 + 더한 구역들 뒤) [+ 여기에 구역 추가] 줄을 둔다. 저장 내용에는 들어가지 않는다(content.js collect)
+  function drawAddBars(){
+    [].forEach.call(document.querySelectorAll('.ed-add'), function(b){ b.parentNode.removeChild(b); });
+    [].forEach.call(document.querySelectorAll('[data-sec]'), function(anc){
+      var key = anc.getAttribute('data-sec'), last = anc;
+      while(last.nextElementSibling && last.nextElementSibling.getAttribute('data-xs') === key) last = last.nextElementSibling;
+      var band = anc.parentNode === document.body;
+      var row = h('div', { class:'ed-add' + (band ? ' band' : '') }, [
+        h('button', { type:'button', class:'ed-b', text:'+ 여기에 구역 추가', onclick:function(ev){ pickKind(ev.currentTarget, key, row); } })
+      ]);
+      last.parentNode.insertBefore(row, last.nextSibling);
+    });
+  }
+  var pickBox = h('div', { class:'ed-tool ed-pick', hidden:true });
+  function pickKind(button, key, row){
+    pickBox.textContent = '';
+    pickBox.appendChild(h('b', { class:'lb', text:'어떤 모양의 구역을 더할까요?' }));
+    C.KINDS.forEach(function(k){
+      pickBox.appendChild(h('button', { type:'button', class:'ed-k', onclick:function(){ pickBox.hidden = true; addSection(k, key, row); } }, [
+        h('b', { text:KIND_NAMES[k] }), h('span', { text:KIND_HINTS[k] })
+      ]));
+    });
+    pickBox.appendChild(btn('취소', function(){ pickBox.hidden = true; }));
+    pickBox.hidden = false;
+    var r = button.getBoundingClientRect();
+    pickBox.style.left = Math.max(6, Math.min(r.left, window.innerWidth - pickBox.offsetWidth - 6)) + 'px';
+    pickBox.style.top = Math.max(6, Math.min(r.bottom + 6, window.innerHeight - pickBox.offsetHeight - 76)) + 'px';
+  }
+  document.addEventListener('pointerdown', function(ev){ if(!pickBox.hidden && !ev.target.closest('.ed-pick,.ed-add')) pickBox.hidden = true; });
+  function addSection(k, key, row){
+    var anc = document.querySelector('[data-sec="' + key + '"]');
+    var sec = C.buildSec(sample(k), key, anc && anc.parentNode === document.body);
+    row.parentNode.insertBefore(sec, row);
+    [].forEach.call(sec.querySelectorAll('[data-xf]'), prepare);
+    var img = sec.querySelector('[data-photo]');
+    if(img && window.Photos) Photos.clear(img);
+    changed();
+    sec.scrollIntoView({ block:'center', behavior:'smooth' });
+    var title = sec.querySelector('[data-xf="h"]');
+    if(title){ title.focus(); var r = document.createRange(); r.selectNodeContents(title); var sl = window.getSelection(); sl.removeAllRanges(); sl.addRange(r); }
+    toast(k === 'photo' ? '구역을 더했습니다. 글을 고치고, 사진 위 [사진 넣기]로 사진을 넣은 뒤 [저장]을 눌러 주세요.' : '구역을 더했습니다. 글을 고친 뒤 [저장]을 눌러 주세요.');
+  }
+  function moveSection(dir){
+    var sec = cur.sec; if(!sec) return;
+    var key = sec.getAttribute('data-xs'), to = dir < 0 ? sec.previousElementSibling : sec.nextElementSibling;
+    if(!to || to.getAttribute('data-xs') !== key){ toast(dir < 0 ? '이 자리에서 맨 위 구역입니다.' : '이 자리에서 맨 아래 구역입니다.'); return; }
+    if(dir < 0) sec.parentNode.insertBefore(sec, to); else sec.parentNode.insertBefore(to, sec);
+    changed(); place();
+    sec.scrollIntoView({ block:'nearest', behavior:'smooth' });
+  }
+  function removeSection(){
+    var sec = cur.sec; if(!sec) return;
+    if(!window.confirm('이 구역을 통째로 지울까요?\n(저장하기 전이면 [편집 끝내기]로 버릴 수 있습니다)')) return;
+    sec.parentNode.removeChild(sec);
+    cur.sec = null; cur.item = null; cur.photo = null;
+    changed(); place();
+  }
+  var secBar = h('div', { class:'ed-tool ed-sec', hidden:true }, [
+    h('b', { class:'lb', text:'더한 구역' }),
+    btn('▲ 위로', function(){ moveSection(-1); }), btn('▼ 아래로', function(){ moveSection(1); }), btn('구역 삭제', removeSection, 'warn')
+  ]);
+  function setSec(el){ if(cur.sec === el) return; cur.sec = el; place(); }
+
   /* ---------- 떠 있는 단추 자리 ---------- */
   function vis(r){ return r.bottom > 0 && r.top < window.innerHeight && r.width > 0; }
   function place(){
     var pr = cur.ed && cur.ed.getBoundingClientRect();
     fmtBar.hidden = !(pr && vis(pr));
     if(!fmtBar.hidden){
-      var rich = cur.ed.getAttribute('data-ed') === 'rich';
+      var rich = cur.ed.getAttribute('data-ed') === 'rich', cell = cellOf(cur.ed);
       fmtBar.querySelector('.fb').hidden = !rich; fmtBar.querySelector('.fm').hidden = !rich;
+      fmtBar.querySelector('.fr').hidden = !(cell && (cell.hasAttribute('data-e') || cell.hasAttribute('data-ei')));
+      fmtBar.querySelector('.fa').hidden = !paraCell(cell);
+      fmtBar.querySelector('.fd').hidden = !(cell && (cell.hasAttribute('data-ap') || cell.getAttribute('data-xf') === 'p'));
       fmtBar.style.left = Math.max(6, Math.min(pr.left, window.innerWidth - fmtBar.offsetWidth - 6)) + 'px';
       fmtBar.style.top = Math.max(6, pr.top - fmtBar.offsetHeight - 6) + 'px';
     }
@@ -501,6 +612,14 @@
       var ih = itemBar.offsetHeight, above = ir.top - ih - 3;
       itemBar.style.left = Math.max(6, Math.min(ir.right - itemBar.offsetWidth, window.innerWidth - itemBar.offsetWidth - 6)) + 'px';
       itemBar.style.top = (above > 6 ? above : Math.max(6, ir.top + 4)) + 'px';
+    }
+    var sr = cur.sec && document.body.contains(cur.sec) && cur.sec.getBoundingClientRect();
+    secBar.hidden = !(sr && vis(sr));
+    if(!secBar.hidden){
+      // 구역 바로 위 왼쪽(자리가 없으면 구역 안 위쪽) — 항목 단추(항목 위 오른쪽)와 겹치지 않게
+      var sh = secBar.offsetHeight, sabove = sr.top - sh - 3;
+      secBar.style.left = Math.max(6, Math.min(sr.left, window.innerWidth - secBar.offsetWidth - 6)) + 'px';
+      secBar.style.top = (sabove > 6 ? sabove : Math.max(6, sr.top + 4)) + 'px';
     }
     var el = cur.photo && document.body.contains(cur.photo) ? cur.photo : null, rr = el && el.getBoundingClientRect();
     photoBar.hidden = !(rr && vis(rr));
@@ -521,15 +640,27 @@
   window.addEventListener('scroll', later, true);
   window.addEventListener('resize', later);
 
-  // 마우스(휴대폰은 누른 곳)가 있는 항목 · 사진. 떠 있는 단추 위에서는 그대로 둔다
+  // 마우스(휴대폰은 누른 곳)가 있는 항목 · 사진 · 더한 구역.
+  // 다른 항목으로 가면 바로 바꾸고, 빈 곳으로 나가면 0.9초 기다린 뒤 단추를 숨긴다 — 단추까지 마우스를 옮기는 동안 사라지지 않게.
+  // 떠 있는 단추 위에서는 숨기지 않는다
+  var SETTERS = { item:setItem, photo:setPhoto, sec:setSec }, hideT = {};
+  function want(kind, el){
+    if(el){ clearTimeout(hideT[kind]); hideT[kind] = null; SETTERS[kind](el); return; }
+    if(!cur[kind] || hideT[kind]) return;
+    hideT[kind] = setTimeout(function(){ hideT[kind] = null; SETTERS[kind](null); }, 900);
+  }
+  function keep(){ Object.keys(hideT).forEach(function(k){ clearTimeout(hideT[k]); hideT[k] = null; }); }
   function hover(ev){
     var t = ev.target;
-    if(!t.closest || t.closest('.ed-ui')) return;
-    if(t.closest('#header,#footer,#allmenu')){ setItem(null); setPhoto(null); return; }
-    setItem(t.closest('[data-list] > [data-s]'));
+    if(!t.closest) return;
+    if(t.closest('.ed-tool')){ keep(); return; }
+    if(t.closest('.ed-ui')) return;
+    if(t.closest('#header,#footer,#allmenu')){ want('item', null); want('photo', null); want('sec', null); return; }
+    want('item', t.closest('[data-list] > [data-s], [data-xl] > *'));
     var ph = t.closest('[data-photo]');
     if(!ph && heroEl && t.closest('#hero') && !t.closest('[data-ed]')) ph = heroEl;
-    setPhoto(ph);
+    want('photo', ph);
+    want('sec', t.closest('[data-xs]'));
   }
   document.addEventListener('pointerover', hover);
   document.addEventListener('pointerdown', hover);
@@ -537,7 +668,7 @@
   /* ---------- 시작 ---------- */
   function start(){
     document.documentElement.classList.add('ed-on');
-    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, bar, fileIn].forEach(function(x){ ui.appendChild(x); });
+    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, secBar, pickBox, bar, fileIn].forEach(function(x){ ui.appendChild(x); });
     document.body.appendChild(ui);
     saveBtn.disabled = true;
 
@@ -554,7 +685,8 @@
       (d.photos || []).forEach(function(p){ if(p.photos && p.photos[0]) E.photos[p.slot] = { fileId:p.photos[0].fileId, w:p.photos[0].w, h:p.photos[0].h, pos:p.pos }; });
       if(window.Photos) Photos.fill(E.photos, d.photoMode === 'attached');
       if(heroEl && window.__hero) drawHero();
-      [].forEach.call(document.querySelectorAll('[data-e],[data-ei]'), prepare);
+      [].forEach.call(document.querySelectorAll(CELLS), prepare);
+      drawAddBars();
       E.base = JSON.stringify(C.collect());
       var meta = (d.pageMeta || {})[C.page];
       stateEl.textContent = meta && meta.updatedAt ? '마지막 저장 ' + meta.updatedAt : '모두 저장됨';

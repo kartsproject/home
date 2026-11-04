@@ -6,12 +6,16 @@
  *   { t: { k12: "고친 글", … },                         // 글자 칸(data-e) — 고친 칸만
  *     l: { l1: [ { s: 0, t: { "2": "글" }, p: "mu1-x4k2" }, … ] } }   // 목록(data-list) — 바꾼 목록만, 화면 순서대로
  *        s: HTML의 몇 번째 항목을 본뜬 것인지(0부터), t: 항목 안 글자 칸(data-ei) 중 고친 것, p: 복제한 항목의 새 사진 자리
+ *     a: { k5: ["더한 문단", …] },                        // 글자 칸 k5(문단) 바로 뒤에 더한 문단 (WBS 18.7)
+ *     x: { s4: [ { k, h, d, p, i, ph }, … ] } }           // 구역 자리 s4 바로 뒤에 더한 구역 (WBS 18.7)
+ *        k: text · photo · table · cards · steps, h: 제목, d: 제목 밑 설명, p: [문단], i: [[제목 · 항목, 설명 · 내용]], ph: 사진 자리
  * 글은 **굵게** · ==형광== · 줄바꿈(\n)만 쓴다. 화면은 textContent · DOM으로만 넣는다(CLAUDE.md 보안 5).
  * 탭은 처음 저장할 때 만든다(setup을 다시 돌리지 않아도 되게, 사진 · 모집요강 탭과 같은 방식).
  */
 var PAGE_TAB_ = '페이지';
 var PAGE_IDS_ = ['index', 'about', 'recruit', 'programs', 'mentoring', 'camp', 'news'];
-var PAGE_LIMITS_ = { text: 3000, texts: 400, lists: 30, items: 60, itemTexts: 40, json: 45000 };   // 시트 한 칸은 5만 자까지
+var PAGE_LIMITS_ = { text: 3000, texts: 400, lists: 30, items: 60, itemTexts: 40, paraAnchors: 100, paras: 20, secAnchors: 60, secs: 10, secParas: 30, json: 45000 };
+var PAGE_SEC_KINDS_ = ['text', 'photo', 'table', 'cards', 'steps'];   // 시트 한 칸은 5만 자까지
 
 function pageTabMissing_() {
   return !SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PAGE_TAB_);
@@ -46,8 +50,8 @@ function isPlainObject_(v) {
 function validatePageContent_(c) {
   if (!isPlainObject_(c)) return null;
   var out = { t: {}, l: {} };
-  var t = c.t == null ? {} : c.t, l = c.l == null ? {} : c.l;
-  if (!isPlainObject_(t) || !isPlainObject_(l)) return null;
+  var t = c.t == null ? {} : c.t, l = c.l == null ? {} : c.l, a = c.a == null ? {} : c.a, x = c.x == null ? {} : c.x;
+  if (!isPlainObject_(t) || !isPlainObject_(l) || !isPlainObject_(a) || !isPlainObject_(x)) return null;
   var tk = Object.keys(t), lk = Object.keys(l);
   if (tk.length > PAGE_LIMITS_.texts || lk.length > PAGE_LIMITS_.lists) return null;
   for (var i = 0; i < tk.length; i++) {
@@ -86,7 +90,67 @@ function validatePageContent_(c) {
     }
     out.l[lk[j]] = list;
   }
+  // 더한 문단 · 구역 (WBS 18.7)
+  var ak = Object.keys(a), xk = Object.keys(x);
+  if (ak.length > PAGE_LIMITS_.paraAnchors || xk.length > PAGE_LIMITS_.secAnchors) return null;
+  for (var q = 0; q < ak.length; q++) {
+    if (!/^k\d{1,4}$/.test(ak[q])) return null;
+    var ps = cleanPageTexts_(a[ak[q]], PAGE_LIMITS_.paras);
+    if (!ps) return null;
+    if (ps.length) { out.a = out.a || {}; out.a[ak[q]] = ps; }
+  }
+  for (var w = 0; w < xk.length; w++) {
+    var secs = x[xk[w]];
+    if (!/^s\d{1,3}$/.test(xk[w]) || !Array.isArray(secs) || secs.length > PAGE_LIMITS_.secs) return null;
+    var cleanSecs = [];
+    for (var v = 0; v < secs.length; v++) {
+      var sec = cleanPageSection_(secs[v]);
+      if (!sec) return null;
+      cleanSecs.push(sec);
+    }
+    if (cleanSecs.length) { out.x = out.x || {}; out.x[xk[w]] = cleanSecs; }
+  }
   return JSON.stringify(out).length > PAGE_LIMITS_.json ? null : out;
+}
+
+// 문자열 배열(max개까지)을 정리한다. 아니면 null
+function cleanPageTexts_(v, max) {
+  if (!Array.isArray(v) || v.length > max) return null;
+  var out = [];
+  for (var i = 0; i < v.length; i++) {
+    var s = cleanPageText_(v[i]);
+    if (s === null) return null;
+    out.push(s);
+  }
+  return out;
+}
+
+// 더한 구역 하나: { k, h, d?, p?(text · photo), i?(table · cards · steps), ph?(photo) }. 아니면 null
+function cleanPageSection_(sec) {
+  if (!isPlainObject_(sec) || PAGE_SEC_KINDS_.indexOf(sec.k) === -1) return null;
+  var h = cleanPageText_(sec.h == null ? '' : sec.h), d = cleanPageText_(sec.d == null ? '' : sec.d);
+  if (h === null || d === null) return null;
+  var o = { k: sec.k, h: h };
+  if (d) o.d = d;
+  if (sec.k === 'text' || sec.k === 'photo') {
+    var p = cleanPageTexts_(sec.p == null ? [] : sec.p, PAGE_LIMITS_.secParas);
+    if (!p) return null;
+    o.p = p;
+    if (sec.k === 'photo' && sec.ph != null) {
+      if (typeof sec.ph !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(sec.ph) || sec.ph.length > 48) return null;
+      o.ph = sec.ph;
+    }
+  } else {
+    var items = sec.i == null ? [] : sec.i;
+    if (!Array.isArray(items) || items.length > PAGE_LIMITS_.items) return null;
+    o.i = [];
+    for (var n = 0; n < items.length; n++) {
+      var pair = cleanPageTexts_(items[n], 2);
+      if (!pair || pair.length !== 2) return null;
+      o.i.push(pair);
+    }
+  }
+  return o;
 }
 
 // { index: { t, l }, … } — 탭이 없거나 내용이 깨진 줄은 넣지 않는다(화면은 HTML 글 그대로)

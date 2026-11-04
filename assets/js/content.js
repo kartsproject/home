@@ -6,6 +6,11 @@
      [data-et]        글 안에 그림 · 작은 칸이 섞인 칸 — 글자만 바꾼다
      [data-list="l1"] 목록. 고친 목록이 있으면 HTML의 항목(s번째)을 본떠 그 순서 · 개수로 다시 만든다
      [data-ei="3"]    목록 항목 안의 글자 칸,  항목 안 [data-photo]는 p가 있으면 그 사진 자리로 바꾼다(복제한 항목)
+   더한 문단 · 구역 (WBS 18.7)
+     a:{ k5:["문단", …] }      글자 칸 k5(문단 p) 바로 뒤에 더한 문단 — 같은 모양(태그 · class)으로 [data-ap="k5"]
+     x:{ s4:[ 구역, … ] }      구역 자리 [data-sec="s4"] 바로 뒤에 더한 구역 [data-xs="s4"]
+        구역 = { k:'text'|'photo'|'table'|'cards'|'steps', h:제목, d:제목 밑 설명, p:[문단], i:[[제목 · 항목, 설명 · 내용]], ph:사진 자리 }
+        모양은 사이트에 있는 것(.p1-sec · .ab-dl · .cp-cards · .p1-st)을 그대로 쓴다. 메인은 띠(section.x-band)로 감싼다
    열쇠는 docs/tools/annotate-edit.py가 HTML에 붙인다. 고친 것이 없는 페이지는 HTML 그대로다.
    글 서식은 **굵게** · ==형광==(em.mark) · 줄바꿈(\n)만. 넣을 때는 textContent · DOM으로만 만든다(innerHTML 없음 — CLAUDE.md 보안 5).
    주소에 ?edit=1이 있거나 이 탭에서 편집을 켰으면(sessionStorage hp_edit) 편집 도구(editor.js)를 부른다 —
@@ -132,6 +137,119 @@ window.Content = (function(){
     if(window.__rvObserve) window.__rvObserve(L.box);
   }
 
+  /* ---------- 더한 문단 · 구역 (WBS 18.7) ---------- */
+  var X_KINDS = ['text', 'photo', 'table', 'cards', 'steps'];
+  var GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+  var SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+  function mk(tag, cls){ var e = document.createElement(tag); if(cls) e.className = cls; return e; }
+  function cell(tag, f, text, cls){ var e = mk(tag, cls); e.setAttribute('data-xf', f); fill(e, String(text == null ? '' : text)); return e; }
+  function strs(v){ return Array.isArray(v) ? v.filter(function(x){ return typeof x === 'string'; }) : []; }
+  function after(ref, n){ ref.parentNode.insertBefore(n, ref.nextSibling); }
+  function rd(e){ return e ? readRich(e) : ''; }
+  // 글자 칸(문단) 뒤에 더하는 문단: 그 문단과 같은 태그 · class, 편집 열쇠는 뺀다
+  var STRIP = ['data-e', 'data-et', 'data-k', 'data-rv', 'data-d', 'id', 'contenteditable', 'data-ed', 'spellcheck', 'data-ap', 'data-xf', 'style'];
+  function newPara(src, mark){
+    var p = src.cloneNode(false);
+    STRIP.forEach(function(a){ p.removeAttribute(a); });
+    if(mark.ap) p.setAttribute('data-ap', mark.ap); else p.setAttribute('data-xf', 'p');
+    return p;
+  }
+  function itemEl(k, it, n){
+    var e;
+    if(k === 'table'){ e = mk('div'); e.appendChild(cell('dt', 'a', it[0])); e.appendChild(cell('dd', 'b', it[1])); return e; }
+    if(k === 'cards'){ e = mk('div', 'cp-card'); e.appendChild(cell('h3', 'a', it[0])); e.appendChild(cell('p', 'b', it[1])); return e; }
+    e = mk('li'); e.appendChild(mk('small')); e.appendChild(cell('h3', 'a', it[0])); e.appendChild(cell('p', 'b', it[1]));
+    return e;
+  }
+  // 더한 구역의 목록: 칸 수(--n) · 단계 번호를 항목 수에 맞춘다
+  function fixAdded(box, k){
+    k = k || (box.closest('[data-xk]') || box).getAttribute('data-xk');
+    var n = box.children.length;
+    if(k === 'cards') box.style.setProperty('--n', String(Math.max(1, Math.min(n, 3))));
+    if(k === 'steps'){
+      box.style.setProperty('--n', String(Math.max(1, Math.min(n, 5))));
+      [].forEach.call(box.children, function(li, i){ var sm = li.querySelector('small'); if(sm) sm.textContent = (i < 9 ? '0' : '') + (i + 1); });
+    }
+  }
+  function buildSec(sec, key, band){
+    sec = obj(sec);
+    var k = X_KINDS.indexOf(sec.k) > -1 ? sec.k : 'text';
+    var box = mk('div', 'p1-sec x-sec x-' + k), head = mk('div', 'p1-h'), body = mk('div', 'x-body');
+    head.appendChild(cell('h2', 'h', sec.h));
+    head.appendChild(cell('p', 'd', sec.d, 'p1-ld'));
+    if(k === 'text' || k === 'photo'){
+      if(k === 'photo'){
+        var fig = mk('figure', 'x-ph'), img = mk('img');
+        img.alt = ''; img.loading = 'lazy'; img.src = GIF;
+        if(typeof sec.ph === 'string' && SLUG.test(sec.ph)) img.setAttribute('data-photo', sec.ph);
+        fig.appendChild(img); body.appendChild(fig);
+      }
+      var tx = mk('div', 'x-tx'), ps = strs(sec.p);
+      (ps.length ? ps : ['']).forEach(function(t){ tx.appendChild(cell('p', 'p', t)); });
+      body.appendChild(tx);
+    }else{
+      var list = mk(k === 'table' ? 'dl' : k === 'cards' ? 'div' : 'ol', k === 'table' ? 'ab-dl' : k === 'cards' ? 'cp-cards' : 'p1-st');
+      var items = Array.isArray(sec.i) ? sec.i.filter(Array.isArray) : [];
+      list.setAttribute('data-xl', '');
+      (items.length ? items : [['', '']]).forEach(function(it, n){ list.appendChild(itemEl(k, [String(it[0] == null ? '' : it[0]), String(it[1] == null ? '' : it[1])], n)); });
+      fixAdded(list, k);
+      body.appendChild(list);
+    }
+    box.appendChild(head); box.appendChild(body);
+    var outer = box;
+    if(band){ outer = mk('section', 'x-band'); var inn = mk('div', 'inner'); inn.appendChild(box); outer.appendChild(inn); }
+    outer.setAttribute('data-xs', key); outer.setAttribute('data-xk', k);
+    return outer;
+  }
+  function readSec(o){
+    var k = o.getAttribute('data-xk'), s = { k:k, h:rd(o.querySelector('[data-xf="h"]')) }, d = rd(o.querySelector('[data-xf="d"]'));
+    if(d) s.d = d;
+    if(k === 'text' || k === 'photo'){
+      s.p = qsa(o, '[data-xf="p"]').map(readRich);
+      var img = o.querySelector('[data-photo]');
+      if(k === 'photo' && img) s.ph = img.getAttribute('data-photo');
+    }else{
+      var list = o.querySelector('[data-xl]');
+      s.i = list ? [].map.call(list.children, function(it){ return [rd(it.querySelector('[data-xf="a"]')), rd(it.querySelector('[data-xf="b"]'))]; }) : [];
+    }
+    return s;
+  }
+  function paraAnchor(k){ var e = /^k\d+$/.test(k) && document.querySelector('[data-e="' + k + '"]'); return e && e.tagName === 'P' && !e.hasAttribute('data-et') ? e : null; }
+  function secAnchor(s){ return /^s\d+$/.test(s) ? document.querySelector('[data-sec="' + s + '"]') : null; }
+  function applyAdded(a, x){
+    qsa(document, '[data-ap],[data-xs]').forEach(function(n){ n.parentNode.removeChild(n); });
+    var made = [];
+    Object.keys(a).forEach(function(k){
+      var anc = paraAnchor(k), ref = anc;
+      if(!anc) return;
+      strs(a[k]).forEach(function(t){ var p = newPara(anc, { ap:k }); fill(p, t); after(ref, p); ref = p; made.push(p); });
+    });
+    Object.keys(x).forEach(function(s){
+      var anc = secAnchor(s), ref = anc;
+      if(!anc || !Array.isArray(x[s])) return;
+      var band = anc.parentNode === document.body;
+      x[s].forEach(function(sec){ var e = buildSec(sec, s, band); after(ref, e); ref = e; made.push(e); });
+    });
+    if(!C.editing && window.__lb) made.forEach(function(e){ window.__lb(e); });
+  }
+  function collectAdded(){
+    var a = {}, x = {};
+    qsa(document, 'p[data-e]').forEach(function(anc){
+      var k = anc.getAttribute('data-e'), list = [], n = anc.nextElementSibling;
+      while(n && n.getAttribute('data-ap') === k){ list.push(readRich(n)); n = n.nextElementSibling; }
+      if(list.length) a[k] = list;
+    });
+    qsa(document, '[data-sec]').forEach(function(anc){
+      var s = anc.getAttribute('data-sec'), list = [], n = anc.nextElementSibling;
+      while(n && (n.getAttribute('data-xs') === s || n.classList.contains('ed-add'))){
+        if(n.hasAttribute('data-xs')) list.push(readSec(n));
+        n = n.nextElementSibling;
+      }
+      if(list.length) x[s] = list;
+    });
+    return { a:a, x:x };
+  }
+
   /* ---------- 고친 내용 넣기 · 모으기 ---------- */
   // HTML의 처음 글 (편집 도구가 「원래대로」 · 바뀐 칸 찾기에 쓴다)
   var orig = {};
@@ -151,6 +269,7 @@ window.Content = (function(){
       if(typeof t[k] === 'string') set(el, t[k]);
       else if(reset && read(el) !== orig[k]) set(el, orig[k]);
     });
+    applyAdded(obj(pd.a), obj(pd.x));
   }
 
   // 지금 화면 → 저장할 내용. HTML과 같은 칸 · 목록은 넣지 않는다
@@ -178,11 +297,15 @@ window.Content = (function(){
       });
       if(!same) l[k] = recs;
     });
-    return { t:t, l:l };
+    var ad = collectAdded(), out = { t:t, l:l };
+    if(Object.keys(ad.a).length) out.a = ad.a;
+    if(Object.keys(ad.x).length) out.x = ad.x;
+    return out;
   }
 
   C.lists = lists; C.orig = orig; C.read = read; C.set = set; C.apply = apply; C.collect = collect;
   C.find = find; C.leavesOf = leavesOf; C.photoOf = photoOf; C.cols = cols; C.textNode = textNode;
+  C.newPara = newPara; C.buildSec = buildSec; C.fixAdded = fixAdded; C.KINDS = X_KINDS;
 
   /* ---------- 방문자 화면: 발행된 내용 ---------- */
   C.ready = window.Board ? Board.load().then(function(d){ if(d) apply(obj(d.pages)[page]); return d; }) : Promise.resolve(null);

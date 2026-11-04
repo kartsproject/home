@@ -786,3 +786,28 @@ img.ph-none,img[data-photo]{background:#F4F2EC}
   .rc-lead-r{justify-content:flex-end}
   .p1-sec + .rc-cards{margin-top:44px}
 }
+
+/* ---------- 페이지 직접 편집으로 더한 구역 · 문단 (WBS 18.7, content.js) ----------
+   모양은 사이트에 있는 것(.p1-sec 제목 칸 + 내용, .ab-dl 표, .cp-cards 카드, .p1-st 단계)을 그대로 쓰고 모자란 것만 더한다 */
+.x-tx p{font-size:17px;line-height:1.85;color:var(--gray);letter-spacing:-.02em}
+.x-tx p + p{margin-top:12px}
+.x-tx p b{color:var(--ink)}
+.x-tx p:empty{display:none}
+.x-ph{margin:0 0 28px}
+.x-ph img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#F4F2EC}
+.x-sec .p1-ld:empty{display:none}
+.x-sec .cp-card h3{margin-top:0}
+.x-sec .p1-st{--gap:24px}
+.x-band{padding:110px 0 20px}
+.x-band .p1-sec{margin-top:0}
+@media(max-width:1100px){
+  .x-sec .cp-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .x-sec .p1-st{grid-template-columns:minmax(0,1fr);gap:30px;padding-top:0}
+  .x-sec .p1-st > li::before,.x-sec .p1-st > li::after{content:none}
+  .x-band{padding-top:80px}
+}
+@media(max-width:768px){
+  .x-sec .cp-cards{grid-template-columns:1fr}
+  .x-tx p{font-size:16px}
+  .x-band{padding-top:64px}
+}

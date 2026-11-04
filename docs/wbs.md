@@ -327,6 +327,8 @@
 | 18.4 | 관문 `savePage` · 「페이지」 탭 · 발행 `pages` · 복제 항목 사진 자리(`S-…-x4자`) 만들기 | `apps-script/Pages.js` · Code.js · Posts.js · Photos.js · Publish.js · Setup.js | 완료 (관문 흉내 시험) — main 반영 시 자동 배포 |
 | 18.5 | 관문 주소를 `assets/js/gateway.js` 한 곳으로, 자르기 창을 `assets/js/cropper.js`로 나눠 관리자 페이지와 함께 씀 | gateway.js · cropper.js · admin.js · `.github/workflows/gateway.yml` · `docs/setup-new-account.md` | 완료 |
 | 18.6 | 실제 사이트에서 운영진 확인 (글 하나 고쳐 저장 → 1~2분 뒤 방문자 화면) | — | 사용자 확인 대기 |
+| 18.7 | 문단 · 구역 더하기 — 문단을 누르면 [아래에 문단 추가] · [문단 빼기], 구역 사이 [+ 여기에 구역 추가]로 틀 5가지(제목 + 글 · 제목 + 사진 + 글 · 제목 + 표 · 제목 + 카드 · 제목 + 단계)를 골라 더하고 [위로] [아래로] [구역 삭제]. 구역 자리 `data-sec`(하위 페이지 탭 칸의 큰 묶음, 메인은 표지 밑 구역 — 34곳) | annotate-edit.py · content.js · editor.js · editor.css · common.css · `apps-script/Pages.js` · Photos.js | 완료 (2026-11-04 관문 흉내 · 가짜 관문 1440 · 390) |
+| 18.8 | 떠 있는 단추가 마우스를 옮기는 사이 사라지던 문제 — 빈 곳으로 나가도 0.9초 기다린 뒤 숨김, 단추 위에서는 숨기지 않음 | editor.js | 완료 |
 
 ---
 
