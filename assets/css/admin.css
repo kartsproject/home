@@ -15,6 +15,9 @@ body.admin{background:#F4F5F3;font-size:16px;min-height:100vh}
 .mg-user{display:flex;align-items:center;gap:18px;font-size:14px}
 .mg-user a{opacity:.85}
 .mg-user a:hover{opacity:1;text-decoration:underline}
+.mg-user a.mg-edit{opacity:1;background:var(--yel,#FFD84D);color:#111;padding:6px 14px;font-weight:700}   /* 페이지 직접 편집 (WBS 18) */
+.mg-user a.mg-edit:hover{text-decoration:none;filter:brightness(.95)}
+@media(max-width:640px){.mg-user{flex-wrap:wrap;gap:10px}}
 .mg-user button{background:none;border:1px solid rgba(255,255,255,.5);color:#fff;padding:6px 14px;cursor:pointer;font-size:13.5px}
 
 /* 사이트 반영 상태 */

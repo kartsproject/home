@@ -1,0 +1,567 @@
+/* ============================================================
+   2026 K예술영재 프로젝트 — editor.js
+   페이지 직접 편집 (WBS 18, 2026-11-04). 사이트 화면 위에서 글자 · 목록 항목 · 사진을 고친다.
+   content.js가 ?edit=1(또는 이 탭에서 편집을 켠 뒤)일 때만 부른다. 방문자 화면에는 이 파일이 오지 않는다.
+     글자     눌러서 바로 고친다. 고르고 [굵게] · [형광], [원래대로]는 HTML 처음 글로. 모아서 아래 [저장]
+     목록     항목 위 단추로 앞으로 · 뒤로 · 복제 · 삭제 (저장할 때 함께)
+     사진     사진 위 단추로 바꾸기(자르기 창) · 자르기 · 빼기 — 누르면 바로 저장된다(관리자 페이지 「사이트 사진」 · 「표지 사진」과 같은 칸)
+   ▣ 저장할 수 있는지는 관문이 요청마다 토큰으로 확인한다. 토큰은 sessionStorage(관리자 페이지와 같은 칸), 기기ID만 localStorage.
+   ▣ 운영진이 쓴 글은 textContent · DOM으로만 다룬다(innerHTML 없음 — CLAUDE.md 보안 5). 붙여 넣기는 글자만.
+   ============================================================ */
+(function(){
+  var C = window.Content, GATEWAY = window.HP_GATEWAY;
+  if(!C || !GATEWAY || !window.Board) return;
+  var K = { token:'hp_admin_token', exp:'hp_admin_exp', device:'hp_admin_device', edit:'hp_edit' };
+  var PAGE_NAMES = { index:'메인', about:'사업소개', recruit:'모집 및 선발', programs:'워크숍', mentoring:'심화 멘토링', camp:'겨울캠프', news:'소식' };
+  var E = { token:null, exp:0, data:null, base:'', photos:{}, local:{}, saving:false, lastActive:Date.now(), heroSlot:null };
+
+  /* ---------- 작은 도구 ---------- */
+  function ss(k, v){ try{ if(v === undefined) return sessionStorage.getItem(k); if(v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); }catch(e){ return null; } }
+  function ls(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } }
+  function deviceId(){
+    var id = ls(K.device);
+    if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(16).slice(2)); ls(K.device, id); }
+    return id || 'no-storage';
+  }
+  function h(tag, attrs, kids){
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function(k){
+      var v = attrs[k];
+      if(v == null || v === false) return;
+      if(k === 'class') e.className = v;
+      else if(k === 'text') e.textContent = v;
+      else if(k.indexOf('on') === 0) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    [].concat(kids == null ? [] : kids).forEach(function(c){
+      if(c == null || c === false) return;
+      e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return e;
+  }
+  // 단추를 눌러도 글자 칸의 커서 · 고른 글이 풀리지 않게
+  function btn(text, onclick, cls, title){
+    return h('button', { type:'button', class:'ed-b' + (cls ? ' ' + cls : ''), text:text, title:title || null,
+      onmousedown:function(ev){ ev.preventDefault(); }, onclick:function(ev){ ev.preventDefault(); ev.stopPropagation(); onclick(ev); } });
+  }
+
+  var ui = h('div', { class:'ed-ui' });
+  var toastEl = h('div', { class:'ed-toast', role:'status' }), toastTimer;
+  function toast(msg, isErr){
+    toastEl.textContent = msg; toastEl.className = 'ed-toast on' + (isErr ? ' err' : '');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.className = 'ed-toast'; }, isErr ? 6000 : 3500);
+  }
+  var busyEl = h('div', { class:'ed-busy', hidden:true }, [h('div', null, [h('i'), h('p')])]);
+  function busy(msg){ busyEl.querySelector('p').textContent = msg || ''; busyEl.hidden = !msg; }
+
+  var ERRORS = {
+    AUTH_INVALID:'접근코드가 맞지 않습니다.',
+    AUTH_EXPIRED:'사용기한이 지난 접근코드입니다.',
+    AUTH_LOCKED:'로그인 실패가 많아 잠겼습니다. 10분 뒤 다시 시도해 주세요.',
+    INVALID_INPUT:'저장할 수 없는 내용이 있습니다. 글이 너무 길지 않은지(한 칸 3,000자) 확인해 주세요.',
+    FILE_REJECTED:'올릴 수 없는 파일입니다. 형식과 크기를 확인해 주세요.',
+    NOT_FOUND:'사진 자리를 찾을 수 없습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
+    BUSY:'다른 저장이 진행 중입니다. 잠시 뒤 다시 눌러 주세요.',
+    NETWORK:'인터넷 연결을 확인해 주세요.',
+    TIMEOUT:'응답이 너무 늦습니다. 잠시 뒤 다시 시도해 주세요.',
+    SERVER_ERROR:'처리 중 오류가 났습니다. 잠시 뒤 다시 시도해 주세요.'
+  };
+  function errMsg(e){ return ERRORS[e && e.code] || ERRORS.SERVER_ERROR; }
+
+  /* ---------- 관문 호출 (admin.js와 같은 방식) ---------- */
+  function GatewayError(code){ this.code = code; }
+  function call(body, timeoutMs){
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var timer = ctrl && setTimeout(function(){ ctrl.abort(); }, timeoutMs || 60000);
+    return fetch(GATEWAY, {
+      method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body:JSON.stringify(body), signal:ctrl && ctrl.signal
+    }).catch(function(e){
+      throw new GatewayError(e && e.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK');
+    }).then(function(r){
+      return r.json().catch(function(){ throw new GatewayError('SERVER_ERROR'); });
+    }).then(function(j){
+      clearTimeout(timer);
+      if(!j.ok) throw new GatewayError(j.error || 'SERVER_ERROR');
+      return j.data;
+    }, function(e){ clearTimeout(timer); throw e; });
+  }
+  function api(action, extra, timeoutMs){
+    var go = function(){ return call(Object.assign({ action:action, token:E.token }, extra), timeoutMs); };
+    if(!E.token || Date.now() > E.exp) return relogin().then(go);
+    return go().catch(function(e){
+      if(e.code === 'TOKEN_EXPIRED' || e.code === 'TOKEN_INVALID') return relogin().then(go);
+      throw e;
+    });
+  }
+
+  /* ---------- 로그인 (관리자 페이지와 같은 접근코드 · 같은 토큰 칸) ---------- */
+  var waiters = [];
+  var codeIn = h('input', { type:'password', autocomplete:'current-password', 'aria-label':'접근코드' });
+  var loginErr = h('p', { class:'ed-err' });
+  var loginSub = h('p', { class:'ed-hint', text:'운영진 접근코드를 입력하면 이 화면에서 바로 고칠 수 있습니다.' });
+  var loginBtn = h('button', { type:'submit', class:'ed-b pri', text:'로그인' });
+  var loginBox = h('div', { class:'ed-modal', hidden:true, role:'dialog', 'aria-label':'편집 로그인' }, [
+    h('form', { class:'ed-login', onsubmit:function(ev){
+      ev.preventDefault();
+      var code = codeIn.value.trim();
+      if(!code){ loginErr.textContent = '접근코드를 입력해 주세요.'; return; }
+      loginBtn.disabled = true; loginErr.textContent = '';
+      call({ action:'auth', code:code, name:'운영자', deviceId:deviceId(), requestId:Date.now() + '-' + Math.random().toString(16).slice(2) }, 30000)
+        .then(function(d){
+          setSession(d);
+          loginBox.hidden = true;
+          var w = waiters; waiters = [];
+          w.forEach(function(fn){ fn(); });
+        }, function(e){ loginErr.textContent = errMsg(e); })
+        .then(function(){ loginBtn.disabled = false; });
+    } }, [
+      h('h2', { text:'페이지 편집' }), loginSub, codeIn, loginErr,
+      h('div', { class:'acts' }, [h('button', { type:'button', class:'ed-b', text:'편집 그만두기', onclick:quit }), loginBtn])
+    ])
+  ]);
+  function setSession(d){ E.token = d.token; E.exp = d.expiresAt; ss(K.token, d.token); ss(K.exp, String(d.expiresAt)); }
+  function relogin(){
+    return new Promise(function(resolve){
+      waiters.push(resolve);
+      if(loginBox.hidden){
+        if(E.data) loginSub.textContent = '로그인 시간이 지났습니다. 다시 로그인하면 하던 일을 이어서 합니다.';
+        codeIn.value = ''; loginErr.textContent = ''; loginBox.hidden = false; codeIn.focus();
+      }
+    });
+  }
+  ['input','click','keydown'].forEach(function(t){ document.addEventListener(t, function(){ E.lastActive = Date.now(); }, true); });
+  setInterval(function(){   // 손대고 있으면 만료 30분 전부터 토큰을 미리 연장
+    if(!E.token || Date.now() - E.lastActive > 15*60*1000 || E.exp - Date.now() > 30*60*1000) return;
+    call({ action:'ping', token:E.token }, 30000).then(setSession, function(){});
+  }, 5*60*1000);
+
+  /* ---------- 아래 막대 ---------- */
+  var saveBtn = btn('저장', save, 'pri');
+  var stateEl = h('span', { class:'ed-state', text:'불러오는 중…' });
+  var bar = h('div', { class:'ed-bar', role:'region', 'aria-label':'페이지 편집' }, [
+    h('b', { text:'편집 중 · ' + (PAGE_NAMES[C.page] || C.page) }),
+    stateEl,
+    h('span', { class:'sp' }),
+    btn('도움말', help),
+    h('a', { class:'ed-b', href:'admin.html', text:'관리자 페이지' }),
+    btn('편집 끝내기', quit),
+    saveBtn
+  ]);
+  function help(){
+    window.alert([
+      '글자: 고칠 글자를 눌러 바로 고칩니다. 글자를 끌어 고른 뒤 위에 뜨는 [굵게] · [형광]을 누르면 서식이 바뀝니다. [원래대로]는 처음 글로 되돌립니다.',
+      '줄 나누기: Enter. 붙여 넣으면 글자만 들어갑니다.',
+      '목록: 카드 · 단계 · 표 줄 위에 마우스를 올리면 [앞으로] [뒤로] [복제] [삭제] 단추가 나옵니다.',
+      '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(1~2분 뒤 보임).',
+      '사진: 사진 위에 마우스를 올리면 [사진 바꾸기] [자르기] [빼기]가 나옵니다. 사진은 누르는 즉시 저장됩니다.',
+      '머리 · 바닥 메뉴와 공지 · 갤러리 · 모집요강 파일은 관리자 페이지에서 고칩니다.'
+    ].join('\n\n'));
+  }
+  function quit(){
+    if(dirty() && !window.confirm('저장하지 않은 고침이 있습니다. 편집을 끝내면 사라집니다. 끝낼까요?')) return;
+    E.base = JSON.stringify(C.collect());   // 아래 beforeunload가 다시 묻지 않게
+    ss(K.edit, null);
+    location.href = location.pathname + location.hash;
+  }
+  window.addEventListener('beforeunload', function(ev){
+    if(!dirty()) return;
+    ev.preventDefault(); ev.returnValue = '';
+  });
+
+  /* ---------- 바뀐 것 · 저장 ---------- */
+  function dirty(){ return !!E.data && JSON.stringify(C.collect()) !== E.base; }
+  var stateTimer;
+  function changed(){
+    clearTimeout(stateTimer);
+    stateTimer = setTimeout(function(){
+      var d = dirty();
+      saveBtn.disabled = !d || E.saving;
+      stateEl.textContent = d ? '저장하지 않은 고침이 있습니다' : '모두 저장됨';
+      stateEl.classList.toggle('warn', d);
+    }, 200);
+  }
+  function save(){
+    if(E.saving || !E.data) return;
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    var content = C.collect(), json = JSON.stringify(content);
+    if(json.length > 45000) return toast('이 페이지에 고친 글이 너무 많습니다. 담당 개발자에게 알려 주세요.', true);
+    E.saving = true; saveBtn.disabled = true;
+    busy('저장하고 사이트에 반영하는 중…\n10초 정도 걸립니다.');
+    api('savePage', { page:C.page, content:content }, 120000).then(function(d){
+      E.base = json;
+      toast(d.published ? '저장했습니다. 1~2분 뒤 방문자 화면에 보입니다.' : '저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !d.published);
+    }, function(e){ toast(errMsg(e), true); }).then(function(){ E.saving = false; busy(null); changed(); });
+  }
+
+  /* ---------- 글자 칸 ---------- */
+  function setEditable(el, plain){
+    if(plain){
+      try{ el.contentEditable = 'plaintext-only'; }catch(e){}
+      if(el.contentEditable !== 'plaintext-only') el.contentEditable = 'true';
+    }else el.contentEditable = 'true';
+    el.spellcheck = false;
+    el.setAttribute('data-ed', plain ? 'text' : 'rich');
+  }
+  // 글자만 고치는 칸: 그 글을 .ed-t로 감싸 그것만 고칠 수 있게 한다(옆의 그림 · 작은 칸은 그대로)
+  function wrapText(el){
+    var n = C.textNode(el);
+    if(!n || n.nodeType === 1) return n;
+    var m = n.data.match(/^(\s*)([\s\S]*?)(\s*)$/), sp = h('span', { class:'ed-t', text:m[2].replace(/​/g, '') }), par = n.parentNode;
+    if(m[1]) par.insertBefore(document.createTextNode(m[1]), n);
+    par.insertBefore(sp, n);
+    if(m[3]) par.insertBefore(document.createTextNode(m[3]), n);
+    par.removeChild(n);
+    return sp;
+  }
+  function prepare(el){
+    if(el.hasAttribute('data-et')){ var sp = wrapText(el); if(sp) setEditable(sp, true); return; }
+    C.set(el, C.read(el));   // 문장 묶음 · 붙임 공백(줄바꿈 단위, common.js)을 풀어 고치기 쉽게
+    setEditable(el, false);
+  }
+  function editRoot(node){
+    var el = node && (node.nodeType === 1 ? node : node.parentNode);
+    return el && el.closest ? el.closest('[data-ed]') : null;
+  }
+  // 고친 글자 칸이 속한 칸(data-e · data-ei가 붙은 요소)
+  function cellOf(ed){ return ed.classList.contains('ed-t') ? ed.parentNode.closest('[data-e],[data-ei]') : ed; }
+  function original(cell){
+    if(cell.hasAttribute('data-e')) return C.orig[cell.getAttribute('data-e')];
+    var item = cell.closest('[data-s]'), box = item && item.parentNode, L = box && C.lists[box.getAttribute('data-list')];
+    var tpl = L && L.tpl[Number(item.getAttribute('data-s'))], o = tpl && C.find(tpl, cell.getAttribute('data-ei'));
+    return o ? C.read(o) : null;
+  }
+
+  // 서식 단추: 고른 글을 b / em.mark로 감싸거나, 이미 그 안이면 풀어 준다
+  function isFmt(n, kind){ return n.nodeType === 1 && (kind === 'b' ? /^(B|STRONG)$/.test(n.nodeName) : n.nodeName === 'EM' && n.classList.contains('mark')); }
+  function unwrap(n){ var p = n.parentNode; while(n.firstChild) p.insertBefore(n.firstChild, n); p.removeChild(n); }
+  function format(kind){
+    var sel = window.getSelection(), ed = sel.rangeCount && editRoot(sel.anchorNode);
+    if(!ed || ed.getAttribute('data-ed') !== 'rich'){ toast('글자 칸 안에서 글자를 먼저 끌어서 골라 주세요.', true); return; }
+    var r = sel.getRangeAt(0);
+    for(var n = r.commonAncestorContainer; n && n !== ed; n = n.parentNode){
+      if(isFmt(n, kind)){ unwrap(n); ed.normalize(); changed(); return; }
+    }
+    if(r.collapsed){ toast('바꿀 글자를 먼저 끌어서 골라 주세요.', true); return; }
+    if(!ed.contains(r.endContainer)) return;
+    var frag = r.extractContents();
+    [].slice.call(frag.querySelectorAll('*')).forEach(function(x){ if(isFmt(x, kind)) unwrap(x); });
+    var w = kind === 'b' ? h('b') : h('em', { class:'mark' });
+    w.appendChild(frag);
+    r.insertNode(w);
+    sel.removeAllRanges();
+    var nr = document.createRange(); nr.selectNodeContents(w); sel.addRange(nr);
+    changed();
+  }
+  function revert(){
+    var ed = cur.ed; if(!ed) return;
+    var cell = cellOf(ed), v = cell && original(cell);
+    if(v == null) return;
+    C.set(cell, v);
+    if(cell.hasAttribute('data-et')) prepare(cell);
+    changed();
+    place();
+  }
+
+  var fmtBar = h('div', { class:'ed-tool ed-fmt', hidden:true }, [
+    btn('굵게', function(){ format('b'); }, 'fb', '고른 글자를 굵게 (다시 누르면 풀림)'),
+    btn('형광', function(){ format('mark'); }, 'fm', '고른 글자에 형광 밑줄 (다시 누르면 풀림)'),
+    btn('원래대로', revert, null, '이 칸을 처음 글로 되돌립니다')
+  ]);
+  var cur = { ed:null, item:null, photo:null };
+
+  document.addEventListener('focusin', function(ev){
+    var ed = editRoot(ev.target);
+    cur.ed = ed && ed.isContentEditable ? ed : null;
+    place();
+  });
+  document.addEventListener('focusout', function(){
+    setTimeout(function(){ if(!editRoot(document.activeElement)){ cur.ed = null; place(); } }, 0);
+  });
+  document.addEventListener('input', function(ev){ if(editRoot(ev.target)) changed(); });
+  document.addEventListener('keydown', function(ev){
+    var ed = editRoot(ev.target);
+    if(!ed) return;
+    if(ev.key === 'Escape'){ ed.blur(); return; }
+    if(ev.key === 'Enter'){
+      ev.preventDefault();
+      if(ed.getAttribute('data-ed') === 'text') return ed.blur();   // 글자만 고치는 칸은 한 줄
+      if(!document.execCommand('insertLineBreak')){
+        var sel = window.getSelection(), r = sel.getRangeAt(0), br = document.createElement('br');
+        r.deleteContents(); r.insertNode(br); r.setStartAfter(br); r.collapse(true); sel.removeAllRanges(); sel.addRange(r);
+      }
+      changed();
+    }
+  });
+  document.addEventListener('paste', function(ev){
+    var ed = editRoot(ev.target);
+    if(!ed) return;
+    ev.preventDefault();
+    var t = (ev.clipboardData || window.clipboardData).getData('text/plain') || '';
+    t = t.replace(/\r\n?/g, '\n');
+    if(ed.getAttribute('data-ed') === 'text') t = t.replace(/\s*\n\s*/g, ' ');
+    if(!document.execCommand('insertText', false, t)){
+      var sel = window.getSelection(), r = sel.getRangeAt(0);
+      r.deleteContents(); r.insertNode(document.createTextNode(t)); r.collapse(false);
+    }
+    changed();
+  });
+  document.addEventListener('drop', function(ev){ if(editRoot(ev.target)) ev.preventDefault(); });
+
+  // 편집 중에는 본문의 링크로 넘어가지 않는다(글자를 누르면 고치기). 머리 · 바닥 메뉴와 탭(#)은 그대로
+  document.addEventListener('click', function(ev){
+    var a = ev.target.closest && ev.target.closest('a[href]');
+    if(!a || a.closest('#header,#footer,#allmenu,.ed-ui')) return;
+    if(/^#/.test(a.getAttribute('href'))) return;
+    ev.preventDefault();
+  }, true);
+
+  /* ---------- 목록 항목 ---------- */
+  function listOf(item){ var box = item.parentNode; return C.lists[box.getAttribute('data-list')]; }
+  function rand4(){ var s = ''; while(s.length < 4) s += 'abcdefghijkmnpqrstuvwxyz23456789'.charAt(Math.floor(Math.random() * 32)); return s; }
+  // 복제한 항목의 새 사진 자리: HTML 처음 항목의 자리 + -x네 글자 (관문 createPhotoSlot_가 받아 준다)
+  function newSlot(item){
+    var L = listOf(item), tpl = L && L.tpl[Number(item.getAttribute('data-s'))], ph = tpl && C.photoOf(tpl);
+    return ph ? ph.getAttribute('data-photo') + '-x' + rand4() : null;
+  }
+  function move(dir){
+    var it = cur.item; if(!it) return;
+    var to = dir < 0 ? it.previousElementSibling : it.nextElementSibling;
+    if(!to){ toast(dir < 0 ? '맨 앞 항목입니다.' : '맨 뒤 항목입니다.'); return; }
+    if(dir < 0) it.parentNode.insertBefore(it, to); else it.parentNode.insertBefore(to, it);
+    changed(); place();
+  }
+  function duplicate(){
+    var it = cur.item; if(!it) return;
+    var L = listOf(it);
+    if(it.parentNode.children.length >= 60) return toast('항목은 60개까지입니다.', true);
+    var c = it.cloneNode(true), ph = C.photoOf(c), slot = newSlot(it);
+    if(ph && slot){ ph.setAttribute('data-photo', slot); window.Photos && Photos.clear(ph); }
+    it.parentNode.insertBefore(c, it.nextSibling);
+    C.cols(L);
+    changed();
+    toast(ph ? '복제했습니다. 새 항목의 사진은 비어 있습니다 — 사진 위 [사진 넣기]로 넣어 주세요.' : '복제했습니다. 글을 고친 뒤 [저장]을 눌러 주세요.');
+    setItem(c);
+  }
+  function removeItem(){
+    var it = cur.item; if(!it) return;
+    var L = listOf(it);
+    if(it.parentNode.children.length < 2) return toast('마지막 항목은 지울 수 없습니다. 글을 고쳐 써 주세요.', true);
+    if(!window.confirm('이 항목을 지울까요?\n(저장하기 전이면 [편집 끝내기]로 버릴 수 있습니다)')) return;
+    it.parentNode.removeChild(it);
+    C.cols(L);
+    setItem(null); changed();
+  }
+  var itemBar = h('div', { class:'ed-tool ed-item', hidden:true }, [
+    btn('◀ 앞으로', function(){ move(-1); }), btn('뒤로 ▶', function(){ move(1); }),
+    btn('복제', duplicate), btn('삭제', removeItem, 'warn')
+  ]);
+  function setItem(it){ if(cur.item === it) return; cur.item = it; place(); }
+
+  /* ---------- 사진 ---------- */
+  var heroEl = document.getElementById('hero');
+  var fileIn = h('input', { type:'file', accept:'image/jpeg,image/png,image/webp', hidden:true });
+  var filePick = null;
+  fileIn.addEventListener('change', function(){ var f = fileIn.files && fileIn.files[0]; fileIn.value = ''; if(f && filePick) filePick(f); });
+
+  function photoSide(){ return (E.data && E.data.limits && E.data.limits.heroPhotoSide) || 2400; }
+  function blobToBase64(blob){
+    return new Promise(function(resolve, reject){
+      var fr = new FileReader();
+      fr.onload = function(){ resolve(String(fr.result).split(',')[1]); };
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  }
+  // 대상: { kind:'photo', slot, el } 또는 { kind:'hero', slot:'music' }
+  function target(){
+    if(cur.photo === heroEl) return E.heroSlot ? { kind:'hero', slot:E.heroSlot } : null;
+    return cur.photo ? { kind:'photo', slot:cur.photo.getAttribute('data-photo'), el:cur.photo } : null;
+  }
+  function ratioOf(t){
+    var el = t.kind === 'hero' ? heroEl : t.el, r = el.getBoundingClientRect();
+    return r.width && r.height ? r.width / r.height : 16 / 9;
+  }
+  function currentPhoto(t){
+    if(t.kind === 'hero'){ var hs = heroItem(t.slot); return hs && hs.photos[0]; }
+    return E.photos[t.slot];
+  }
+  function upload(t, r, name){
+    busy('사진을 올리고 사이트에 반영하는 중…\n20초 정도 걸립니다.');
+    return blobToBase64(r.blob).then(function(b64){
+      return api('upload', { kind:'photo', name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
+    }).then(function(d){
+      return saveSlot(t, [d.attachmentId]).then(function(res){
+        E.local[t.kind + ':' + t.slot] = r.preview;
+        var ph = { fileId:d.fileId, w:r.w, h:r.h };
+        if(t.kind === 'hero'){ var hs = heroItem(t.slot); if(hs){ hs.photos = [ph]; hs.cutouts = []; } drawHero(); }
+        else{ E.photos[t.slot] = ph; showPhoto(t.slot, ph, r.preview); }
+        toast(res.published ? '사진을 바꿨습니다. 1~2분 뒤 방문자 화면에 보입니다.' : '사진은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
+      });
+    }).catch(function(e){ toast(e && e.code ? errMsg(e) : '이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.', true); })
+      .then(function(){ busy(null); });
+  }
+  function saveSlot(t, photos){
+    if(t.kind === 'hero') return api('save', { board:'hero', id:'H-' + t.slot, post:{ depth:false, center:null }, photos:photos, cutouts:[], files:[] }, 120000);
+    return api('save', { board:'photo', id:'S-' + t.slot, post:{ pos:null }, photos:photos, files:[] }, 120000);
+  }
+  function showPhoto(slot, ph, preview){
+    [].forEach.call(document.querySelectorAll('[data-photo="' + slot + '"]'), function(el){
+      Photos.apply(el, ph);
+      if(!preview) return;
+      var img = el.tagName === 'IMG' ? el : el.querySelector('img');
+      if(img) img.src = preview; else el.style.setProperty('--photo', 'url("' + preview + '")');
+    });
+  }
+  function replacePhoto(){
+    var t = target(); if(!t) return;
+    filePick = function(file){
+      var url = URL.createObjectURL(file);
+      Cropper.crop(url, { ratio:ratioOf(t), maxSide:photoSide(), skip:true, onError:function(m){ toast(m, true); } }).then(function(r){
+        if(r === null){ URL.revokeObjectURL(url); return; }
+        (r === 'skip' ? Cropper.shrink(file, photoSide()) : Promise.resolve(r)).then(function(x){ upload(t, x, file.name); });
+      }, function(){ toast('이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.', true); });
+    };
+    fileIn.click();
+  }
+  function recrop(){
+    var t = target(); if(!t) return;
+    var local = E.local[t.kind + ':' + t.slot], ph = currentPhoto(t);
+    if(!local && !(ph && ph.fileId)) return toast('자를 사진이 없습니다. [사진 넣기]로 올려 주세요.', true);
+    var src = local || Board.photoUrl(ph.fileId, photoSide());
+    Cropper.crop(src, { ratio:ratioOf(t), maxSide:photoSide(), remote:!local, onError:function(m){ toast(m, true); } }).then(function(r){
+      if(r && r !== 'skip') upload(t, r, '사진');
+    }, function(){ toast('이 사진은 여기서 자를 수 없습니다. 원본 파일을 [사진 바꾸기]로 다시 올리면서 잘라 주세요.', true); });
+  }
+  function removePhoto(){
+    var t = target(); if(!t) return;
+    if(!currentPhoto(t) && !E.local[t.kind + ':' + t.slot]) return toast('뺄 사진이 없습니다.');
+    var msg = t.kind === 'hero'
+      ? '「' + heroName(t.slot) + '」 표지 사진을 뺄까요? 표지에서 그 분야 칸이 빠집니다(동영상 · 2.5D도 함께 빠짐).'
+      : '이 사진을 뺄까요? 사이트에서 이 자리는 비어 보입니다.';
+    if(!window.confirm(msg)) return;
+    busy('사진을 빼고 사이트에 반영하는 중…');
+    saveSlot(t, []).then(function(res){
+      delete E.local[t.kind + ':' + t.slot];
+      if(t.kind === 'hero'){ var hs = heroItem(t.slot); if(hs){ hs.photos = []; hs.cutouts = []; hs.videos = []; } drawHero(); }
+      else{
+        delete E.photos[t.slot];
+        [].forEach.call(document.querySelectorAll('[data-photo="' + t.slot + '"]'), function(el){ Photos.clear(el); });
+      }
+      toast(res.published ? '사진을 뺐습니다.' : '뺐지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
+    }, function(e){ toast(errMsg(e), true); }).then(function(){ busy(null); place(); });
+  }
+
+  // 표지(메인): 분야를 고른 뒤 그 분야 사진을 바꾼다
+  function heroItem(k){ return E.data && (E.data.hero || []).filter(function(x){ return x.slot === k; })[0]; }
+  function heroName(k){ return (window.__hero && __hero.names[k]) || k; }
+  function drawHero(){
+    if(!window.__hero) return;
+    var custom = {}, videos = {};
+    (E.data.hero || []).forEach(function(x){
+      if(x.photos && x.photos[0]) custom[x.slot] = { fileId:x.photos[0].fileId, w:x.photos[0].w, h:x.photos[0].h };
+      if(custom[x.slot] && x.videos && x.videos[0] && x.videos[0].src) videos[x.slot] = { src:x.videos[0].src };
+    });
+    __hero.rebuild(custom, videos);
+    if(E.heroSlot) __hero.show(E.heroSlot);
+    drawHeroChips();
+  }
+  var heroChips = h('span', { class:'chips' });
+  function drawHeroChips(){
+    heroChips.textContent = '';
+    if(!window.__hero) return;
+    if(!E.heroSlot) E.heroSlot = __hero.current() || __hero.slots[0];
+    __hero.slots.forEach(function(k){
+      var hs = heroItem(k), has = !!(hs && hs.photos && hs.photos.length);
+      heroChips.appendChild(btn(heroName(k) + (has ? '' : ' (없음)'), function(){ E.heroSlot = k; __hero.show(k); drawHeroChips(); }, k === E.heroSlot ? 'on' : null));
+    });
+  }
+  var photoLabel = h('b', { class:'lb' });
+  var photoBar = h('div', { class:'ed-tool ed-photo', hidden:true }, [
+    photoLabel, heroChips,
+    btn('사진 바꾸기', replacePhoto, 'pri'), btn('자르기', recrop), btn('빼기', removePhoto, 'warn')
+  ]);
+  function setPhoto(el){ if(cur.photo === el) return; cur.photo = el; place(); }
+
+  /* ---------- 떠 있는 단추 자리 ---------- */
+  function vis(r){ return r.bottom > 0 && r.top < window.innerHeight && r.width > 0; }
+  function place(){
+    var pr = cur.ed && cur.ed.getBoundingClientRect();
+    fmtBar.hidden = !(pr && vis(pr));
+    if(!fmtBar.hidden){
+      var rich = cur.ed.getAttribute('data-ed') === 'rich';
+      fmtBar.querySelector('.fb').hidden = !rich; fmtBar.querySelector('.fm').hidden = !rich;
+      fmtBar.style.left = Math.max(6, Math.min(pr.left, window.innerWidth - fmtBar.offsetWidth - 6)) + 'px';
+      fmtBar.style.top = Math.max(6, pr.top - fmtBar.offsetHeight - 6) + 'px';
+    }
+    var ir = cur.item && document.body.contains(cur.item) && cur.item.getBoundingClientRect();
+    itemBar.hidden = !(ir && vis(ir));
+    if(!itemBar.hidden){
+      // 항목 바로 위 오른쪽(자리가 없으면 항목 안 위쪽) — 사진 단추(사진 아래쪽)와 겹치지 않게
+      var ih = itemBar.offsetHeight, above = ir.top - ih - 3;
+      itemBar.style.left = Math.max(6, Math.min(ir.right - itemBar.offsetWidth, window.innerWidth - itemBar.offsetWidth - 6)) + 'px';
+      itemBar.style.top = (above > 6 ? above : Math.max(6, ir.top + 4)) + 'px';
+    }
+    var el = cur.photo && document.body.contains(cur.photo) ? cur.photo : null, rr = el && el.getBoundingClientRect();
+    photoBar.hidden = !(rr && vis(rr));
+    if(!photoBar.hidden){
+      var isHero = el === heroEl, has = isHero ? true : !!(E.photos[el.getAttribute('data-photo')] || E.local['photo:' + el.getAttribute('data-photo')]);
+      photoLabel.textContent = isHero ? '표지 사진' : '사진';
+      heroChips.hidden = !isHero;
+      photoBar.querySelector('.pri').textContent = has ? '사진 바꾸기' : '사진 넣기';
+      // 사진 안 왼쪽 아래(화면 아래 막대 위로). 표지는 분야 목록 · 로고 위로 조금 더 올린다
+      var top = Math.min(rr.bottom, window.innerHeight - 70) - photoBar.offsetHeight - (isHero ? 90 : 8);
+      top = Math.max(top, rr.top + 8);
+      photoBar.style.left = Math.max(6, Math.min(rr.left + 8, window.innerWidth - photoBar.offsetWidth - 6)) + 'px';
+      photoBar.style.top = Math.max(6, top) + 'px';
+    }
+  }
+  var raf = 0;
+  function later(){ if(!raf) raf = requestAnimationFrame(function(){ raf = 0; place(); }); }
+  window.addEventListener('scroll', later, true);
+  window.addEventListener('resize', later);
+
+  // 마우스(휴대폰은 누른 곳)가 있는 항목 · 사진. 떠 있는 단추 위에서는 그대로 둔다
+  function hover(ev){
+    var t = ev.target;
+    if(!t.closest || t.closest('.ed-ui')) return;
+    if(t.closest('#header,#footer,#allmenu')){ setItem(null); setPhoto(null); return; }
+    setItem(t.closest('[data-list] > [data-s]'));
+    var ph = t.closest('[data-photo]');
+    if(!ph && heroEl && t.closest('#hero') && !t.closest('[data-ed]')) ph = heroEl;
+    setPhoto(ph);
+  }
+  document.addEventListener('pointerover', hover);
+  document.addEventListener('pointerdown', hover);
+
+  /* ---------- 시작 ---------- */
+  function start(){
+    document.documentElement.classList.add('ed-on');
+    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, bar, fileIn].forEach(function(x){ ui.appendChild(x); });
+    document.body.appendChild(ui);
+    saveBtn.disabled = true;
+
+    E.token = ss(K.token); E.exp = Number(ss(K.exp)) || 0;
+    var ready = (E.token && Date.now() < E.exp) ? Promise.resolve() : relogin();
+    ready.then(function(){ return C.ready; }).then(function(){
+      busy('편집할 내용을 불러오는 중…');
+      return api('list', {}, 60000);
+    }).then(function(d){
+      E.data = d;
+      // 관문의 최신 내용(발행 전 고침 포함)으로 다시 맞춘다
+      C.editing = true;
+      C.apply((d.pages || {})[C.page], true);
+      (d.photos || []).forEach(function(p){ if(p.photos && p.photos[0]) E.photos[p.slot] = { fileId:p.photos[0].fileId, w:p.photos[0].w, h:p.photos[0].h, pos:p.pos }; });
+      if(window.Photos) Photos.fill(E.photos, d.photoMode === 'attached');
+      if(heroEl && window.__hero) drawHero();
+      [].forEach.call(document.querySelectorAll('[data-e],[data-ei]'), prepare);
+      E.base = JSON.stringify(C.collect());
+      var meta = (d.pageMeta || {})[C.page];
+      stateEl.textContent = meta && meta.updatedAt ? '마지막 저장 ' + meta.updatedAt : '모두 저장됨';
+    }, function(e){
+      toast(errMsg(e), true);
+      stateEl.textContent = '불러오지 못했습니다 — 새로 고쳐 주세요';
+    }).then(function(){ busy(null); });
+  }
+  start();
+})();

@@ -229,14 +229,14 @@ body.menu-open #allmenu{opacity:1;pointer-events:auto}
 #tabs.yr-tabs button:hover{background:var(--teal-lt)}
 #tabs.yr-tabs button.on{background:var(--teal);color:#fff}
 #tabs.yr-tabs ~ main .panel{padding-top:44px}
-.rc-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:40px}
+.rc-cards{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:20px;margin-top:40px}
 .rc-card{border:1px solid var(--line);border-radius:16px;padding:40px 28px 36px}
 .rc-card h3{font-size:22px;font-weight:700;color:var(--teal);letter-spacing:-.03em}
 .rc-card dl{margin-top:24px}
 .rc-card dt{font-size:14px;color:var(--gray);letter-spacing:-.02em}
 .rc-card dd{margin-top:6px;font-size:17px;font-weight:700;letter-spacing:-.02em}
 .rc-card dd+dt{margin-top:22px}
-.rc-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}   /* 모집 공고 · 지원 접수 · 선발 (2026-11-04 반 배정 삭제) */
+.rc-steps{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:13px}   /* 모집 공고 · 지원 접수 · 선발 (2026-11-04 반 배정 삭제) */
 .rc-steps li{background:var(--cream);border-radius:12px;padding:30px 24px}
 .rc-steps .no{display:block;font-size:14px;font-weight:700;color:var(--coral);letter-spacing:.02em}
 .rc-steps b{display:block;margin-top:10px;font-size:19px;font-weight:700;letter-spacing:-.03em}
@@ -244,7 +244,7 @@ body.menu-open #allmenu{opacity:1;pointer-events:auto}
 .rc-wait{font-size:17px;color:var(--gray);letter-spacing:-.02em}
 
 /* 겨울캠프 — 아이콘 카드 4장 · 함께 지내는 캠프 */
-.cp-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.cp-cards{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:20px}
 .cp-card{border:1px solid var(--line);border-radius:16px;padding:32px 28px 36px}
 .cp-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:var(--teal-lt);color:var(--teal)}
 .cp-ic svg{display:block;width:22px;height:22px}
@@ -509,11 +509,11 @@ html.zv-open{overflow:hidden}
 .ab-main h3{margin-top:10px;font-size:28px;font-weight:800;letter-spacing:-.045em}
 .ab-main p{margin-top:8px;font-size:15px;color:var(--gray);letter-spacing:-.02em}
 .ab-br{width:75%;height:34px;margin-top:-18px;border:3px dashed var(--dash);border-bottom:0;border-radius:18px 18px 0 0}
-.ab-fs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;width:100%;text-align:left}
+.ab-fs{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:18px;width:100%;text-align:left}
 .ab-fs img{width:100%;height:250px;object-fit:cover}
 .ab-fs b{display:block;margin-top:14px;font-size:20px;font-weight:700;letter-spacing:-.03em}
 /* 운영 흐름 — 다섯 단계 가로, 위에 물결 점선과 단계마다 노란 점, 오른쪽 아래 되돌아가는 고리 */
-.ab-cy{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px;padding-top:56px}
+.ab-cy{display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:22px;padding-top:56px}
 .ab-cy > li{position:relative;z-index:0}
 .ab-cy > li::before{content:"";position:absolute;left:0;top:-36px;width:16px;height:16px;border-radius:50%;background:var(--yel)}
 .ab-cy > li::after{content:"";position:absolute;left:8px;top:-40px;z-index:-1;width:calc(100% + 22px);height:24px;background:var(--wave) no-repeat 0 0 / 100% 100%}
@@ -548,7 +548,7 @@ html.zv-open{overflow:hidden}
 /* ---------- 워크숍 음악 ---------- */
 .wk-lead-tx{padding-top:40px}
 /* 이렇게 배웁니다 — 사진 3장(높이 300), 위에 물결 점선 + 노란 점 */
-.wk-fw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;padding-top:40px}
+.wk-fw{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:30px;padding-top:40px}
 .wk-fw > li{position:relative;z-index:0}
 .wk-fw > li::before{content:"";position:absolute;left:0;top:-28px;width:16px;height:16px;border-radius:50%;background:var(--yel)}
 .wk-fw > li::after{content:"";position:absolute;left:8px;top:-32px;z-index:-1;width:calc(100% + 30px);height:24px;background:var(--wave) no-repeat 0 0 / 100% 100%}
@@ -694,7 +694,7 @@ html.zv-open{overflow:hidden}
 .cp-ic{background:#F4F2EC;color:var(--ink)}
 .cp-ic.hl{background:var(--yel)}
 .cp-card h3{margin-top:28px;font-size:21px;font-weight:700;letter-spacing:-.03em}
-.cp-st{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+.cp-st{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:40px}
 .cp-st li{padding-top:20px;border-top:2px solid var(--ink)}
 .cp-st h3{font-size:20px;font-weight:700;letter-spacing:-.04em}
 .cp-st p{margin-top:10px;font-size:15px;line-height:1.65;color:#333;letter-spacing:-.02em}
@@ -723,13 +723,13 @@ html.zv-open{overflow:hidden}
 
 /* ============ 분야별 수정안 (WBS 13, 2026-11-03) ============
    무용 커리큘럼 — 음악 「이렇게 배웁니다」 사진 카드(.wk-fw)의 네 칸판. 1100 이하 두 칸씩(점선 숨김), 768 이하 한 칸 */
-.wk-fw.c4{grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.wk-fw.c4{grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:24px}
 .wk-fw.c4 > li::after{width:calc(100% + 24px)}
 .wk-fw.c4 > li:last-child::after{width:calc(100% - 8px)}
 .wk-fw.c4 .wk-ph{height:240px}
 .wk-fw.c4 h3{font-size:20px;line-height:1.35}
 /* 전통예술 · 미술 — 다섯 칸판(13.9). PC 한 줄, 1100 이하 세 칸씩, 768 이하 한 칸 */
-.wk-fw.c5{grid-template-columns:repeat(5,minmax(0,1fr));gap:20px}
+.wk-fw.c5{grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:20px}
 .wk-fw.c5 > li::after{width:calc(100% + 20px)}
 .wk-fw.c5 > li:last-child::after{width:calc(100% - 8px)}
 .wk-fw.c5 .wk-ph{height:200px}

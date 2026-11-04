@@ -18,6 +18,7 @@
     <p class="mg-logo">K예술영재 홍보 사이트 <b>게시글 관리</b></p>
     <div class="mg-user" id="user" hidden>
       <span id="who"></span>
+      <a href="index.html?edit=1" class="mg-edit" title="이 창에서 사이트를 열고, 글자 · 목록 · 사진을 화면에서 바로 고칩니다">사이트에서 직접 편집 ✎</a>
       <a href="index.html" target="_blank" rel="noopener">사이트 보기 ↗</a>
       <button type="button" id="logout">로그아웃</button>
     </div>
@@ -40,7 +41,9 @@
 <div class="mg-busy" id="busy" hidden><div><i></i><p id="busyMsg"></p></div></div>
 <div class="mg-toast" id="toast" role="status"></div>
 
+<script src="assets/js/gateway.js"></script>
 <script src="assets/js/board.js"></script>
+<script src="assets/js/cropper.js"></script>
 <script src="assets/js/admin.js"></script>
 </body>
 </html>

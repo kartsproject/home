@@ -315,6 +315,21 @@
 | 17.7 | 모집 및 선발 2026 — 리드 문장 삭제 · 모집요강 단추 오른쪽 · 일정 안내 오른쪽 · 「지원 안내」를 분야 카드 위로 | recruit.html · common.css | 완료 |
 | 17.8 | 「기본 사진」 없애기 — 지금 사진(표지 4 · 사이트 사진 30)을 올린 사진(드라이브 첨부)으로 옮기고(`importSitePhotos`), 사진을 빼면 사이트는 빈자리 · 관리자는 「이미지 첨부 예정」(`photoMode: attached`) | `apps-script/ImportPhotos.js` · Publish.js · Posts.js, photos.js · main.js · board.js · admin.js · common.css | 완료 (2026-11-04 16:05 사용자 `importSitePhotos` 실행 — 표지 4 · 사진 30 첨부, photoMode attached 발행 → CSS · HTML의 기본 사진 주소 삭제. 파일 `assets/img/real/`은 남김) |
 
+### 18. 페이지 직접 편집 (2026-11-04 사용자 — 「모든 사항을 고칠 수 있도록」)
+
+관리자 페이지 [사이트에서 직접 편집] → 사이트 화면에서 글자 · 목록 항목 · 사진을 고친다 (`docs/decisions.md` 5절 「페이지 직접 편집」).
+
+| ID | 작업 | 산출물 | 상태 |
+|---|---|---|---|
+| 18.1 | 편집 열쇠 붙이기 — 글자 칸 `data-e`(글만 고치는 칸 `data-et`), 목록 `data-list` · 항목 안 칸 `data-ei` (7페이지, 글자 칸 183 · 목록 14) | `docs/tools/annotate-edit.py`, 7개 html | 완료 |
+| 18.2 | 고친 내용 넣기 — `posts.json` `pages`를 HTML 글 위에, 목록은 HTML 항목을 본떠 다시 만들기, 줄바꿈 단위 다시 맞추기(`__lb`), 칸 수에 맞춘 가로 칸(`--n`), 사진은 다시 만든 뒤 넣기 | `assets/js/content.js` · common.js · photos.js · board.js · common.css | 완료 |
+| 18.3 | 편집 화면 — 아래 막대(저장 · 끝내기 · 도움말), 글자 바로 고치기 + [굵게] [형광] [원래대로], 항목 [앞으로] [뒤로] [복제] [삭제], 사진 [사진 바꾸기 · 넣기] [자르기] [빼기], 표지 분야별 사진, 로그인 · 토큰 연장, 나가기 경고 | `assets/js/editor.js` · `assets/css/editor.css` · main.js(`__hero`) · admin.html · admin.css | 완료 (2026-11-04 가짜 관문 1440 · 390, 7페이지) |
+| 18.4 | 관문 `savePage` · 「페이지」 탭 · 발행 `pages` · 복제 항목 사진 자리(`S-…-x4자`) 만들기 | `apps-script/Pages.js` · Code.js · Posts.js · Photos.js · Publish.js · Setup.js | 완료 (관문 흉내 시험) — main 반영 시 자동 배포 |
+| 18.5 | 관문 주소를 `assets/js/gateway.js` 한 곳으로, 자르기 창을 `assets/js/cropper.js`로 나눠 관리자 페이지와 함께 씀 | gateway.js · cropper.js · admin.js · `.github/workflows/gateway.yml` · `docs/setup-new-account.md` | 완료 |
+| 18.6 | 실제 사이트에서 운영진 확인 (글 하나 고쳐 저장 → 1~2분 뒤 방문자 화면) | — | 사용자 확인 대기 |
+
+---
+
 ## 4. 진행 순서
 
 ```

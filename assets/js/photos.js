@@ -11,8 +11,7 @@
    주소에 ?photo=자리 가 있으면(관리자 페이지 「페이지에서 보기」) 그 자리로 옮겨 노란 테두리로 표시한다.
    ============================================================ */
 (function(){
-  var els = [].slice.call(document.querySelectorAll('[data-photo]'));
-  if(!els.length || !window.Board) return;
+  if(!window.Board) return;
   var m = location.search.match(/[?&]photo=([a-z0-9-]+)/), focus = m ? m[1] : null;
 
   // 보이는 크기 × 화면 배율에 맞춰 400 단위로 받는다(긴 변 2400까지 — 관리자 페이지가 올릴 때 줄이는 크기). 숨은 탭 안은 크기를 잴 수 없어 800
@@ -25,6 +24,7 @@
 
   function apply(el, p){
     var pos = p.pos ? p.pos.x + '% ' + p.pos.y + '%' : p.fileId ? '50% 50%' : null;
+    if(p.fileId) el.classList.remove('ph-none');
     if(el.tagName === 'IMG' || el.classList.contains('wk-ph')){
       var img = el.tagName === 'IMG' ? el : el.querySelector('img');
       if(!img){
@@ -59,12 +59,19 @@
     el.style.setProperty('--photo', 'none');
   }
 
-  Board.load().then(function(d){
-    var photos = (d && d.photos) || {}, attached = d && d.photoMode === 'attached';
-    els.forEach(function(el){
+  // root 안의 사진 자리를 모두 맞춘다. 자리는 이때 찾는다 — 페이지 직접 편집(content.js)이 목록을 다시 만들거나 항목을 복제한 뒤에도 맞게
+  function fill(photos, attached, root){
+    [].forEach.call((root || document).querySelectorAll('[data-photo]'), function(el){
       var p = photos[el.getAttribute('data-photo')];
       if(attached && !(p && p.fileId)){ clear(el); return; }
       if(p && (p.fileId || p.pos)) apply(el, p);
     });
+  }
+  // 편집 화면(editor.js)이 사진을 바꾼 뒤 그 자리만 다시 그릴 때 쓴다. 비우기 전 모습으로 되돌리는 일은 하지 않는다(새로 고침)
+  window.Photos = { apply:apply, clear:clear, fill:fill };
+
+  // content.js의 then이 먼저 돈다(먼저 불러온 스크립트) — 목록을 다시 만든 뒤 사진을 넣는다
+  Board.load().then(function(d){
+    fill((d && d.photos) || {}, d && d.photoMode === 'attached');
   }).then(mark, mark);
 })();

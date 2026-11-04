@@ -325,10 +325,17 @@ var SITEMAP = [
     });
   }
 
-  [].forEach.call(document.querySelectorAll(SEL), function(el){
+  function one(el){
     if(!simple(el)) return;
     var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), t;
     while((t = w.nextNode())) t.data = glue(t.data);
     if(SENTENCE.indexOf(el.tagName) > -1 && !el.querySelector('br')) sentences(el);
-  });
+  }
+  // root(요소)와 그 안을 다시 맞춘다 — 페이지 직접 편집(content.js)이 글을 바꾼 칸 · 다시 만든 목록에 부른다
+  window.__lb = function(root){
+    if(!root || root === document){ [].forEach.call(document.querySelectorAll(SEL), one); return; }
+    if(root.matches && root.matches(SEL)) one(root);
+    [].forEach.call(root.querySelectorAll(SEL), one);
+  };
+  window.__lb(document);
 })();

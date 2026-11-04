@@ -27,6 +27,7 @@ function route_(req) {
     case 'save':    return handleSave_(req);
     case 'remove':  return handleRemove_(req);
     case 'publish': return handlePublish_(req);
+    case 'savePage': return handleSavePage_(req);   // 페이지 직접 편집 (Pages.js, WBS 18)
     default:        return jsonResponse_(false, 'SERVER_ERROR', null);
   }
 }

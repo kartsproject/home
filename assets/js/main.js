@@ -151,6 +151,13 @@
     });
     setTimeout(show,2000);
   }
+  /* 페이지 직접 편집(editor.js, WBS 18)이 표지 사진을 바꾼 뒤 슬라이드를 다시 만들고, 지금 보이는 분야를 알 때 쓴다 */
+  window.__hero={
+    rebuild:function(custom,videos){ started=true; clearTimeout(timer); build(custom||{},videos||{}); show(); play(); },
+    current:function(){ var s=slides[idx], m=s && s.className.match(/\bs-(\w+)/); return m ? m[1] : null; },
+    show:function(k){ var i=-1; slides.forEach(function(s,n){ if(s.classList.contains('s-'+k)) i=n; }); if(i>-1){ go(i); play(); } return i>-1; },
+    names:NAMES, slots:SLOTS
+  };
   if(window.Board) Board.load().then(function(d){ attached=!!(d&&d.photoMode==='attached'); start(d&&d.hero,d&&d.heroVideo); });
   else start(null);
   setTimeout(function(){ start(null); },3000);   /* 목록이 너무 늦으면 기본 사진으로 (이미 시작했으면 무시) */

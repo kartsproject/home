@@ -263,7 +263,7 @@ Apps Script 편집기 ⚙ **프로젝트 설정 › 스크립트 속성**에 아
 
 - **(가) Claude에게 맡기기**: 2-8 · 3-7에서 복사한 두 주소를 「홍보: … / 아카이빙: …」처럼 보내 주세요. 바꿔서 반영합니다. 웹앱 주소는 화면 코드에 원래 공개되는 값이라 채팅으로 보내도 됩니다.
 - **(나) 직접 고치기 (GitHub 웹)**:
-  - 홍보: `kartsproject/home` → `assets/js/admin.js` → 연필(✎) → 9번째 줄 `var GATEWAY = '…';`의 따옴표 안을 새 주소로 바꿉니다 → **Commit changes**(main)를 누릅니다.
+  - 홍보: `kartsproject/home` → `assets/js/gateway.js` → 연필(✎) → `window.HP_GATEWAY = '…';` 줄의 따옴표 안을 새 주소로 바꿉니다 → **Commit changes**(main)를 누릅니다.
   - 아카이빙: `kartsproject/archive` → `site/js/api.js` → 7번째 줄 `const GATEWAY_URL = '…';` → 같은 방법으로 바꿉니다.
 
 반영되고 1~2분 뒤부터 두 관리자 페이지와 아카이빙 열람 화면이 새 관문을 씁니다. 이 뒤로는 `apps-script/`가 바뀌어 main에 올라가면 자동 배포가 **이 배포를 새 버전으로** 바꿉니다.

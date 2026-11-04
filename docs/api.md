@@ -47,6 +47,7 @@
 | `save` | 글 하나를 새로 쓰거나 고친다 → 발행 | 필요 |
 | `remove` | 글 하나를 지운다 → 발행 | 필요 |
 | `publish` | 발행만 다시 한다 (발행 실패 후 [다시 반영]) | 필요 |
+| `savePage` | 페이지 직접 편집 — 한 페이지의 고친 글자 · 목록을 저장한다 → 발행 (2026-11-04 WBS 18) | 필요 |
 
 ### 3-1. auth
 
@@ -86,6 +87,7 @@
 | `hero` | 「표지」 4칸 `{ id, slot, label, photos(0~1장), cutouts(누끼 0~1장), videos(동영상 0~1개 `{ src, w, h, attachmentId, name, size }`), depth(2.5D 켬), center({x, y} %), updatedBy, updatedAt }` (2026-10-14, 누끼 · 2.5D는 2026-10-15, 동영상은 2026-10-16 2안) |
 | `photos` | 「사진」 30자리 `{ id, slot, label, photos(0~1장), pos({x, y} % 또는 null), updatedBy, updatedAt }` (2026-11-04 WBS 15). 「사진」 탭이 없거나 자리가 빠졌으면 이때 만든다(잠금 안에서) |
 | `guides` | 「모집요강」 연도별 `{ id, year, title, files, visibility, … }`, 연도 큰 순 (2026-11-04). 탭이 없으면 이때 만든다 |
+| `pages` · `pageMeta` | 페이지 직접 편집 내용 `{ about:{ t, l }, … }`(3-8) · 페이지마다 `{ updatedBy, updatedAt }` (2026-11-04 WBS 18). 편집 화면은 발행 전 내용도 이것으로 맞춘다 |
 | `categories` | 공지 분류 목록 (「설정」) |
 | `limits` | 업로드 형식 · 크기 · 개수 한도 (`sheet-schema.md` 4절) — 화면이 미리 막는 데 쓴다. 표지 사진을 줄일 크기 `heroPhotoSide`(2400), 누끼 크기 한도 `cutoutBytes`(8MB), 표지 동영상 `videoBytes`(20MB) · `videoPartBytes`(조각 크기) · `videoTypes`도 여기 |
 | `lastPublish` | 마지막 발행 결과 `{ ok, at }` — 실패 상태면 화면이 [다시 반영] 버튼을 보인다 |
@@ -132,7 +134,7 @@
 |---|---|
 | `action` · `token` | |
 | `board` | `notice` · `press` · `gallery` · `hero` · `photo`(사이트 사진 자리, 2026-11-04) · `guide`(모집요강, 2026-11-04 — `post`: `year`(네 자리) · `title`(선택) · `visibility`, `files` 최대 5개, 같은 연도가 이미 있으면 `DUPLICATE_YEAR`) |
-| `id` | 고칠 글ID. 새 글이면 빈 값 → 관문이 만든다. **표지는 늘 칸 ID(`H-dance` 등)**, **사이트 사진은 늘 자리 ID(`S-step1` 등)** — 새로 만들 수 없음 |
+| `id` | 고칠 글ID. 새 글이면 빈 값 → 관문이 만든다. **표지는 늘 칸 ID(`H-dance` 등)**, **사이트 사진은 늘 자리 ID(`S-step1` 등)** — 새로 만들 수 없음. 다만 페이지 직접 편집에서 복제한 항목의 사진 자리 `S-{원래 자리}-x{영소문자 · 숫자 4자}`(예 `S-mu1-x4k2`, 50자 이내)는 처음 저장할 때 관문이 「사진」 행을 만든다(`createPhotoSlot_`, 기본 30자리 + 200자리까지, 2026-11-04 WBS 18) |
 | `post` | 공지: `category` · `title` · `body` · `date` · `pinned` · `photoPosition` · `photoLink` · `visibility` / 언론홍보: `source` · `title` · `date` · `url` · `visibility` / 갤러리: `title` · `desc` · `date` · `visibility` · `course`(과정 코드 `workshop` · `mentoring` · `camp` · `""`) · `field`(분야 코드 `dance` · `music` · `art` · `trad` · `""`=공통). 시트에는 `워크숍 · 무용`처럼 쓰고, `course` · `field`가 모두 `""`이면 지정 안 함(빈칸). **둘 다 보내지 않으면 기존 값 유지** — 분야 칸이 없는 1안 관리자 화면이 저장해도 지워지지 않게. 하나만 보내거나, 목록에 없는 값 · 문자열이 아닌 값이거나, `course`가 `""`인데 `field`가 있으면 `INVALID_INPUT` (2026-10-16 WBS 8.10, 그 전 8.5의 `field` 하나만 보내는 요청도 이제 `INVALID_INPUT`) / 표지: `depth`(2.5D 입체 효과 켬, true/false) · `center`(`{ x, y }` 0~100 %, 누끼 인물 영역의 가운데 — 누끼가 없으면 `null`) / 사이트 사진: `pos`(`{ x, y }` 0~100 % 보이는 위치, `null`이면 기본 위치) |
 | `photos` | 첨부ID 배열 — **이 순서가 화면 순서**. 언론홍보는 빈 배열, 표지 · 사이트 사진은 0~1개(빈 배열이면 기본 사진으로) |
 | `files` | 첨부ID 배열 (공지만) |
@@ -181,6 +183,24 @@
 - 내용이 직전 발행과 같으면 커밋하지 않는다(빌드 한도 절약, `decisions.md` 3절).
 
 응답 `data`: `published`.
+
+### 3-8. savePage (2026-11-04 WBS 18)
+
+사이트 화면 위에서 고친 글자 · 목록을 페이지 한 줄로 저장한다(「페이지」 탭, `sheet-schema.md` 2-10). 사진은 이 요청이 아니라 `save`(`photo` · `hero`)로 바로 저장한다.
+
+| 요청 필드 | 설명 |
+|---|---|
+| `action` · `token` | |
+| `page` | `index` · `about` · `recruit` · `programs` · `mentoring` · `camp` · `news` (그 밖은 `INVALID_INPUT`) |
+| `content` | `{ t:{ k12:"글" }, l:{ l1:[ { s, t, p } ] } }` — 페이지의 고친 것 전체(바꾸지 않은 칸 · 목록은 넣지 않음) |
+
+검증 (하나라도 어기면 `INVALID_INPUT`, 아무것도 쓰지 않음):
+- `t` 열쇠 `k` + 숫자 1~4자리, 400개까지. 값은 문자열 3,000자까지 — 줄바꿈은 `\n`으로 맞추고 제어 문자는 뺀다
+- `l` 열쇠 `l` + 숫자 1~3자리, 30개까지. 값은 배열 60개까지, 항목은 `s`(0~199 정수, HTML의 몇 번째 항목을 본뜬 것) · `t`(열쇠 숫자 1~3자리, 40개까지, 값은 위와 같음) · `p`(복제한 항목의 사진 자리, 영소문자 · 숫자 · `-` 48자까지)
+- 정리한 JSON이 45,000자를 넘으면 거절(시트 한 칸 5만 자)
+
+처리: 「페이지」 탭이 없으면 만들고, 그 페이지 줄을 고치거나 새로 쓴 뒤 발행한다. 응답 `data`: `published`.
+글 서식은 `**굵게**` · `==형광==` · 줄바꿈만이고, 화면(`content.js`)은 textContent · DOM으로만 넣는다.
 
 ---
 

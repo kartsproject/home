@@ -17,7 +17,8 @@ var BOARDS_ = {
   guide:   { tab: '모집요강', prefix: 'R', ensure: function () { ensureGuideTab_(); }, check: function (f, rows, ownId) { return checkGuideYear_(f, rows, ownId); },
              validate: function (p) { return validateGuide_(p); },
              maxPhotos: function () { return 0; }, maxFiles: function () { return LIMITS_.guideFiles; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } },
-  photo:   { tab: '사진', fixed: true, ensure: function () { ensurePhotoSlots_(); }, validate: function (p) { return validatePhotoSlot_(p); },
+  photo:   { tab: '사진', fixed: true, ensure: function () { ensurePhotoSlots_(); }, create: function (id, rows) { return createPhotoSlot_(id, rows); },
+             validate: function (p) { return validatePhotoSlot_(p); },
              maxPhotos: function () { return 1; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } }
 };
 
@@ -44,6 +45,8 @@ function handleList_(req) {
     hero: hero,
     photos: photos,
     guides: guides,
+    pages: readPages_(),          // 페이지 직접 편집 (Pages.js, WBS 18) — 편집 화면은 발행 전 내용도 이것으로 본다
+    pageMeta: readPageMeta_(),
     photoMode: getPhotoMode_(),
     categories: getCategories_(),
     limits: LIMITS_,
@@ -70,6 +73,11 @@ function handleSave_(req) {
     var existing = null;
     if (req.id) {
       existing = rows.filter(function (r) { return r['글ID'] === req.id; })[0];
+      // 페이지 직접 편집에서 복제한 항목의 사진 자리(S-mu1-x4k2)는 처음 사진을 넣을 때 행을 만든다 (Photos.js)
+      if (!existing && board.create) {
+        existing = board.create(req.id, rows);
+        if (existing) rows = readTab_(board.tab);
+      }
       if (!existing) return jsonResponse_(false, 'NOT_FOUND', null);
     }
     if (board.check) {
