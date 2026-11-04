@@ -84,7 +84,7 @@ function buildPublicPosts_() {
   // 모집요강: 공개 연도만 { "2026": { title, files } } (Guides.js, WBS 17.4)
   var guides = buildPublicGuides_(attachments);
   return {
-    compareKey: JSON.stringify({ notices: notices, press: press, gallery: gallery, hero: hero, heroVideo: heroVideo, photos: photos, guides: guides }),
+    compareKey: JSON.stringify({ notices: notices, press: press, gallery: gallery, hero: hero, heroVideo: heroVideo, photos: photos, guides: guides, photoMode: getPhotoMode_() }),
     posts: {
       updatedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX"),
       notices: notices,
@@ -93,7 +93,9 @@ function buildPublicPosts_() {
       hero: hero,
       heroVideo: heroVideo,
       photos: photos,
-      guides: guides
+      guides: guides,
+      // 'attached': 기본 사진 없이 올린 사진만 — 사진을 뺀 자리는 비워 둔다 (ImportPhotos.js, 2026-11-04). 빈 값이면 예전처럼 기본 사진
+      photoMode: getPhotoMode_()
     }
   };
 }

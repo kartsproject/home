@@ -44,6 +44,7 @@ function handleList_(req) {
     hero: hero,
     photos: photos,
     guides: guides,
+    photoMode: getPhotoMode_(),
     categories: getCategories_(),
     limits: LIMITS_,
     lastPublish: getLastPublish_()

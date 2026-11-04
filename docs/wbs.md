@@ -312,6 +312,8 @@
 | 17.4 | 모집요강 — 관리자 페이지 「모집요강」 탭(연도마다 파일 최대 5개, 같은 연도 한 줄, 공개 여부), 모집 및 선발 연도 탭의 「모집요강 내려받기」 | `apps-script/Guides.js` · Posts.js · Publish.js · Setup.js · Settings.js, admin.js · admin.css, `assets/js/recruit.js` · recruit.html · common.css | 완료 (2026-11-04 관문 흉내 · 가짜 관문 1440 · 390). 파일은 운영진이 올림. 2028년 이후 탭은 recruit.html에 연도 탭 추가 필요 |
 | 17.5 | 모집요강은 연도마다 파일 하나 · 「{연도} 모집요강 내려받기」 단추만(파일 이름 안 보임), 2026 탭 내용을 「2026 참가자 모집 공고」 PDF 기준으로 — 카드(세부전공 · 모집대상 출생 · 선발방식 · 실기/포트폴리오), 「지원 안내」(모집 분야 · 지원 자격 · 지원 방법 · 참가비 · 문의), 단계(모집 공고 · 서류 접수 · 합격자 발표 날짜) | recruit.html · recruit.js · common.css · admin.js · Settings.js | 완료 (2026-11-04, 1440 · 390) |
 | 17.6 | 줄바꿈 단위 — 어절(keep-all) · 문장(문장마다 묶음) · 내용 묶음(괄호 · 날짜 · 「한 해」「분야 간」「6월 중」 같은 짧은 말, · — ~ → 기호는 앞말에), 제목 · 짧은 글은 줄 길이 고르게(balance), 「(4개 분야)」 등 군더더기 줄임 | common.js 「줄바꿈 단위」 · common.css · about.html · recruit.html | 완료 (2026-11-04, 1440 · 390). 운영진이 쓴 글(공지 본문 등)은 손대지 않음 |
+| 17.7 | 모집 및 선발 2026 — 리드 문장 삭제 · 모집요강 단추 오른쪽 · 일정 안내 오른쪽 · 「지원 안내」를 분야 카드 위로 | recruit.html · common.css | 완료 |
+| 17.8 | 「기본 사진」 없애기 — 지금 사진(표지 4 · 사이트 사진 30)을 올린 사진(드라이브 첨부)으로 옮기고(`importSitePhotos`), 사진을 빼면 사이트는 빈자리 · 관리자는 「이미지 첨부 예정」(`photoMode: attached`) | `apps-script/ImportPhotos.js` · Publish.js · Posts.js, photos.js · main.js · board.js · admin.js · common.css | 코드 완료 (관문 흉내 · 가짜 관문 시험) — 사용자가 편집기에서 `importSitePhotos` 실행 대기. 실행 확인 뒤 CSS · HTML의 기본 사진 주소를 지움(다음 단계) |
 
 ## 4. 진행 순서
 

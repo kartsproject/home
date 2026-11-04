@@ -7,6 +7,7 @@
      그 밖의 요소(#sv · #recruit · .mn-ph i)            → CSS 변수 --photo · --photo-pos
                                                           (CSS가 var(--photo, 기본 사진) · var(--photo-pos, 기본 위치)로 쓴다)
    자리 이름은 관문 PHOTO_SLOTS_(apps-script/Photos.js) · 관리자 페이지 PHOTO_PAGES(admin.js)와 같다.
+   data/posts.json의 photoMode가 'attached'면(관문 importSitePhotos 뒤) 기본 사진을 쓰지 않고, 올린 사진이 없는 자리는 비워 둔다.
    주소에 ?photo=자리 가 있으면(관리자 페이지 「페이지에서 보기」) 그 자리로 옮겨 노란 테두리로 표시한다.
    ============================================================ */
 (function(){
@@ -50,10 +51,19 @@
     setTimeout(function(){ el.scrollIntoView({ block:'center', behavior:'smooth' }); }, 400);
   }
 
+  // photoMode 'attached'(2026-11-04): 기본 사진을 쓰지 않는다 — 올린 사진이 없는 자리는 비워 둔다(.ph-none)
+  function clear(el){
+    el.classList.add('ph-none');
+    if(el.tagName === 'IMG'){ el.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=='; return; }   // 투명 1px — 깨진 그림 표시 없이 바탕색만
+    if(el.classList.contains('wk-ph')){ el.textContent = ''; el.classList.remove('empty'); return; }
+    el.style.setProperty('--photo', 'none');
+  }
+
   Board.load().then(function(d){
-    var photos = (d && d.photos) || {};
+    var photos = (d && d.photos) || {}, attached = d && d.photoMode === 'attached';
     els.forEach(function(el){
       var p = photos[el.getAttribute('data-photo')];
+      if(attached && !(p && p.fileId)){ clear(el); return; }
       if(p && (p.fileId || p.pos)) apply(el, p);
     });
   }).then(mark, mark);

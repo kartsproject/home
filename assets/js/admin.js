@@ -233,8 +233,16 @@
   /* ---------- 목록 ---------- */
   function load(){
     busy('목록을 불러오는 중…');
-    return api('list', {}).then(function(d){ S.data = d; renderPub(); renderList(); }, function(e){ toast(errMsg(e), true); })
+    return api('list', {}).then(function(d){ S.data = d; applyPhotoMode(); renderPub(); renderList(); }, function(e){ toast(errMsg(e), true); })
       .then(function(){ busy(null); });
+  }
+
+  // photoMode 'attached'(관문 importSitePhotos 뒤, 2026-11-04): 기본 사진이 없다 — 사진은 올린 것만, 빼면 「이미지 첨부 예정」(사이트는 빈자리)
+  function attachedMode(){ return !!(S.data && S.data.photoMode === 'attached'); }
+  function applyPhotoMode(){
+    if(!attachedMode()) return;
+    HERO_DEFAULT = {};
+    PHOTO_PAGES.forEach(function(g){ g.slots.forEach(function(sl){ sl.def = null; sl.pos = null; }); });
   }
 
   function renderPub(){
@@ -330,11 +338,13 @@
   function heroState(slot){
     if(slot.photos.length) return { src:Board.photoUrl(slot.photos[0].fileId, 640), text:(slot.videos || []).length ? '올린 동영상' : slot.depth && slot.cutouts.length ? '올린 사진 · 2.5D' : '올린 사진', cls:'on' };
     if(HERO_DEFAULT[slot.slot]) return { src:HERO_DEFAULT[slot.slot], text:'기본 사진', cls:'def' };
-    return { src:null, text:'사진 없음 · 표지에서 건너뜀', cls:'off' };
+    return { src:null, text:attachedMode() ? '이미지 첨부 예정 · 표지에서 건너뜀' : '사진 없음 · 표지에서 건너뜀', cls:'off' };
   }
   function heroCards(items){
     var box = h('div', null, [
-      h('p', { class:'mg-note', text:'표지는 이 순서로 한 장씩 넘어갑니다. 칸을 눌러 사진을 올리거나 바꾸세요. 사진을 빼면 기본 사진이 보이고, 기본 사진도 없는 칸은 건너뜁니다.' })
+      h('p', { class:'mg-note', text:attachedMode()
+        ? '표지는 이 순서로 한 장씩 넘어갑니다. 칸을 눌러 사진을 올리거나 바꾸세요. 사진을 뺀 칸은 표지에서 건너뜁니다.'
+        : '표지는 이 순서로 한 장씩 넘어갑니다. 칸을 눌러 사진을 올리거나 바꾸세요. 사진을 빼면 기본 사진이 보이고, 기본 사진도 없는 칸은 건너뜁니다.' })
     ]);
     box.appendChild(h('div', { class:'mg-cards hero' }, items.map(function(s, i){
       var st = heroState(s);
@@ -376,11 +386,12 @@
     var pos = slot.pos ? [slot.pos.x, slot.pos.y] : slot.photos.length ? [50, 50] : info.pos || [50, 50];
     if(slot.photos.length) return { src:Board.photoUrl(slot.photos[0].fileId, 640), text:'바꾼 사진', cls:'on', pos:pos };
     if(info.def) return { src:info.def, text:slot.pos ? '기본 사진 · 위치 조정' : '기본 사진', cls:'def', pos:pos };
-    return { src:null, text:'사진 준비 중', cls:'off', pos:pos };
+    return { src:null, text:attachedMode() ? '이미지 첨부 예정' : '사진 준비 중', cls:'off', pos:pos };
   }
   function photoCards(items){
     var box = h('div', null, [
-      h('p', { class:'mg-note', text:'사이트 곳곳에 들어간 사진입니다(메인 첫 화면 표지는 「표지 사진」 탭, 소식 · 프로그램 페이지 사진 줄은 「갤러리」 탭). 자리를 눌러 사진을 바꾸거나 보이는 위치를 고르세요. 사진을 빼면 처음 사진(기본 사진)으로 돌아갑니다.' })
+      h('p', { class:'mg-note', text:'사이트 곳곳에 들어간 사진입니다(메인 첫 화면 표지는 「표지 사진」 탭, 소식 · 프로그램 페이지 사진 줄은 「갤러리」 탭). 자리를 눌러 사진을 바꾸거나 보이는 위치를 고르세요. ' +
+        (attachedMode() ? '사진을 빼면 사이트의 그 자리는 비워 두고, 여기에는 「이미지 첨부 예정」으로 보입니다.' : '사진을 빼면 처음 사진(기본 사진)으로 돌아갑니다.') })
     ]);
     if(!S.data.photos){
       box.appendChild(h('p', { class:'mg-empty', text:'관문(Apps Script)을 새로 배포하면 쓸 수 있습니다. 담당자에게 알려 주세요.' }));
@@ -640,7 +651,8 @@
     wrap.appendChild(h('h2', { text:'사이트 사진 — ' + (info.pageName ? info.pageName + ' · ' : '') + info.name }));
     wrap.appendChild(h('p', { class:'mg-note' }, [
       info.def ? '사진을 올리면 이 자리의 기본 사진 대신 보입니다. 사진을 빼고 저장하면 기본 사진으로 돌아갑니다. '
-               : '지금은 「사진 준비 중」으로 비어 있는 자리입니다. 사진을 올리면 그 자리에 보이고, 빼면 다시 비어 보입니다. ',
+        : attachedMode() ? '사진을 올리면 이 자리에 보입니다. 사진을 빼고 저장하면 사이트의 이 자리는 비워 둡니다(사진 없음). '
+        : '지금은 「사진 준비 중」으로 비어 있는 자리입니다. 사진을 올리면 그 자리에 보이고, 빼면 다시 비어 보입니다. ',
       '학생 얼굴이 크게 나오는 사진은 피해 주세요. ',
       h('a', { href:photoHref(info), target:'_blank', rel:'noopener', text:'사이트에서 이 자리 보기 ↗' })
     ]));
@@ -657,8 +669,8 @@
       } })])
     ]));
     wrap.appendChild(h('div', { class:'mg-actions' }, [
-      (e.photos.length || p.pos) ? h('button', { type:'button', class:'mg-btn warn', text:info.def ? '기본 사진 · 위치로 되돌리기' : '비우기 (사진 준비 중)', onclick:function(){
-        e.photos = []; p.pos = null; markDirty(); drawPhotos(null, e); drawPos(e); toast('저장하면 ' + (info.def ? '기본 사진으로' : '빈 자리로') + ' 돌아갑니다.');
+      (e.photos.length || p.pos) ? h('button', { type:'button', class:'mg-btn warn', text:info.def ? '기본 사진 · 위치로 되돌리기' : '사진 빼기 (비워 두기)', onclick:function(){
+        e.photos = []; p.pos = null; markDirty(); drawPhotos(null, e); drawPos(e); toast('저장하면 ' + (info.def ? '기본 사진으로 돌아갑니다.' : '이 자리는 비워 둡니다.'));
       } }) : null,
       h('div', { class:'r' }, [
         h('button', { type:'button', class:'mg-btn', text:'취소', onclick:function(){ if(confirmLeave()) closeEditor(); } }),

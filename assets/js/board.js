@@ -159,7 +159,7 @@ window.Board = (function(){
       var obj = function(v){ return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; };
       // heroVideo: 표지 동영상(2안 WBS 8.6) — 영상을 올린 칸만 { src, w, h }. 1안 화면은 쓰지 않는다
       // photos: 사이트 사진 자리(WBS 15) — 관리자가 바꾼 자리만 { step1:{ fileId, w, h, pos }, … }. 없으면 페이지의 기본 사진 (photos.js)
-      return { notices:arr(d.notices).map(fix), press:arr(d.press), gallery:arr(d.gallery).map(fix), hero:obj(d.hero), heroVideo:obj(d.heroVideo), photos:obj(d.photos), guides:obj(d.guides) };
+      return { notices:arr(d.notices).map(fix), press:arr(d.press), gallery:arr(d.gallery).map(fix), hero:obj(d.hero), heroVideo:obj(d.heroVideo), photos:obj(d.photos), guides:obj(d.guides), photoMode:String(d.photoMode || '') };
     }).catch(function(){ return null; });
     return loading;
   }

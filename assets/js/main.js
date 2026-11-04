@@ -17,7 +17,9 @@
       tabsBox=hero.querySelector('.h-tabs'), anchor=hero.querySelector('.hero-in'),
       slides=[], tabs=[], idx=0, timer, shown=false;
 
+  var attached=false;   /* data/posts.json photoMode 'attached' — 기본 사진 없이 올린 사진만 (2026-11-04, 관문 ImportPhotos.js) */
   function hasDefault(k){
+    if(attached) return false;
     return getComputedStyle(document.documentElement).getPropertyValue('--img-hero-'+k).indexOf('url(')>-1;
   }
   function photoWidth(){ return window.innerWidth*(window.devicePixelRatio||1)>1600 ? 2400 : 1600; }
@@ -40,6 +42,7 @@
       s.className='slide s-'+k+(i===0?' on':'');
       /* 파일ID는 관문이 만든 영숫자라 따옴표가 들어갈 일이 없고, photoUrl이 한 번 더 인코딩한다 */
       if(custom[k]) s.style.setProperty('--img-hero-'+k,'url("'+Board.photoUrl(custom[k].fileId,photoWidth())+'")');
+      else if(attached) s.style.setProperty('--img-hero-'+k,'none');   /* 사진이 하나도 없을 때의 바탕색 칸 */
       if(custom[k] && videos[k] && videos[k].src && useVideo){ s._video=videos[k]; s.classList.add('vd'); }   /* 영상은 차례가 가까워지면 부른다(prep) */
       else if(custom[k] && custom[k].fg) addDepth(s,custom[k]);
       hero.insertBefore(s,anchor);   /* .slide가 #hero의 첫 div들이어야 main.css의 nth-of-type(확대 · 축소 번갈아)이 맞는다 */
@@ -148,7 +151,7 @@
     });
     setTimeout(show,2000);
   }
-  if(window.Board) Board.load().then(function(d){ start(d&&d.hero,d&&d.heroVideo); });
+  if(window.Board) Board.load().then(function(d){ attached=!!(d&&d.photoMode==='attached'); start(d&&d.hero,d&&d.heroVideo); });
   else start(null);
   setTimeout(function(){ start(null); },3000);   /* 목록이 너무 늦으면 기본 사진으로 (이미 시작했으면 무시) */
 })();

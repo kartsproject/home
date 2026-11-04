@@ -773,3 +773,20 @@ html.zv-open{overflow:hidden}
 h1,h2,h3,h4,.kick,.p1-ld,.mn-lead,p,dd,li,figcaption{text-wrap:balance}
 .post-body,.post-body *{text-wrap:pretty}
 .ln-s{display:inline-block;max-width:100%}
+
+/* ===== 사진을 뺀 자리 (photoMode 'attached', photos.js · 2026-11-04) — 사진 없이 바탕만 ===== */
+img.ph-none{background:#F4F2EC}
+.wk-ph.ph-none{background:#F4F2EC}
+#sv.ph-none::after{display:none}
+#recruit.ph-none::before{display:none}
+.mn-ph:has(i.ph-none){background:#F4F2EC}
+/* 모집 및 선발 2026 — 리드 오른쪽 칸은 모집요강 단추만(오른쪽 맞춤), 일정 안내 글도 오른쪽 (2026-11-04) */
+.rc-lead-r{display:flex;align-items:flex-end;justify-content:flex-end}
+.rc-lead-r .rc-guide{margin-top:0}
+.rc-period{text-align:right}
+.rc-cards{margin-top:0}
+.p1-sec + .rc-cards{margin-top:70px}
+@media(max-width:768px){
+  .rc-lead-r{justify-content:flex-end}
+  .p1-sec + .rc-cards{margin-top:44px}
+}
