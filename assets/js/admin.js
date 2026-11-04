@@ -16,6 +16,7 @@
     { id:'notice',  tab:'공지사항',  name:'공지',        add:'+ 새 공지' },
     { id:'press',   tab:'언론홍보',  name:'언론홍보 글', add:'+ 새 기사' },
     { id:'gallery', tab:'갤러리',    name:'앨범',        add:'+ 새 앨범' },
+    { id:'guide',   tab:'모집요강',  name:'모집요강',    add:'+ 새 연도' },
     { id:'hero',    tab:'표지 사진', name:'표지 사진',   add:null },
     { id:'photo',   tab:'사이트 사진', name:'사이트 사진', add:null }
   ];
@@ -143,6 +144,7 @@
     MEDIA_FAILED:'동영상을 사이트에 올리지 못했습니다. 아무것도 바뀌지 않았으니 잠시 뒤 다시 저장해 주세요.',
     NETWORK:'인터넷 연결을 확인해 주세요.',
     TIMEOUT:'응답이 너무 늦습니다. 잠시 뒤 다시 시도해 주세요.',
+    DUPLICATE_YEAR:'그 연도의 모집요강이 이미 있습니다. 목록에서 그 연도를 눌러 고쳐 주세요.',
     SERVER_ERROR:'처리 중 오류가 났습니다. 잠시 뒤 다시 시도해 주세요.'
   };
   function errMsg(e){ return ERRORS[e && e.code] || ERRORS.SERVER_ERROR; }
@@ -276,6 +278,7 @@
 
     if(S.tab === 'hero'){ view.appendChild(heroCards(items)); return; }
     if(S.tab === 'photo'){ view.appendChild(photoCards(items)); return; }
+    if(S.tab === 'guide'){ view.appendChild(guideRows(items)); return; }
     if(!items.length){ view.appendChild(h('p', { class:'mg-empty', text:'아직 글이 없습니다.' })); return; }
 
     if(S.tab === 'press'){
@@ -317,7 +320,7 @@
   function visBadge(v){ return h('span', { class:'badge ' + (v === '공개' ? 'on' : 'off'), text:v }); }
   function boardOf(id){ return BOARDS.filter(function(b){ return b.id === id; })[0]; }
   function itemsOf(id){
-    var d = S.data, list = (id === 'notice' ? d.notices : id === 'press' ? d.press : id === 'gallery' ? d.gallery : id === 'photo' ? d.photos : d.hero) || [];
+    var d = S.data, list = (id === 'notice' ? d.notices : id === 'press' ? d.press : id === 'gallery' ? d.gallery : id === 'photo' ? d.photos : id === 'guide' ? d.guides : d.hero) || [];
     /* 표지 칸은 화면(main.js SLOTS)과 같은 분야 순서로 보여 준다 — 관문 · 시트의 칸 순서는 그대로 (분야 순서 2026-10-21, WBS 9.10) */
     if(id === 'hero') list = list.slice().sort(function(a, b){ return HERO_ORDER.indexOf(a.slot) - HERO_ORDER.indexOf(b.slot); });
     return list;
@@ -346,6 +349,26 @@
       ]);
     })));
     return box;
+  }
+
+  /* 모집요강 — 연도마다 한 줄 (WBS 17.4). 관문이 아직 이 기능을 모르면(새로 배포 전) d.guides가 없다 */
+  function guideRows(items){
+    var box = h('div', null, [h('p', { class:'mg-note', text:'연도마다 모집요강 파일(PDF · 한글 등)을 올리면 「모집 및 선발」 페이지의 그 연도 탭에 「모집요강 내려받기」가 나옵니다. 비공개로 두면 사이트에 보이지 않습니다. 사이트에 그 연도 탭이 없으면(예: 2028) 담당자에게 탭 추가를 요청하세요.' })]);
+    if(!S.data.guides){ box.appendChild(h('p', { class:'mg-empty', text:'관문(Apps Script)을 새로 배포하면 쓸 수 있습니다. 담당자에게 알려 주세요.' })); return box; }
+    if(!items.length){ box.appendChild(h('p', { class:'mg-empty', text:'아직 올린 모집요강이 없습니다. [+ 새 연도]를 눌러 올려 주세요.' })); return box; }
+    box.appendChild(h('div', { class:'mg-rows' }, items.map(function(g){
+      return h('button', { type:'button', class:'mg-row', onclick:function(){ openEditor('guide', g); } }, [
+        h('span', { class:'badges' }, [visBadge(g.visibility)]),
+        h('span', { class:'t' }, [h('small', { text:g.year + '년' }), g.title || g.year + ' 모집요강']),
+        h('span', { class:'m', text:g.files.length ? '파일 ' + g.files.length + '개' : '파일 없음 · 사이트에 안 보임' })
+      ]);
+    })));
+    return box;
+  }
+  function nextGuideYear(){
+    var y = Number(todayKst().slice(0, 4)), used = (S.data.guides || []).map(function(g){ return Number(g.year); });
+    while(used.indexOf(y) > -1) y++;
+    return String(y);
   }
 
   /* 사이트 사진 — 페이지별 자리. 올린 사진 > 기본 사진 > 사진 준비 중. 관문이 아직 이 기능을 모르면(새로 배포 전) d.photos가 없다 */
@@ -398,7 +421,8 @@
     var blank = {
       notice:  { category:S.data.categories[0], title:'', body:'', date:todayKst(), pinned:false, photoPosition:'top', photoLink:'', visibility:'공개' },
       press:   { source:'', title:'', date:todayKst(), url:'', visibility:'공개' },
-      gallery: { title:'', desc:'', date:todayKst(), visibility:'공개', course:'', field:'' }
+      gallery: { title:'', desc:'', date:todayKst(), visibility:'공개', course:'', field:'' },
+      guide:   { year:nextGuideYear(), title:'', visibility:'공개' }
     };
     S.edit = {
       board:board, id:post ? post.id : null, dirty:false, preview:false,
@@ -408,6 +432,7 @@
       cutouts: post && post.cutouts ? post.cutouts.map(copyAtt) : [],
       videos: post && post.videos ? post.videos.map(copyAtt) : [],
       maxPhotos: board === 'notice' ? lim.noticePhotos : board === 'hero' || board === 'photo' ? 1 : lim.galleryPhotos,
+      maxFiles: board === 'guide' ? (lim.guideFiles || 5) : lim.noticeFiles,
       photoSide: board === 'hero' || board === 'photo' ? (lim.heroPhotoSide || 2400) : PHOTO_MAX_SIDE
     };
     renderEditor();
@@ -448,6 +473,7 @@
 
     if(e.board === 'hero'){ renderHeroEditor(wrap, e); view.appendChild(wrap); return; }
     if(e.board === 'photo'){ renderPhotoEditor(wrap, e); view.appendChild(wrap); return; }
+    if(e.board === 'guide'){ renderGuideEditor(wrap, e); view.appendChild(wrap); return; }
 
     wrap.appendChild(h('h2', { text:(e.id ? '' : '새 ') + boardOf(e.board).name + (e.id ? ' 수정' : '') }));
 
@@ -572,6 +598,37 @@
       } })])
     ]));
     wrap.appendChild(h('div', { class:'mg-actions' }, [
+      h('div', { class:'r' }, [
+        h('button', { type:'button', class:'mg-btn', text:'취소', onclick:function(){ if(confirmLeave()) closeEditor(); } }),
+        h('button', { type:'button', class:'mg-btn pri', text:'저장', onclick:save })
+      ])
+    ]));
+  }
+
+  // 모집요강 한 연도 — 연도 · 제목(선택) · 공개 여부 · 파일
+  function renderGuideEditor(wrap, e){
+    var p = e.post, lim = S.data.limits;
+    var bind = function(key){ return function(ev){ p[key] = ev.target.value; markDirty(); }; };
+    wrap.appendChild(h('h2', { text:e.id ? p.year + ' 모집요강 수정' : '새 모집요강' }));
+    wrap.appendChild(h('div', { class:'fld-row', style:'margin-top:22px' }, [
+      h('div', { class:'fld' }, [
+        h('label', { for:'f-year', text:'연도' }),
+        h('input', { id:'f-year', type:'number', min:'2020', max:'2099', step:'1', value:p.year, oninput:bind('year') }),
+        h('p', { class:'syntax', text:'모집 및 선발 페이지의 같은 연도 탭에 나옵니다. 한 연도에 하나만 만들 수 있습니다.' })
+      ]),
+      h('div', { class:'fld' }, [
+        h('span', { class:'lb' }, ['공개 여부', h('span', { class:'hint', text:'비공개면 사이트에 보이지 않습니다' })]),
+        h('div', { class:'choices' }, ['공개', '비공개'].map(function(v){
+          return h('label', null, [h('input', { type:'radio', name:'vis', value:v, checked:p.visibility === v, onchange:bind('visibility') }), v]);
+        }))
+      ])
+    ]));
+    wrap.appendChild(field('f-title', '제목 (선택)', lim.guideTitle || 100, function(){
+      return h('input', { id:'f-title', type:'text', value:p.title, placeholder:'비우면 「' + (p.year || '2026') + ' 모집요강」', maxlength:String(lim.guideTitle || 100), oninput:bind('title') });
+    }, '내려받기 상자 위에 보이는 이름'));
+    wrap.appendChild(fileField(e, lim));
+    wrap.appendChild(h('div', { class:'mg-actions' }, [
+      e.id ? h('button', { type:'button', class:'mg-btn warn', text:'삭제', onclick:removePost }) : null,
       h('div', { class:'r' }, [
         h('button', { type:'button', class:'mg-btn', text:'취소', onclick:function(){ if(confirmLeave()) closeEditor(); } }),
         h('button', { type:'button', class:'mg-btn pri', text:'저장', onclick:save })
@@ -1211,7 +1268,7 @@
     box = box || $('fileFld'); lim = lim || S.data.limits;
     if(!box) return;
     box.textContent = '';
-    box.appendChild(h('span', { class:'lb' }, ['첨부파일 (' + e.files.length + ' / ' + lim.noticeFiles + ')', h('span', { class:'hint', text:'방문자가 내려받을 수 있습니다' })]));
+    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? '모집 및 선발 페이지의 이 연도 탭에서 방문자가 내려받습니다. 위에서부터 차례로 보입니다.' : '방문자가 내려받을 수 있습니다' })]));
     if(e.files.length){
       box.appendChild(h('div', { class:'files' }, e.files.map(function(f, i){
         var move = function(to){ e.files.splice(to, 0, e.files.splice(i, 1)[0]); markDirty(); drawFiles(null, e); };
@@ -1231,15 +1288,15 @@
       addFiles(e, [].slice.call(input.files)); input.value = '';
     } });
     box.appendChild(h('div', { class:'add' }, [
-      h('button', { type:'button', class:'mg-btn sm', text:'+ 파일 추가', disabled:e.files.length >= lim.noticeFiles, onclick:function(){ input.click(); } }),
+      h('button', { type:'button', class:'mg-btn sm', text:'+ 파일 추가', disabled:e.files.length >= e.maxFiles, onclick:function(){ input.click(); } }),
       h('span', { class:'hint', text:lim.fileExts.join(' · ') + ' · 한 개 ' + Board.formatSize(lim.fileBytes) + ' 이하' }),
       input
     ]));
   }
 
   function addFiles(e, list){
-    var lim = S.data.limits, room = lim.noticeFiles - e.files.length;
-    if(list.length > room){ toast('첨부파일은 최대 ' + lim.noticeFiles + '개입니다.', true); list = list.slice(0, room); }
+    var lim = S.data.limits, room = e.maxFiles - e.files.length;
+    if(list.length > room){ toast('파일은 최대 ' + e.maxFiles + '개입니다.', true); list = list.slice(0, room); }
     var jobs = [];
     list.forEach(function(file){
       var ext = (file.name.match(/\.([a-z0-9]+)$/i) || [])[1];
@@ -1277,6 +1334,13 @@
         photos:e.photos.map(function(a){ return a.attachmentId; }), cutouts:e.cutouts.map(function(a){ return a.attachmentId; }),
         videos:e.videos.map(function(a){ return a.attachmentId; }), files:[]
       }, newVideo ? '저장하고 사이트에 반영하는 중…\n동영상이 있어 30초 정도 걸릴 수 있습니다.' : null);
+    }
+    if(e.board === 'guide'){
+      var year = String(p.year || '').trim();
+      if(!/^20[2-9]\d$/.test(year)) return fail('연도를 네 자리로 입력해 주세요. 예: 2026');
+      if((S.data.guides || []).some(function(g){ return g.year === year && g.id !== e.id; })) return fail(year + '년 모집요강이 이미 있습니다. 목록에서 그 연도를 눌러 고쳐 주세요.');
+      if(!e.files.length && p.visibility === '공개' && !confirm('파일이 없어 사이트에는 보이지 않습니다. 그래도 저장할까요?')) return;
+      return send({ board:'guide', id:e.id, post:{ year:year, title:(p.title || '').trim(), visibility:p.visibility }, photos:[], files:e.files.map(function(a){ return a.attachmentId; }) });
     }
     if(e.board === 'photo'){
       return send({ board:'photo', id:e.id, post:{ pos:p.pos || null }, photos:e.photos.map(function(a){ return a.attachmentId; }), files:[] });

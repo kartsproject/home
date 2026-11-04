@@ -83,7 +83,7 @@ main.mg-in{padding:34px 0 120px}
 .fld{margin-top:26px}
 .fld > label,.fld > .lb{display:block;font-weight:700;font-size:15px;margin-bottom:9px;letter-spacing:-.02em}
 .fld .hint{font-weight:400;font-size:13px;color:var(--gray-lt);margin-left:6px}
-.fld input[type=text],.fld input[type=url],.fld input[type=date],.fld select,.fld textarea{width:100%;border:1px solid #CFD2D0;padding:11px 13px;font:inherit;font-size:15.5px;background:#fff}
+.fld input[type=text],.fld input[type=url],.fld input[type=date],.fld input[type=number],.fld select,.fld textarea{width:100%;border:1px solid #CFD2D0;padding:11px 13px;font:inherit;font-size:15.5px;background:#fff}
 .fld textarea{min-height:260px;line-height:1.8;resize:vertical}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
 .fld-row{display:grid;grid-template-columns:200px 200px 1fr;gap:18px}

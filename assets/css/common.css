@@ -757,3 +757,20 @@ html.zv-open{overflow:hidden}
 .photo-focus{outline:5px solid #F5B800;outline-offset:-5px}
 #sv.photo-focus,#recruit.photo-focus{outline:none}
 #sv.photo-focus::after,#recruit.photo-focus,#recruit.photo-focus::before{box-shadow:inset 0 0 0 5px #F5B800}
+
+/* ===== 모집요강 내려받기 (모집 및 선발 · 연도 탭, recruit.js · WBS 17.4) ===== */
+.rc-guide{margin:0 0 56px;padding:24px 28px;border-radius:16px;background:#F4F2EC;display:flex;align-items:center;gap:16px 40px;flex-wrap:wrap}
+.rc-guide h3{font-size:19px;font-weight:700;letter-spacing:-.03em;flex:0 0 auto}
+.rc-guide ul{display:flex;flex-wrap:wrap;gap:10px;flex:1 1 360px}
+.rc-guide a{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;background:#fff;border:1px solid var(--line-lt);font-size:15.5px;letter-spacing:-.02em;transition:border-color .2s}
+.rc-guide a:hover,.rc-guide a:focus-visible{border-color:var(--ink)}
+.rc-guide .sz{font-size:13.5px;color:var(--gray-lt)}
+.rc-guide .dl{font-size:13.5px;font-weight:700;padding-left:10px;border-left:1px solid var(--line-lt)}
+.rc-guide .dl::after{content:" ↓"}
+#y2027 .rc-guide{margin-bottom:24px}
+@media(max-width:768px){
+  .rc-guide{padding:20px;gap:12px;margin-bottom:40px}
+  .rc-guide ul{flex-basis:100%}
+  .rc-guide a{width:100%;justify-content:space-between;border-radius:12px}
+  .rc-guide .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+}

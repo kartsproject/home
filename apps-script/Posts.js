@@ -14,6 +14,9 @@ var BOARDS_ = {
              maxPhotos: function () { return LIMITS_.galleryPhotos; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } },
   hero:    { tab: '표지', fixed: true, hero: true, validate: function (p) { return validateHero_(p); },
              maxPhotos: function () { return 1; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 1; }, maxVideos: function () { return 1; } },
+  guide:   { tab: '모집요강', prefix: 'R', ensure: function () { ensureGuideTab_(); }, check: function (f, rows, ownId) { return checkGuideYear_(f, rows, ownId); },
+             validate: function (p) { return validateGuide_(p); },
+             maxPhotos: function () { return 0; }, maxFiles: function () { return LIMITS_.guideFiles; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } },
   photo:   { tab: '사진', fixed: true, ensure: function () { ensurePhotoSlots_(); }, validate: function (p) { return validatePhotoSlot_(p); },
              maxPhotos: function () { return 1; }, maxFiles: function () { return 0; }, maxCutouts: function () { return 0; }, maxVideos: function () { return 0; } }
 };
@@ -24,6 +27,7 @@ function handleList_(req) {
 
   // 「사진」 탭은 관문을 새로 배포한 뒤 처음 목록을 열 때 만든다 — setup을 다시 돌리지 않아도 되게 (Photos.js)
   if (photoSlotsMissing_()) withLock_(function () { ensurePhotoSlots_(); return null; });
+  if (guideTabMissing_()) withLock_(function () { ensureGuideTab_(); return null; });
 
   var attachments = readTab_('첨부');
   var notices = readTab_('공지').map(function (r) { return noticeFromRow_(r, attachments, true); });
@@ -31,12 +35,15 @@ function handleList_(req) {
   var gallery = readTab_('갤러리').map(function (r) { return galleryFromRow_(r, attachments, true); });
   var hero = readTab_('표지').map(function (r) { return heroFromRow_(r, attachments); });
   var photos = readPhotoTab_().map(function (r) { return photoSlotFromRow_(r, attachments); });
+  var guides = readGuideTab_().map(function (r) { return guideFromRow_(r, attachments, true); })
+    .sort(function (a, b) { return a.year < b.year ? 1 : -1; });
   return jsonResponse_(true, null, {
     notices: sortNotices_(notices),
     press: sortByDate_(press),
     gallery: sortByDate_(gallery),
     hero: hero,
     photos: photos,
+    guides: guides,
     categories: getCategories_(),
     limits: LIMITS_,
     lastPublish: getLastPublish_()
@@ -63,6 +70,10 @@ function handleSave_(req) {
     if (req.id) {
       existing = rows.filter(function (r) { return r['글ID'] === req.id; })[0];
       if (!existing) return jsonResponse_(false, 'NOT_FOUND', null);
+    }
+    if (board.check) {
+      var checkError = board.check(fields, rows, existing ? existing['글ID'] : '');
+      if (checkError) return jsonResponse_(false, checkError, null);
     }
     // 첨부 확인: 「첨부」에 있고, 구분이 맞고, 아직 어느 글에도 붙지 않았거나 이 글의 것이어야 한다.
     var ownId = existing ? existing['글ID'] : '';
@@ -141,6 +152,7 @@ function handleRemove_(req) {
   if (!board || board.fixed || !req.id) return jsonResponse_(false, 'INVALID_INPUT', null);
 
   return withLock_(function () {
+    if (board.ensure) board.ensure();
     var row = readTab_(board.tab).filter(function (r) { return r['글ID'] === req.id; })[0];
     if (!row) return jsonResponse_(false, 'NOT_FOUND', null);
 
