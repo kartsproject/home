@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:26:13+09:00",
+  "updatedAt": "2026-11-05T13:30:56+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -142,6 +142,106 @@
     }
   ],
   "gallery": [
+    {
+      "id": "G-0003",
+      "title": "전통예술분야 워크숍",
+      "desc": "2026.08 · 석관동캠퍼스",
+      "date": "2026-11-05",
+      "course": "workshop",
+      "field": "trad",
+      "photos": [
+        {
+          "fileId": "1LPn9HGtEarC029vUckVOnFaSuqyRW4MY",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "1hnbHqMDxEAlSHtzDSOc2x7q6adHiLpxZ",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "15fcKse8lwxTPtVyBL5zXpXDEKAcXmmk4",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1v785vJ9Q7xNtUA6MDrH9FWcrGlhSb89B",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1qb2HfBgiUQnS2ElLy6P_LTWeQw4TlukA",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "14C2Kv0MgtFRK_RjN90QV8PSNxmV0HZes",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "11I_USCUMjYYioHiATwqbugBmEoF5LcHh",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1vQp40FU-Scpspm7dZzeHfMjfnhTbIInu",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1lNakv0y3AyPA7N8n7M0hqqlNacWCiwTl",
+          "w": 1440,
+          "h": 810
+        },
+        {
+          "fileId": "1MrtVxGLmdX-6FpwKRFBUNeqr6f0ADHB4",
+          "w": 1440,
+          "h": 810
+        },
+        {
+          "fileId": "1ENHUXtbiUfuW3g-p3PJgKDCl0jTG8PGH",
+          "w": 1440,
+          "h": 810
+        },
+        {
+          "fileId": "1WCKiagMYY4i5w83MIXCJU2o62aksX6rk",
+          "w": 1440,
+          "h": 810
+        },
+        {
+          "fileId": "14UdOUTLg5jC-ggZszefylF-8y7lT8uyl",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1_ieEHWp9_gRUoTFRwDmvPxnAWvQZUmF1",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1WTA_mUVQfyBw8_U1x2odcEwrhGXDb0xE",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "1OnCBD1aaq4OZ3YAZi9dJ1P4Nvaz_tyP7",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1Ch4EV0MlaubTyxAbM6QbBy5GHJkIaeT1",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1cON3x--Sj8ZBZledhGY081IXyx-A_Czb",
+          "w": 1600,
+          "h": 901
+        }
+      ]
+    },
     {
       "id": "G-0002",
       "title": "무용분야 워크숍",
