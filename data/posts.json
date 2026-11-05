@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:33:22+09:00",
+  "updatedAt": "2026-11-05T13:36:36+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -142,6 +142,111 @@
     }
   ],
   "gallery": [
+    {
+      "id": "G-0005",
+      "title": "작은음악회",
+      "desc": "2026. 10. 석관동 캠퍼스",
+      "date": "2026-11-05",
+      "course": "mentoring",
+      "field": "trad",
+      "photos": [
+        {
+          "fileId": "1ltIP7wVjQubw0vwc_K9g4KogLFvPIrED",
+          "w": 1200,
+          "h": 1600
+        },
+        {
+          "fileId": "1FbXyIYhYz6kJcyJhiBFfjQEnlKREuGT7",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1kJ6LqEi4jCHrqeRtQiAPHy2fUX1gyOo4",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1O8d_pXvEOt8DnboE0WYby0Bw5oCByCci",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1jjLzWFsYixu8_7eu30-ZJwihz2vC0DxT",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "12QAtwLkmLfRp9xeBsCBkKqz-1FT9Tu-f",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1VUsrse3gglazbtbceCNKNfBiyOoege05",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1EG8ae29SvX7ILQBNxRsy70xaUxYTTSIW",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1UpDO8VXtUrVNkG3uv8HE6xLsht11-8NS",
+          "w": 1200,
+          "h": 1600
+        },
+        {
+          "fileId": "1RfKuO_AOq78_yz2kCQY4dD-bxZh04gmL",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1PLAg2a2KhMeGfOuzK31d42v5Xapjucm9",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "1ZZo9QB29y0xNyYRt98LJglH6YI9h1mGu",
+          "w": 1600,
+          "h": 1600
+        },
+        {
+          "fileId": "15JUB8Y6lXj4w5_Pc_W_E3zUtgS9lh_8C",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1VU3MWBYBYRYgmiVpnuU1hkElrLbRqOKJ",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1lrFG5dm95TLXA4LUpYOJ9EFCvW_JWrAT",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1bHaPcptYUJMeLPwcHnf9yMs4Vr8dCn7F",
+          "w": 1200,
+          "h": 1600
+        },
+        {
+          "fileId": "1nETT70HR69o7lTcW9U9BkkAchwVXOXgL",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1bhE8SqbL-UStfJIyShIIJWnu4-MZfbOd",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1PkvHzZ0M06uyYa9jAIuXP-cFrx65huov",
+          "w": 1200,
+          "h": 1600
+        }
+      ]
+    },
     {
       "id": "G-0004",
       "title": "미술분야 워크숍",
