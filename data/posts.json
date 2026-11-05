@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:21:10+09:00",
+  "updatedAt": "2026-11-05T13:24:37+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -141,7 +141,123 @@
       "url": "https://monthly.chosun.com/news/articleView.html?idxno=70694"
     }
   ],
-  "gallery": [],
+  "gallery": [
+    {
+      "id": "G-0001",
+      "title": "음악분야 워크숍",
+      "desc": "2026.08 · 서초동캠퍼스",
+      "date": "2026-11-05",
+      "course": "workshop",
+      "field": "music",
+      "photos": [
+        {
+          "fileId": "1XVCXOG1ZMswGb9gu6FCbCOr27VZQA21J",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "1X_GAFuTwdqZvkDcN_yft4KTOPWbMiioy",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1K9qO_9L6Z-PDnSNxR6D1dWSzlL5QIrWW",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1Gg0zlt5aPSpv1hlg9h2p-I5IEchWy_Sf",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1aFmbAwL7Pln0aCPW7ectqHnLeyC8W3Sk",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "18p-f7o97wTO-gbR2uxH80Jgg5zSsURak",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1JW5Kwf8cD8E9x0stnFG_HU2WNmOsd_0t",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1tGgKE66kW5fzUh3_E1inovuYVhJZPH0w",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1E1pnqijhhq_E6JhBfJwJNjTPijcMPLJ8",
+          "w": 1200,
+          "h": 1600
+        },
+        {
+          "fileId": "1YhkRHNzFcmXikZKJ5jX52HlnEj5b64Nk",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1Jhz1r3Ypj9GJmMLfLLBzWzf8dBq1bk23",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1DtcKIeujT0oa8yOTGr-ayQ922Pn3-rdo",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1aGYLNYYGWoiRKZ1SScolQ9r_yhOgNZ6m",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "1yCHqWRLKY0j-Pz-V1JfSgVm-63EkvwtN",
+          "w": 1600,
+          "h": 900
+        },
+        {
+          "fileId": "10QrmA3ycj-GnMrwmSSpvjzFHTSM8GyYZ",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1nLX_zFoQAcRr4l-MddKluTaB3uz3MDez",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "10M8_1OoiQdhxidhBx4mfnxWEGjeUt_Vo",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1mxQdUG7Lg543zi38qDtuBo83pHjLs8tQ",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1y2opWf31mcYXQ4bB2vXPabH577RWEWMn",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1UtzYqMArZTr0dE5TyOkNM2Dr1BEf333A",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1_CRhBjt-5dK6b6Ptfx3Isu-b6Cty4lNA",
+          "w": 1600,
+          "h": 1200
+        }
+      ]
+    }
+  ],
   "hero": {
     "dance": {
       "fileId": "178YnF_sSX_bYy6wZu6iBw7q6XDHylvNq",
