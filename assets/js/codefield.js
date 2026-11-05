@@ -3,7 +3,7 @@
    접근코드 입력칸 (2026-11-05 사용자 요청). 관리자 페이지(admin.html) · 페이지 직접 편집(editor.js) 로그인이 함께 쓴다.
      ① 영문 · 숫자 · - · _ 만 들어간다. 한글 자판인 채로 치면 그 자리에서 영문으로 바꾸고(「ㅏㄱ」→「kr」, 두벌식 자판 위치 그대로),
         그 밖의 글자(빈칸 · 기호)는 뺀다. 대문자 · 소문자는 친 그대로 둔다 — 코드는 대소문자를 구별한다(2026-11-05 사용자)
-     ② 칸 오른쪽 [보기] 단추로 입력한 코드를 보고 다시 숨긴다
+     ② 칸 오른쪽 눈 아이콘 단추로 입력한 코드를 보고 다시 숨긴다(보이는 중이면 빗금 친 눈)
    코드가 맞는지는 관문이 확인한다. 이 파일은 입력을 고쳐 보여 줄 뿐이다(CLAUDE.md 보안 1).
    아카이빙 사이트 site/js/hangul.js와 같은 바꾸기 규칙.
      CodeField.toEng(문자열)    한글 → 영문 자판 글자
@@ -31,6 +31,22 @@ window.CodeField = (function(){
     return out;
   }
 
+  // [보기] 단추의 눈 아이콘(DOM으로 그림). 보이는 중이면 눈에 빗금
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function eyeIcon(off){
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '18'); svg.setAttribute('height', '18');
+    svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-linecap', 'round'); svg.setAttribute('stroke-linejoin', 'round'); svg.setAttribute('aria-hidden', 'true');
+    var path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z');
+    var dot = document.createElementNS(SVG_NS, 'circle');
+    dot.setAttribute('cx', '12'); dot.setAttribute('cy', '12'); dot.setAttribute('r', '3');
+    svg.appendChild(path); svg.appendChild(dot);
+    if(off){ var line = document.createElementNS(SVG_NS, 'path'); line.setAttribute('d', 'M4 4l16 16'); svg.appendChild(line); }
+    return svg;
+  }
+
   function clean(str){ return toEng(str).replace(/[^A-Za-z0-9_-]/g, ''); }
 
   function enhance(input){
@@ -48,17 +64,17 @@ window.CodeField = (function(){
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cf-eye';
-    btn.textContent = '보기';
-    btn.setAttribute('aria-pressed', 'false');
-    btn.setAttribute('aria-label', '입력한 접근코드 보기');
     wrap.appendChild(btn);
 
     function show(on){
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      btn.textContent = on ? '숨기기' : '보기';
+      btn.textContent = '';
+      btn.appendChild(eyeIcon(on));
+      btn.title = on ? '숨기기' : '보기';
       btn.setAttribute('aria-label', on ? '접근코드 숨기기' : '입력한 접근코드 보기');
       input.type = on ? 'text' : 'password';   // 보이는 동안 한글 입력기가 켜질 수 있다 — 아래 fix가 영문으로 바꾼다
     }
+    show(false);
     btn.addEventListener('mousedown', function(ev){ ev.preventDefault(); });   // 입력칸의 커서를 그대로 둔다
     btn.addEventListener('click', function(){ show(btn.getAttribute('aria-pressed') !== 'true'); input.focus(); });
 

@@ -131,8 +131,8 @@ html.ed-on .x-sec .p1-ld:empty::before{content:"(제목 밑 설명 — 비워 �
 .ed-login .cf-wrap{margin-top:16px}
 .ed-login .cf-wrap input{margin-top:0}
 .cf-wrap{position:relative;display:block}
-.cf-wrap input{padding-right:76px!important}
-.cf-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:32px;padding:0 11px;border:1px solid #CFD2D0;background:#fff;color:#212326;
+.cf-wrap input{padding-right:52px!important}
+.cf-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:36px;height:32px;padding:0;border:1px solid #CFD2D0;background:#fff;color:#212326;
   font:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:-.02em}
 .cf-eye:hover{border-color:#212326}
 .cf-eye[aria-pressed="true"]{background:#212326;border-color:#212326;color:#fff}
