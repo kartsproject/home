@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:24:37+09:00",
+  "updatedAt": "2026-11-05T13:26:13+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -142,6 +142,46 @@
     }
   ],
   "gallery": [
+    {
+      "id": "G-0002",
+      "title": "무용분야 워크숍",
+      "desc": "2026. 07. 한국예술종합학교 광주캠퍼스",
+      "date": "2026-11-05",
+      "course": "workshop",
+      "field": "dance",
+      "photos": [
+        {
+          "fileId": "1AfP6nAOQH2BV1zQG4wmVnqnK9ETu7lj_",
+          "w": 1600,
+          "h": 902
+        },
+        {
+          "fileId": "1BHWtAKNQqnoEF1VdCFB52sonDyGQcMoJ",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "1AWzum5P1N7G7I_iV9tX-LOWoiSy8C8h5",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "10Zie1NFPjdPoKnkVFxkIMoT9nAWzUsDT",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "1GEZJO1VZuKzxs9dTChWUUDDtZGmQYCTH",
+          "w": 1600,
+          "h": 902
+        },
+        {
+          "fileId": "1tfnFMjFz-f_kqdRKU3pdRKWzuyLQD_uS",
+          "w": 1600,
+          "h": 901
+        }
+      ]
+    },
     {
       "id": "G-0001",
       "title": "음악분야 워크숍",
