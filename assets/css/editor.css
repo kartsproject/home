@@ -126,3 +126,13 @@ html.ed-on [data-xs]:hover{box-shadow:0 0 0 2px rgba(23,108,134,.6)}
 html.ed-on [data-xl] > *:hover{box-shadow:0 0 0 2px rgba(242,194,48,.85)}
 html.ed-on .x-sec .p1-ld:empty,html.ed-on .x-tx p:empty{display:block}
 html.ed-on .x-sec .p1-ld:empty::before{content:"(제목 밑 설명 — 비워 두면 보이지 않음)"}
+
+/* 접근코드 칸 [보기] (codefield.js, 2026-11-05) */
+.ed-login .cf-wrap{margin-top:16px}
+.ed-login .cf-wrap input{margin-top:0}
+.cf-wrap{position:relative;display:block}
+.cf-wrap input{padding-right:76px!important}
+.cf-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:32px;padding:0 11px;border:1px solid #CFD2D0;background:#fff;color:#212326;
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:-.02em}
+.cf-eye:hover{border-color:#212326}
+.cf-eye[aria-pressed="true"]{background:#212326;border-color:#212326;color:#fff}

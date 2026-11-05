@@ -320,7 +320,7 @@ window.Content = (function(){
     var css = document.createElement('link');
     css.rel = 'stylesheet'; css.href = 'assets/css/editor.css';
     document.head.appendChild(css);
-    ['assets/js/gateway.js', 'assets/js/cropper.js', 'assets/js/editor.js'].forEach(function(src){
+    ['assets/js/gateway.js', 'assets/js/cropper.js', 'assets/js/codefield.js', 'assets/js/editor.js'].forEach(function(src){
       var s = document.createElement('script');
       s.src = src; s.async = false;   // 적은 순서대로 돈다
       document.body.appendChild(s);

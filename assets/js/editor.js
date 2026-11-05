@@ -107,6 +107,7 @@
     h('form', { class:'ed-login', onsubmit:function(ev){
       ev.preventDefault();
       var code = codeIn.value.trim();
+      if(window.CodeField) code = CodeField.toEng(code);
       if(!code){ loginErr.textContent = '접근코드를 입력해 주세요.'; return; }
       loginBtn.disabled = true; loginErr.textContent = '';
       call({ action:'auth', code:code, name:'운영자', deviceId:deviceId(), requestId:Date.now() + '-' + Math.random().toString(16).slice(2) }, 30000)
@@ -122,13 +123,17 @@
       h('div', { class:'acts' }, [h('button', { type:'button', class:'ed-b', text:'편집 그만두기', onclick:quit }), loginBtn])
     ])
   ]);
+  // 접근코드 칸: 한글 자판이어도 영문으로, 오른쪽 [보기] (codefield.js, 2026-11-05)
+  var codeField = window.CodeField ? CodeField.enhance(codeIn) : null;
   function setSession(d){ E.token = d.token; E.exp = d.expiresAt; ss(K.token, d.token); ss(K.exp, String(d.expiresAt)); }
   function relogin(){
     return new Promise(function(resolve){
       waiters.push(resolve);
       if(loginBox.hidden){
         if(E.data) loginSub.textContent = '로그인 시간이 지났습니다. 다시 로그인하면 하던 일을 이어서 합니다.';
-        codeIn.value = ''; loginErr.textContent = ''; loginBox.hidden = false; codeIn.focus();
+        codeIn.value = ''; loginErr.textContent = ''; loginBox.hidden = false;
+        if(codeField) codeField.hide();
+        codeIn.focus();
       }
     });
   }

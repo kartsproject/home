@@ -133,6 +133,7 @@
     $('loginSub').textContent = message || '운영진 접근코드를 입력해 주세요.';
     $('loginErr').textContent = '';
     $('code').value = '';
+    if(codeField) codeField.hide();
     $('login').hidden = false;
     $('code').focus();
   }
@@ -142,9 +143,12 @@
       if($('login').hidden) showLogin(S.data ? '로그인 시간이 지났습니다. 다시 로그인하면 하던 작업을 이어서 합니다.' : null);
     });
   }
+  // 접근코드 칸: 한글 자판이어도 영문으로, 오른쪽 [보기] (codefield.js, 2026-11-05)
+  var codeField = window.CodeField ? CodeField.enhance($('code')) : null;
   $('loginForm').addEventListener('submit', function(ev){
     ev.preventDefault();
     var code = $('code').value.trim();
+    if(window.CodeField) code = CodeField.toEng(code);
     if(!code){ $('loginErr').textContent = '접근코드를 입력해 주세요.'; return; }
     $('loginBtn').disabled = true; $('loginErr').textContent = '';
     call({ action:'auth', code:code, name:OPERATOR, deviceId:deviceId(), requestId:Date.now() + '-' + Math.random().toString(16).slice(2) }, 30000)
