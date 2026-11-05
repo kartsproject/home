@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:08:48+09:00",
+  "updatedAt": "2026-11-05T13:09:51+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -214,21 +214,6 @@
           "fileId": "1LY_9od9XWxYt5jvNGIiK_AOtydM1r12T",
           "w": 1600,
           "h": 1011
-        }
-      ]
-    },
-    {
-      "id": "G-0002",
-      "title": "음악 마스터클래스",
-      "desc": "2026.07 · 서초동캠퍼스",
-      "date": "2026-07-01",
-      "course": "workshop",
-      "field": "music",
-      "photos": [
-        {
-          "fileId": "1v7fujNz0zQePJNHnh9Vg-qZysYir_T42",
-          "w": 1600,
-          "h": 1200
         }
       ]
     },
