@@ -1,12 +1,14 @@
 /* ============================================================
    2026 K예술영재 프로젝트 — codefield.js
    접근코드 입력칸 (2026-11-05 사용자 요청). 관리자 페이지(admin.html) · 페이지 직접 편집(editor.js) 로그인이 함께 쓴다.
-     ① 한글 자판인 채로 쳐도 영문으로 바꾼다 — 「ㅏㄱ」처럼 들어가면 그 자리에서 「kr」로 (두벌식 자판 위치 그대로)
+     ① 영문 · 숫자 · - · _ 만 들어간다. 한글 자판인 채로 치면 그 자리에서 영문으로 바꾸고(「ㅏㄱ」→「kr」, 두벌식 자판 위치 그대로),
+        그 밖의 글자(빈칸 · 기호)는 뺀다. 대문자 · 소문자는 친 그대로 둔다 — 코드는 대소문자를 구별한다(2026-11-05 사용자)
      ② 칸 오른쪽 [보기] 단추로 입력한 코드를 보고 다시 숨긴다
    코드가 맞는지는 관문이 확인한다. 이 파일은 입력을 고쳐 보여 줄 뿐이다(CLAUDE.md 보안 1).
    아카이빙 사이트 site/js/hangul.js와 같은 바꾸기 규칙.
-     CodeField.toEng(문자열)            한글 → 영문 자판 글자
-     CodeField.enhance(input, { upper }) 입력칸에 ①② 붙이기. upper: 대문자로 맞춤(홍보 사이트는 대소문자를 구별하니 쓰지 않음)
+     CodeField.toEng(문자열)    한글 → 영문 자판 글자
+     CodeField.clean(문자열)    toEng 뒤 영문 · 숫자 · - · _ 만 남김 (로그인 보낼 때)
+     CodeField.enhance(input)   입력칸에 ①② 붙이기
    ============================================================ */
 window.CodeField = (function(){
   var CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
@@ -29,8 +31,9 @@ window.CodeField = (function(){
     return out;
   }
 
-  function enhance(input, opts){
-    opts = opts || {};
+  function clean(str){ return toEng(str).replace(/[^A-Za-z0-9_-]/g, ''); }
+
+  function enhance(input){
     if(!input || input.getAttribute('data-cf')) return;
     input.setAttribute('data-cf', '1');
     input.setAttribute('autocapitalize', 'off');
@@ -61,11 +64,10 @@ window.CodeField = (function(){
 
     // 한글 → 영문. 한글을 조합하는 중에는 건드리지 않고, 조합이 끝나면 바꾼다
     function fix(){
-      var v = input.value, n = toEng(v);
-      if(opts.upper) n = n.toUpperCase();
+      var v = input.value, n = clean(v);
       if(n === v) return;
       var p = input.selectionStart, np = n.length;
-      if(p != null){ np = toEng(v.slice(0, p)).length; }
+      if(p != null){ np = clean(v.slice(0, p)).length; }
       input.value = n;
       try{ input.setSelectionRange(np, np); }catch(e){}
     }
@@ -74,5 +76,5 @@ window.CodeField = (function(){
     input.addEventListener('blur', fix);
     return { hide:function(){ show(false); } };
   }
-  return { toEng:toEng, enhance:enhance };
+  return { toEng:toEng, clean:clean, enhance:enhance };
 })();

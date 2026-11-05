@@ -148,7 +148,7 @@
   $('loginForm').addEventListener('submit', function(ev){
     ev.preventDefault();
     var code = $('code').value.trim();
-    if(window.CodeField) code = CodeField.toEng(code);
+    if(window.CodeField) code = CodeField.clean(code);
     if(!code){ $('loginErr').textContent = '접근코드를 입력해 주세요.'; return; }
     $('loginBtn').disabled = true; $('loginErr').textContent = '';
     call({ action:'auth', code:code, name:OPERATOR, deviceId:deviceId(), requestId:Date.now() + '-' + Math.random().toString(16).slice(2) }, 30000)
