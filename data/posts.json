@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:30:56+09:00",
+  "updatedAt": "2026-11-05T13:33:22+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -142,6 +142,66 @@
     }
   ],
   "gallery": [
+    {
+      "id": "G-0004",
+      "title": "미술분야 워크숍",
+      "desc": "2026. 08. 한국과학기술원",
+      "date": "2026-11-05",
+      "course": "workshop",
+      "field": "art",
+      "photos": [
+        {
+          "fileId": "1lGVgeDAEb3grU8c5WlcI3DHRRTNep8bd",
+          "w": 1600,
+          "h": 1010
+        },
+        {
+          "fileId": "16wUuhSc4OL4cTSU4PjSveg18hV7bWxDe",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "11in3lMUDmvs9AMjhoe-4nlUJFjTepMug",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "16yHSnS77xO8Ggk0FwuPCdrK5IHhJwA17",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1fdiaWIs4TrrlHHbj_Vbe8asPy7sKny20",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "14Nq_MWD8WimyqYsZL7sKQIs0xbKxxLCD",
+          "w": 1600,
+          "h": 1200
+        },
+        {
+          "fileId": "1Gj5IZFnofIFEgaiUOCJknxIwSsolKpJW",
+          "w": 1600,
+          "h": 901
+        },
+        {
+          "fileId": "1y7dsiSRggmXQRCjq5MLP3LioGH7iHsYP",
+          "w": 1440,
+          "h": 1080
+        },
+        {
+          "fileId": "1z0Eytxr35qbsWD0B5D7EaBVIy98lhuFe",
+          "w": 1440,
+          "h": 811
+        },
+        {
+          "fileId": "1tIdg56hgkDYVcvBqrwoq4HbjKh_kUZZB",
+          "w": 1440,
+          "h": 811
+        }
+      ]
+    },
     {
       "id": "G-0003",
       "title": "전통예술분야 워크숍",
