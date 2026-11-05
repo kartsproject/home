@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:36:36+09:00",
+  "updatedAt": "2026-11-05T13:37:03+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -151,6 +151,11 @@
       "field": "trad",
       "photos": [
         {
+          "fileId": "1VUsrse3gglazbtbceCNKNfBiyOoege05",
+          "w": 1600,
+          "h": 1600
+        },
+        {
           "fileId": "1ltIP7wVjQubw0vwc_K9g4KogLFvPIrED",
           "w": 1200,
           "h": 1600
@@ -177,11 +182,6 @@
         },
         {
           "fileId": "12QAtwLkmLfRp9xeBsCBkKqz-1FT9Tu-f",
-          "w": 1600,
-          "h": 1600
-        },
-        {
-          "fileId": "1VUsrse3gglazbtbceCNKNfBiyOoege05",
           "w": 1600,
           "h": 1600
         },
