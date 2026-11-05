@@ -154,25 +154,43 @@ function handleSave_(req) {
   });
 }
 
+// 글 하나(id) 또는 여러 개(ids, 관리자 페이지 「선택 삭제」 2026-11-05)를 지우고 한 번 발행한다.
+// 첨부 파일을 휴지통으로 보내는 데 시간이 걸리니, 3분 20초가 지나면 남은 글은 remaining으로 돌려준다 — 화면이 이어서 다시 보낸다.
+// 이미 없는 글은 지운 것으로 친다. 하나도 찾지 못하면 NOT_FOUND.
+var REMOVE_MAX_IDS_ = 100, REMOVE_TIME_BUDGET_MS_ = 200000;
 function handleRemove_(req) {
   var auth = requireAuth_(req);
   if (!auth.ok) return jsonResponse_(false, auth.error, null);
   var board = BOARDS_[req.board];
-  if (!board || board.fixed || !req.id) return jsonResponse_(false, 'INVALID_INPUT', null);
+  var ids = Array.isArray(req.ids) ? req.ids : (req.id ? [req.id] : []);
+  if (!board || board.fixed || !ids.length || ids.length > REMOVE_MAX_IDS_) return jsonResponse_(false, 'INVALID_INPUT', null);
+  if (ids.some(function (id) { return typeof id !== 'string' || !id || id.length > 30; })) return jsonResponse_(false, 'INVALID_INPUT', null);
+  ids = ids.filter(function (id, i) { return ids.indexOf(id) === i; });
 
   return withLock_(function () {
+    var started = Date.now();
     if (board.ensure) board.ensure();
-    var row = readTab_(board.tab).filter(function (r) { return r['글ID'] === req.id; })[0];
-    if (!row) return jsonResponse_(false, 'NOT_FOUND', null);
+    var rows = readTab_(board.tab), byId = {};
+    rows.forEach(function (r) { byId[r['글ID']] = r; });
+    var found = ids.filter(function (id) { return byId[id]; });
+    if (!found.length) return jsonResponse_(false, 'NOT_FOUND', null);
 
-    var mine = readTab_('첨부').filter(function (a) { return a['글ID'] === req.id; });
-    mine.forEach(discardAttachment_);
-    deleteRows_('첨부', mine.map(function (a) { return a._row; }));
-    deleteRows_(board.tab, [row._row]);
+    var attachments = readTab_('첨부'), attRows = [], postRows = [], removed = [], remaining = [];
+    found.forEach(function (id) {
+      if (removed.length && Date.now() - started > REMOVE_TIME_BUDGET_MS_) { remaining.push(id); return; }
+      attachments.filter(function (a) { return a['글ID'] === id; }).forEach(function (a) {
+        discardAttachment_(a);
+        attRows.push(a._row);
+      });
+      postRows.push(byId[id]._row);
+      removed.push(id);
+    });
+    deleteRows_('첨부', attRows);
+    deleteRows_(board.tab, postRows);
 
-    logAccess_('성공', auth.code, auth.name, '', 'remove', req.id);
+    removed.forEach(function (id) { logAccess_('성공', auth.code, auth.name, '', 'remove', id); });
     var published = publish_(auth.name);
-    return jsonResponse_(true, null, { published: published.ok });
+    return jsonResponse_(true, null, { published: published.ok, removed: removed, remaining: remaining });
   });
 }
 

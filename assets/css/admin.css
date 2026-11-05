@@ -64,7 +64,7 @@ main.mg-in{padding:34px 0 120px}
 .mg-card{background:#fff;border:0;padding:0;text-align:left;cursor:pointer}
 .mg-card .th{display:block;aspect-ratio:4/3;background:linear-gradient(150deg,#1E6C7E,#0B2F38) center/cover no-repeat;position:relative}
 .mg-card .th .badge{position:absolute;left:10px;top:10px}
-.mg-card .tx{padding:14px 14px 16px}
+.mg-card .tx{display:block;padding:14px 14px 16px}
 .mg-card .t{font-weight:700;letter-spacing:-.02em;font-size:15.5px}
 .mg-card .m{font-size:13px;color:var(--gray-lt);margin-top:4px}
 .mg-card:hover .t{text-decoration:underline}
@@ -186,6 +186,27 @@ main.mg-in{padding:34px 0 120px}
   padding:13px 22px;font-size:14.5px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:calc(100% - 40px)}
 .mg-toast.on{opacity:1;transform:translate(-50%,0)}
 .mg-toast.err{background:#9B2330}
+
+/* ---------- 선택 삭제 (2026-11-05) ---------- */
+.mg-selbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:-6px 0 12px;padding:10px 14px;background:#fff;border:1px solid var(--line)}
+.mg-selbar .cnt{font-size:14px;color:var(--teal);font-weight:600}
+.mg-selbar .mg-btn{margin-left:auto}
+.mg-btn.warn:hover:not(:disabled){background:#9B2330;border-color:#9B2330;color:#fff}
+.mg-btn:disabled{opacity:.4;cursor:not-allowed}
+.mg-chk{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:14.5px;font-weight:600}
+.mg-chk input{width:20px;height:20px;margin:0;accent-color:var(--teal);cursor:pointer}
+.mg-sel-row{display:grid;grid-template-columns:48px 1fr;align-items:stretch;border-bottom:1px solid var(--line)}
+.mg-sel-row .mg-chk{justify-content:center}
+.mg-sel-row .mg-row{border-bottom:0;padding-left:4px}
+.mg-sel-row.on,.mg-sel-row.on .mg-row{background:#EEF5F7}
+.mg-sel-card{position:relative}
+.mg-sel-card .mg-chk{position:absolute;right:8px;top:8px;z-index:2;width:34px;height:34px;justify-content:center;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.mg-sel-card .mg-card{width:100%}
+.mg-sel-card.on .mg-card{outline:3px solid var(--teal);outline-offset:-3px}
+@media(max-width:800px){
+  .mg-sel-row{grid-template-columns:40px 1fr}
+  .mg-selbar .mg-btn{margin-left:0}
+}
 
 @media(max-width:800px){
   .mg-cards{grid-template-columns:repeat(2,1fr)}

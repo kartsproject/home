@@ -31,7 +31,7 @@
     return c ? c + ' · ' + codeName(GALLERY_FIELDS, field || '') : '';
   }
 
-  var S = { token:null, exp:0, name:'', data:null, tab:'notice', edit:null, lastActive:Date.now() };
+  var S = { token:null, exp:0, name:'', data:null, tab:'notice', edit:null, lastActive:Date.now(), sel:{ board:null, ids:{} } };
   var $ = function(id){ return document.getElementById(id); };
 
   /* ---------- 저장소 (막혀 있어도 화면은 동작) ---------- */
@@ -222,41 +222,110 @@
     if(S.tab === 'guide'){ view.appendChild(guideRows(items)); return; }
     if(!items.length){ view.appendChild(h('p', { class:'mg-empty', text:'아직 글이 없습니다.' })); return; }
 
+    // 선택 삭제 (2026-11-05): 탭을 바꾸면 고른 것을 비우고, 목록에 없는 글은 뺀다
+    if(S.sel.board !== S.tab) S.sel = { board:S.tab, ids:{} };
+    var present = {};
+    items.forEach(function(x){ present[x.id] = true; });
+    Object.keys(S.sel.ids).forEach(function(id){ if(!present[id]) delete S.sel.ids[id]; });
+    view.appendChild(selBar(items));
+
     if(S.tab === 'press'){
       view.appendChild(h('div', { class:'mg-rows' }, items.map(function(p){
-        return h('button', { type:'button', class:'mg-row', onclick:function(){ openEditor('press', p); } }, [
+        return selRow(p, h('button', { type:'button', class:'mg-row', onclick:function(){ openEditor('press', p); } }, [
           h('span', { class:'badges' }, [visBadge(p.visibility)]),
           h('span', { class:'t' }, [h('small', { text:p.source }), p.title]),
           h('span', { class:'m', text:p.date })
-        ]);
+        ]));
       })));
-      return;
-    }
-
-    if(S.tab === 'notice'){
+    }else if(S.tab === 'notice'){
       view.appendChild(h('div', { class:'mg-rows' }, items.map(function(n){
         var meta = [n.date];
         if(n.photos.length) meta.push('사진 ' + n.photos.length);
         if(n.files.length) meta.push('파일 ' + n.files.length);
-        return h('button', { type:'button', class:'mg-row', onclick:function(){ openEditor('notice', n); } }, [
+        return selRow(n, h('button', { type:'button', class:'mg-row', onclick:function(){ openEditor('notice', n); } }, [
           h('span', { class:'badges' }, [visBadge(n.visibility), n.pinned ? h('span', { class:'badge pin', text:'상단 고정' }) : null]),
           h('span', { class:'t' }, [h('small', { text:n.category }), n.title]),
           h('span', { class:'m', text:meta.join(' · ') })
-        ]);
+        ]));
       })));
     }else{
       view.appendChild(h('div', { class:'mg-cards' }, items.map(function(g){
         var th = h('span', { class:'th' }, [visBadge(g.visibility)]);
         if(g.photos.length) th.style.backgroundImage = 'url("' + Board.photoUrl(g.photos[0].fileId, 480) + '")';
-        return h('button', { type:'button', class:'mg-card', onclick:function(){ openEditor('gallery', g); } }, [
+        return selRow(g, h('button', { type:'button', class:'mg-card', onclick:function(){ openEditor('gallery', g); } }, [
           th,
           h('span', { class:'tx' }, [
             h('span', { class:'t', text:g.title, style:'display:block' }),
             h('span', { class:'m', text:[g.date, galleryLabel(g.course, g.field) || null, '사진 ' + g.photos.length + '장'].filter(Boolean).join(' · '), style:'display:block' })
           ])
-        ]);
+        ]), true);
       })));
     }
+    updateSel();
+  }
+
+  /* ---------- 선택 삭제 (공지사항 · 언론홍보 · 갤러리, 2026-11-05) ---------- */
+  // 줄 · 카드 왼쪽(카드는 사진 위)에 고르는 칸. 글을 여는 단추와 따로 둔다(단추 안에 고르는 칸을 넣을 수 없음)
+  function selRow(item, opener, isCard){
+    var box = h('input', { type:'checkbox', 'aria-label':'선택: ' + (item.title || item.id) });
+    box.checked = !!S.sel.ids[item.id];
+    box.addEventListener('change', function(){
+      if(box.checked) S.sel.ids[item.id] = true; else delete S.sel.ids[item.id];
+      updateSel();
+    });
+    return h('div', { class:(isCard ? 'mg-sel-card' : 'mg-sel-row'), 'data-id':item.id }, [
+      h('label', { class:'mg-chk', title:'선택' }, [box]), opener
+    ]);
+  }
+  function selBar(items){
+    var all = h('input', { type:'checkbox', id:'selAll' });
+    all.addEventListener('change', function(){
+      S.sel.ids = {};
+      if(all.checked) items.forEach(function(x){ S.sel.ids[x.id] = true; });
+      [].forEach.call(document.querySelectorAll('.mg-sel-row input, .mg-sel-card input'), function(c){ c.checked = all.checked; });
+      updateSel();
+    });
+    return h('div', { class:'mg-selbar' }, [
+      h('label', { class:'mg-chk all' }, [all, h('span', { text:'전체 선택' })]),
+      h('span', { class:'cnt', id:'selCnt' }),
+      h('button', { type:'button', class:'mg-btn sm warn', id:'selDel', text:'선택 삭제', onclick:removeSelected })
+    ]);
+  }
+  function updateSel(){
+    var all = $('selAll');
+    if(!all) return;
+    var total = document.querySelectorAll('.mg-sel-row, .mg-sel-card').length, n = Object.keys(S.sel.ids).length;
+    all.checked = total > 0 && n === total;
+    all.indeterminate = n > 0 && n < total;
+    $('selCnt').textContent = n ? n + '개 선택됨' : '';
+    $('selDel').disabled = !n;
+    $('selDel').textContent = n ? '선택 삭제 (' + n + ')' : '선택 삭제';
+    [].forEach.call(document.querySelectorAll('.mg-sel-row, .mg-sel-card'), function(r){ r.classList.toggle('on', !!S.sel.ids[r.getAttribute('data-id')]); });
+  }
+  function removeSelected(){
+    var ids = Object.keys(S.sel.ids), board = S.tab, total = ids.length, published = true;
+    if(!total) return;
+    var name = boardOf(board).name;
+    if(!confirm('선택한 ' + name + ' ' + total + '개를 삭제할까요?\n첨부한 사진 · 파일도 함께 지워집니다(드라이브 휴지통에서 30일 안에 복구 가능).')) return;
+    // 관문이 시간이 모자라면 남은 글을 돌려준다 — 남은 것을 이어서 보낸다
+    function step(rest){
+      busy('삭제하고 사이트에 반영하는 중… (' + (total - rest.length) + ' / ' + total + ')\n사진이 많으면 몇 분 걸릴 수 있습니다.');
+      return api('remove', { board:board, ids:rest }, 330000).then(function(d){
+        if(!d.published) published = false;
+        var remain = d.remaining || [];
+        if(remain.length && remain.length < rest.length) return step(remain);
+      });
+    }
+    step(ids).then(function(){
+      S.sel.ids = {};
+      toast(published ? total + '개를 삭제했습니다. 1~2분 뒤 사이트에서 사라집니다.' : '삭제했지만 사이트 반영에 실패했습니다. 위의 [다시 반영]을 눌러 주세요.', !published);
+      return load();
+    }, function(err){
+      busy(null);
+      toast(errMsg(err) + ' 지워진 것과 남은 것을 목록에서 확인해 주세요.', true);
+      S.sel.ids = {};
+      return load();
+    });
   }
   function visBadge(v){ return h('span', { class:'badge ' + (v === '공개' ? 'on' : 'off'), text:v }); }
   function boardOf(id){ return BOARDS.filter(function(b){ return b.id === id; })[0]; }

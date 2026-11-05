@@ -49,9 +49,17 @@ function writeRow_(name, obj, rowNumber) {
 }
 
 // 행 번호 목록을 지운다. 위에서부터 지우면 아래 행 번호가 밀리므로 아래부터 지운다.
+// 이어진 줄은 한 번에 지운다(갤러리 사진 수십 장 · 여러 글 한꺼번에 지우기가 빨라지게, 2026-11-05)
 function deleteRows_(name, rowNumbers) {
+  if (!rowNumbers.length) return;
   var sheet = getSheet_(name);
-  rowNumbers.slice().sort(function (a, b) { return b - a; }).forEach(function (r) { sheet.deleteRow(r); });
+  var rows = rowNumbers.slice().sort(function (a, b) { return b - a; });
+  var end = rows[0], start = rows[0];
+  for (var i = 1; i <= rows.length; i++) {
+    if (i < rows.length && rows[i] === start - 1) { start = rows[i]; continue; }
+    sheet.deleteRows(start, end - start + 1);
+    if (i < rows.length) { end = rows[i]; start = rows[i]; }
+  }
 }
 
 // docs/api.md 1절: 시트에 쓰는 값은 수식 주입을 막는다(= + - @ 로 시작하면 앞에 ' 를 붙인다).
