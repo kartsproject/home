@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T17:43:55+09:00",
+  "updatedAt": "2026-11-05T13:08:48+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -142,21 +142,6 @@
     }
   ],
   "gallery": [
-    {
-      "id": "G-0008",
-      "title": "심화 멘토링 첫 회차",
-      "desc": "2026.10",
-      "date": "2026-10-01",
-      "course": "mentoring",
-      "field": "trad",
-      "photos": [
-        {
-          "fileId": "1ScKBAhfY81tZN55YOLPZ3XR5c8Vf7chH",
-          "w": 1600,
-          "h": 1011
-        }
-      ]
-    },
     {
       "id": "G-0007",
       "title": "분야별 평가회의",
