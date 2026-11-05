@@ -548,49 +548,61 @@
     return h('div', { class:'fld' }, [h('label', { for:id }, [label, hint ? h('span', { class:'hint', text:hint }) : null]), input, count]);
   }
 
-  // 본문: 서식 버튼(굵게 · 강조색 · 빨간색) + 미리보기 (docs/decisions.md 4절)
+  // 본문: 글쓰기 도구(richtext.js — 굵게 · 기울임 · 밑줄 · 형광 · 크기 · 색 · 글꼴 · 정렬 · 목록 · 소제목 · 링크) + 미리보기
+  // (2026-11-05 사용자). 보이는 대로 고치고, 저장은 글 묶음(rich)과 글자만(body, 글자 수 · 빈 글 확인용)으로 보낸다.
+  // 예전 본문(**굵게** {강조:} {빨강:})은 열 때 같은 모양으로 바꿔 보여 준다
   function bodyField(p, lim){
-    var ta = h('textarea', { id:'f-body', value:p.body, placeholder:'안내 내용을 입력하세요. 주소(https://…)는 자동으로 링크가 됩니다.' });
+    var ed = h('div', { class:'rt-edit rt-doc', id:'f-body', contenteditable:'true', role:'textbox', 'aria-multiline':'true', 'aria-label':'본문',
+      'data-placeholder':'안내 내용을 입력하세요. 주소(https://…)는 사이트에서 자동으로 링크가 됩니다.' });
+    ed.spellcheck = false;
+    RT.docToDom(ed, p.rich && p.rich.b ? p.rich : RT.legacyBodyToDoc(p.body));
+    if(!ed.firstChild){ var first = h('p'); first.appendChild(h('br')); ed.appendChild(first); }   // 빈 본문도 문단 안에서 쓰기 시작하게
+    try{ document.execCommand('defaultParagraphSeparator', false, 'p'); }catch(err){}
     var count = h('p', { class:'count' });
     var pv = h('div', { class:'preview', hidden:true });
     var pvBtn;
     var sync = function(){
-      p.body = ta.value;
-      count.textContent = ta.value.length + ' / ' + lim.noticeBody;
-      count.className = 'count' + (ta.value.length > lim.noticeBody ? ' over' : '');
+      var doc = RT.domToDoc(ed);
+      p.rich = doc;
+      p.body = RT.docText(doc);
+      count.textContent = p.body.length + ' / ' + lim.noticeBody;
+      count.className = 'count' + (p.body.length > lim.noticeBody ? ' over' : '');
+      ed.classList.toggle('is-empty', !p.body.trim());
       if(!pv.hidden) drawPreview();
     };
     var drawPreview = function(){
       pv.textContent = '';
       pv.appendChild(Board.renderNotice(previewPost(), { localPhoto:function(ph){ return ph.local; } }));
     };
-    var wrapSel = function(open, close){
-      var s = ta.selectionStart, eIdx = ta.selectionEnd, sel = ta.value.slice(s, eIdx) || '글자';
-      ta.value = ta.value.slice(0, s) + open + sel + close + ta.value.slice(eIdx);
-      ta.focus(); ta.setSelectionRange(s + open.length, s + open.length + sel.length);
-      markDirty(); sync();
-    };
-    ta.addEventListener('input', function(){ markDirty(); sync(); });
+    var bar = RT.toolbar({
+      root:function(){ return ed; },
+      mode:function(){ return 'doc'; },
+      changed:function(){ markDirty(); sync(); },
+      notice:function(m){ toast(m, true); }
+    });
+    ed.addEventListener('input', function(){ markDirty(); sync(); });
+    ed.addEventListener('keydown', function(ev){ bar.keys(ev); });
+    // 붙여 넣기는 글자만(다른 곳의 글꼴 · 색이 섞이지 않게). 줄은 그대로
+    ed.addEventListener('paste', function(ev){
+      ev.preventDefault();
+      var t = ((ev.clipboardData || window.clipboardData).getData('text/plain') || '').replace(/\r\n?/g, '\n');
+      document.execCommand('insertText', false, t);
+    });
+    ed.addEventListener('drop', function(ev){ ev.preventDefault(); });
     pvBtn = h('button', { type:'button', class:'pv', text:'미리보기', onclick:function(){
       pv.hidden = !pv.hidden; pvBtn.className = 'pv' + (pv.hidden ? '' : ' on');
       if(!pv.hidden) drawPreview();
     } });
     sync();
-    return h('div', { class:'fld' }, [
+    return h('div', { class:'fld rt-field' }, [
       h('label', { for:'f-body' }, ['본문', h('span', { class:'hint', text:'비워 두면 사진 · 첨부만 보입니다' })]),
-      h('div', { class:'tools' }, [
-        h('button', { type:'button', class:'b', text:'굵게', title:'고른 글자를 굵게', onclick:function(){ wrapSel('**', '**'); } }),
-        h('button', { type:'button', class:'k', text:'강조색', title:'고른 글자를 청록색으로', onclick:function(){ wrapSel('{강조:', '}'); } }),
-        h('button', { type:'button', class:'w', text:'빨간색', title:'고른 글자를 빨간색으로', onclick:function(){ wrapSel('{빨강:', '}'); } }),
-        h('span', { class:'sp' }), pvBtn
-      ]),
-      ta, count,
-      h('p', { class:'syntax' }, ['글자를 고르고 버튼을 누르면 기호가 붙습니다: ',
-        h('code', { text:'**굵게**' }), ' ', h('code', { text:'{강조:청록}' }), ' ', h('code', { text:'{빨강:빨강}' }),
-        ' — 실제 모양은 미리보기로 확인하세요.']),
+      bar, ed,
+      h('div', { class:'tools under' }, [count, h('span', { class:'sp' }), pvBtn]),
+      h('p', { class:'syntax', text:'글자를 끌어 고른 뒤 위 도구를 누르세요. 정렬 · 목록 · 소제목은 커서가 있는 문단에 적용됩니다. 실제 모양은 미리보기로 확인하세요.' }),
       pv
     ]);
   }
+
 
   function previewPost(){
     var e = S.edit;
@@ -792,7 +804,7 @@
     }else if(!e.photos.length && p.visibility === '공개' && !confirm('사진이 없는 앨범입니다. 사이트에 빈 칸으로 보입니다. 그래도 공개로 저장할까요?')) return;
 
     var post = isNotice
-      ? { category:p.category, title:p.title, body:p.body, date:p.date, pinned:!!p.pinned, photoPosition:p.photoPosition, photoLink:(p.photoLink || '').trim(), visibility:p.visibility }
+      ? { category:p.category, title:p.title, body:p.body, rich:p.rich || RT.legacyBodyToDoc(p.body), date:p.date, pinned:!!p.pinned, photoPosition:p.photoPosition, photoLink:(p.photoLink || '').trim(), visibility:p.visibility }
       : { title:p.title, desc:p.desc || '', date:p.date, visibility:p.visibility, course:p.course || '', field:p.course ? p.field || '' : '' };
     send({
       board:e.board, id:e.id, post:post,

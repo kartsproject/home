@@ -12,7 +12,7 @@
         구역 = { k:'text'|'photo'|'table'|'cards'|'steps', h:제목, d:제목 밑 설명, p:[문단], i:[[제목 · 항목, 설명 · 내용]], ph:사진 자리 }
         모양은 사이트에 있는 것(.p1-sec · .ab-dl · .cp-cards · .p1-st)을 그대로 쓴다. 메인은 띠(section.x-band)로 감싼다
    열쇠는 docs/tools/annotate-edit.py가 HTML에 붙인다. 고친 것이 없는 페이지는 HTML 그대로다.
-   글 서식은 **굵게** · ==형광==(em.mark) · 줄바꿈(\n)만. 넣을 때는 textContent · DOM으로만 만든다(innerHTML 없음 — CLAUDE.md 보안 5).
+   글 서식은 글쓰기 도구(richtext.js)의 조각 — 예전 글(**굵게** ==형광==)도 읽는다. 넣을 때는 DOM으로만 만든다(innerHTML 없음 — CLAUDE.md 보안 5).
    주소에 ?edit=1이 있거나 이 탭에서 편집을 켰으면(sessionStorage hp_edit) 편집 도구(editor.js)를 부른다 —
    편집 도구는 로그인을 받고, 저장할 수 있는지는 관문이 요청마다 확인한다.
    이 파일은 board.js 뒤, photos.js 앞에 둔다(목록을 다시 만든 뒤 사진을 넣도록).
@@ -23,32 +23,11 @@ window.Content = (function(){
 
   function obj(v){ return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
   function qsa(root, sel){ return [].slice.call(root.querySelectorAll(sel)); }
-  function isMark(n){ return n.nodeName === 'EM' && n.classList.contains('mark'); }
 
-  /* ---------- 읽기: 칸 → 글 ---------- */
-  // 서식 표시는 잠깐 보이지 않는 글자로 두었다가(앞뒤 띄어쓰기를 바깥으로 빼려고) 끝에 ** · ==로 바꾼다
-  var B1 = '\u0001', B2 = '\u0003', M1 = '\u0002', M2 = '\u0004';
-  function readRich(el){
-    var out = '';
-    (function walk(p, inB, inM){
-      [].forEach.call(p.childNodes, function(n){
-        if(n.nodeType === 3){ out += n.data.replace(/\s+/g, ' '); return; }
-        if(n.nodeType !== 1) return;
-        var t = n.nodeName;
-        if(t === 'BR'){ out += '\n'; return; }
-        if(t === 'DIV' || t === 'P'){ if(out && out.slice(-1) !== '\n') out += '\n'; walk(n, inB, inM); return; }   // 편집 중 붙여 넣은 줄
-        if((t === 'B' || t === 'STRONG') && !inB){ out += B1; walk(n, true, inM); out += B2; return; }
-        if(isMark(n) && !inM){ out += M1; walk(n, inB, true); out += M2; return; }
-        walk(n, inB, inM);   // 그 밖의 칸(문장 묶음 .ln-s 등)은 글자만
-      });
-    })(el, false, false);
-    out = out.replace(/​/g, '')
-      .replace(/([\u0001\u0002])( +)/g, '$2$1').replace(/( +)([\u0003\u0004])/g, '$2$1')
-      .replace(/\u0001\u0003|\u0002\u0004/g, '').replace(/\u0001\u0003|\u0002\u0004/g, '');
-    out = out.split('\n').map(function(l){ return l.replace(/ {2,}/g, ' ').trim(); }).join('\n')
-      .replace(/\n{3,}/g, '\n\n').trim();
-    return out.replace(/[\u0001\u0003]/g, '**').replace(/[\u0002\u0004]/g, '==');
-  }
+  /* ---------- 읽기 · 쓰기: 칸 ↔ 글 (글쓰기 도구 richtext.js, 2026-11-05) ----------
+     칸의 값: 예전 글(문자열 — 굵게 · 형광 · 줄바꿈만 쓴 칸은 지금도 이렇게 저장) 또는 { r:[조각], a:정렬 }.
+     정렬은 칸 요소에 rt-a-* class로 붙인다 */
+  var ALIGN_RE = /(^|\s)rt-a-[lcr](?=\s|$)/g;
   // 글자만 바꾸는 칸: 그 칸이 바로 가진 첫 글(편집 중이면 .ed-t)
   function textNode(el){
     for(var i = 0; i < el.childNodes.length; i++){
@@ -60,41 +39,38 @@ window.Content = (function(){
   }
   function readText(el){
     var n = textNode(el);
-    return n ? n.textContent.replace(/​/g, '').replace(/\s+/g, ' ').trim() : '';
+    return n ? n.textContent.replace(/\u200b/g, '').replace(/\s+/g, ' ').trim() : '';
+  }
+  function readRich(el){
+    var runs = RT.domToRuns(el), m = /(?:^|\s)rt-a-([lcr])(?:\s|$)/.exec(el.className || '');
+    if(!m){ var legacy = RT.runsToLegacy(runs); if(legacy !== null) return legacy; }
+    var o = { r:runs };
+    if(m) o.a = m[1];
+    return o;
   }
   function read(el){ return el.hasAttribute('data-et') ? readText(el) : readRich(el); }
+  function key(v){ return typeof v === 'string' ? v : JSON.stringify(v); }
+  function eq(a, b){ return key(a) === key(b); }
+  function textOf(v){ return typeof v === 'string' ? v : RT.runsText(obj(v).r); }
 
-  /* ---------- 쓰기: 글 → 칸 ---------- */
-  function addText(p, s){
-    s.split('\n').forEach(function(x, i){
-      if(i) p.appendChild(document.createElement('br'));
-      if(x) p.appendChild(document.createTextNode(x));
-    });
-  }
-  function fill(p, s){
-    var re = /\*\*([\s\S]+?)\*\*|==([\s\S]+?)==/g, last = 0, m;
-    while((m = re.exec(s))){
-      if(m.index > last) addText(p, s.slice(last, m.index));
-      var e;
-      if(m[1] != null){ e = document.createElement('b'); fill(e, m[1]); }
-      else{ e = document.createElement('em'); e.className = 'mark'; fill(e, m[2]); }
-      p.appendChild(e);
-      last = re.lastIndex;
-    }
-    if(last < s.length) addText(p, s.slice(last));
-  }
   // 칸에 글을 넣는다. 화면에 붙어 있으면 줄바꿈 단위(common.js __lb)도 다시 맞춘다 — 편집 중에는 맞추지 않는다
-  function set(el, s){
-    s = String(s == null ? '' : s);
+  function set(el, v){
+    if(v == null) v = '';
     if(el.hasAttribute('data-et')){
-      var n = textNode(el);
+      var s = textOf(v), n = textNode(el);
       if(!n) return;
       if(n.nodeType === 1){ n.textContent = s; return; }
       var m = n.data.match(/^(\s*)[\s\S]*?(\s*)$/);
-      n.data = m[1] + (s || '​') + m[2];   // 비운 칸도 다음에 찾을 수 있게 보이지 않는 글자 하나
+      n.data = m[1] + (s || '\u200b') + m[2];   // 비운 칸도 다음에 찾을 수 있게 보이지 않는 글자 하나
     }else{
       el.textContent = '';
-      fill(el, s);
+      el.className = (el.className || '').replace(ALIGN_RE, '').trim();
+      if(!el.className) el.removeAttribute('class');
+      if(typeof v === 'string') RT.runsToDom(el, RT.legacyToRuns(v));
+      else{
+        RT.runsToDom(el, obj(v).r);
+        if(RT.ALIGNS[v.a]) el.classList.add('rt-a-' + v.a);
+      }
     }
     if(!C.editing && window.__lb && document.body.contains(el)) window.__lb(el);
   }
@@ -124,7 +100,7 @@ window.Content = (function(){
       var c = tpl.cloneNode(true), tt = obj(r.t);
       Object.keys(tt).forEach(function(rk){
         var e = find(c, rk);
-        if(e && typeof tt[rk] === 'string'){ set(e, tt[rk]); made.push(e); }
+        if(e && cellv(tt[rk])){ set(e, tt[rk]); made.push(e); }
       });
       if(typeof r.p === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(r.p)){ var ph = photoOf(c); if(ph) ph.setAttribute('data-photo', r.p); }
       frag.appendChild(c);
@@ -142,10 +118,12 @@ window.Content = (function(){
   var GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
   var SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
   function mk(tag, cls){ var e = document.createElement(tag); if(cls) e.className = cls; return e; }
-  function cell(tag, f, text, cls){ var e = mk(tag, cls); e.setAttribute('data-xf', f); fill(e, String(text == null ? '' : text)); return e; }
-  function strs(v){ return Array.isArray(v) ? v.filter(function(x){ return typeof x === 'string'; }) : []; }
+  function cell(tag, f, v, cls){ var e = mk(tag, cls); e.setAttribute('data-xf', f); set(e, v); return e; }
+  function cellv(v){ return typeof v === 'string' || (v && typeof v === 'object' && !Array.isArray(v)); }
+  function strs(v){ return Array.isArray(v) ? v.filter(cellv) : []; }
   function after(ref, n){ ref.parentNode.insertBefore(n, ref.nextSibling); }
   function rd(e){ return e ? readRich(e) : ''; }
+  function rdEmpty(v){ return typeof v === 'string' ? !v : !v.r.length && !v.a; }
   // 글자 칸(문단) 뒤에 더하는 문단: 그 문단과 같은 태그 · class, 편집 열쇠는 뺀다
   var STRIP = ['data-e', 'data-et', 'data-k', 'data-rv', 'data-d', 'id', 'contenteditable', 'data-ed', 'spellcheck', 'data-ap', 'data-xf', 'style'];
   function newPara(src, mark){
@@ -184,14 +162,19 @@ window.Content = (function(){
         if(typeof sec.ph === 'string' && SLUG.test(sec.ph)) img.setAttribute('data-photo', sec.ph);
         fig.appendChild(img); body.appendChild(fig);
       }
-      var tx = mk('div', 'x-tx'), ps = strs(sec.p);
-      (ps.length ? ps : ['']).forEach(function(t){ tx.appendChild(cell('p', 'p', t)); });
+      // 글 칸: 글쓰기 도구의 여러 문단(b — 소제목 · 목록 가능). 예전 문단 글 목록(p)도 읽는다
+      var tx = mk('div', 'x-tx rt-doc');
+      tx.setAttribute('data-xf', 'tx');
+      var blocks = Array.isArray(sec.b) ? sec.b : strs(sec.p).map(function(t){
+        return typeof t === 'string' ? { t:'p', r:RT.legacyToRuns(t) } : { t:'p', r:obj(t).r || [], a:obj(t).a };
+      });
+      RT.docToDom(tx, { v:1, b:blocks.length ? blocks : [{ t:'p', r:[] }] });
       body.appendChild(tx);
     }else{
       var list = mk(k === 'table' ? 'dl' : k === 'cards' ? 'div' : 'ol', k === 'table' ? 'ab-dl' : k === 'cards' ? 'cp-cards' : 'p1-st');
       var items = Array.isArray(sec.i) ? sec.i.filter(Array.isArray) : [];
       list.setAttribute('data-xl', '');
-      (items.length ? items : [['', '']]).forEach(function(it, n){ list.appendChild(itemEl(k, [String(it[0] == null ? '' : it[0]), String(it[1] == null ? '' : it[1])], n)); });
+      (items.length ? items : [['', '']]).forEach(function(it, n){ list.appendChild(itemEl(k, [cellv(it[0]) ? it[0] : '', cellv(it[1]) ? it[1] : ''], n)); });
       fixAdded(list, k);
       body.appendChild(list);
     }
@@ -203,9 +186,10 @@ window.Content = (function(){
   }
   function readSec(o){
     var k = o.getAttribute('data-xk'), s = { k:k, h:rd(o.querySelector('[data-xf="h"]')) }, d = rd(o.querySelector('[data-xf="d"]'));
-    if(d) s.d = d;
+    if(!rdEmpty(d)) s.d = d;
     if(k === 'text' || k === 'photo'){
-      s.p = qsa(o, '[data-xf="p"]').map(readRich);
+      var tx = o.querySelector('[data-xf="tx"]');
+      s.b = tx ? RT.domToDoc(tx).b : [];
       var img = o.querySelector('[data-photo]');
       if(k === 'photo' && img) s.ph = img.getAttribute('data-photo');
     }else{
@@ -222,7 +206,7 @@ window.Content = (function(){
     Object.keys(a).forEach(function(k){
       var anc = paraAnchor(k), ref = anc;
       if(!anc) return;
-      strs(a[k]).forEach(function(t){ var p = newPara(anc, { ap:k }); fill(p, t); after(ref, p); ref = p; made.push(p); });
+      strs(a[k]).forEach(function(t){ var p = newPara(anc, { ap:k }); set(p, t); after(ref, p); ref = p; made.push(p); });
     });
     Object.keys(x).forEach(function(s){
       var anc = secAnchor(s), ref = anc;
@@ -266,8 +250,8 @@ window.Content = (function(){
     });
     qsa(document, '[data-e]').forEach(function(el){
       var k = el.getAttribute('data-e');
-      if(typeof t[k] === 'string') set(el, t[k]);
-      else if(reset && read(el) !== orig[k]) set(el, orig[k]);
+      if(cellv(t[k])) set(el, t[k]);
+      else if(reset && !eq(read(el), orig[k])) set(el, orig[k]);
     });
     applyAdded(obj(pd.a), obj(pd.x));
   }
@@ -277,7 +261,7 @@ window.Content = (function(){
     var t = {}, l = {};
     qsa(document, '[data-e]').forEach(function(el){
       var k = el.getAttribute('data-e'), v = read(el);
-      if(v !== orig[k]) t[k] = v;
+      if(!eq(v, orig[k])) t[k] = v;
     });
     Object.keys(lists).forEach(function(k){
       var L = lists[k], items = [].slice.call(L.box.children), same = items.length === L.tpl.length, recs = [];
@@ -287,7 +271,7 @@ window.Content = (function(){
         var r = { s:s }, tt = {};
         leavesOf(it).forEach(function(e){
           var rk = e.getAttribute('data-ei'), o = find(tpl, rk), v = read(e);
-          if(!o || v !== read(o)) tt[rk] = v;
+          if(!o || !eq(v, read(o))) tt[rk] = v;
         });
         if(Object.keys(tt).length) r.t = tt;
         var ph = photoOf(it), oph = photoOf(tpl);
@@ -317,9 +301,11 @@ window.Content = (function(){
     else edit = sessionStorage.getItem('hp_edit') === '1';
   }catch(e){}
   if(edit && page){
-    var css = document.createElement('link');
-    css.rel = 'stylesheet'; css.href = 'assets/css/editor.css';
-    document.head.appendChild(css);
+    ['assets/css/richtext.css', 'assets/css/editor.css'].forEach(function(href){
+      var css = document.createElement('link');
+      css.rel = 'stylesheet'; css.href = href;
+      document.head.appendChild(css);
+    });
     ['assets/js/gateway.js', 'assets/js/cropper.js', 'assets/js/codefield.js', 'assets/js/editor.js'].forEach(function(src){
       var s = document.createElement('script');
       s.src = src; s.async = false;   // 적은 순서대로 돈다

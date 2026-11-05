@@ -1,0 +1,38 @@
+@charset "utf-8";
+/* ============================================================
+   2026 K예술영재 프로젝트 — richtext.css
+   글쓰기 도구 막대 (richtext.js toolbar). 관리자 페이지(admin.html)와 사이트 편집 화면(editor.js가 부름)만 불러온다.
+   글에 넣은 서식의 모양(.rt-c-* · .rt-s-* …)은 common.css.
+   ============================================================ */
+.rt-bar{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:5px;background:#fff;border:1px solid #DDD;font-size:13px;letter-spacing:-.02em}
+.rt-bar [hidden]{display:none!important}
+.rt-btn{height:30px;padding:0 9px;border:1px solid transparent;background:none;color:#212326;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border-radius:2px}
+.rt-btn:hover{background:#F1F3F2;border-color:#DDD}
+.rt-btn.on{background:#212326;color:#fff;border-color:#212326}
+.rt-btn.rt-b{font-weight:800}
+.rt-btn.rt-i{font-style:italic}
+.rt-btn.rt-u{text-decoration:underline;text-underline-offset:3px}
+.rt-btn.rt-m{background:linear-gradient(transparent 55%,rgba(242,194,48,.6) 0)}
+.rt-btn.rt-m.on{background:#212326}
+.rt-btn.warn{color:#B42B38}
+.rt-sep{width:1px;height:20px;background:#DDD;margin:0 3px}
+.rt-pop{position:absolute;z-index:20;display:flex;flex-direction:column;align-items:stretch;min-width:150px;padding:5px;background:#fff;border:1px solid #CFCFCF;box-shadow:0 6px 20px rgba(0,0,0,.16)}
+.rt-pop .rt-btn{text-align:left;height:34px;font-weight:500}
+.rt-pop .rt-btn.rt-s-s{font-size:12px}
+.rt-pop .rt-btn.rt-s-l{font-size:16px}
+
+/* 공지사항 본문 칸 (admin.js bodyField) */
+.rt-field .rt-bar{position:sticky;top:0;z-index:5;border-bottom:0}
+.rt-edit{min-height:280px;max-height:70vh;overflow:auto;padding:16px 18px;border:1px solid #CFCFCF;background:#fff;font-size:16px;line-height:1.85;color:#333;outline:none;overflow-wrap:anywhere}
+.rt-edit:focus{border-color:#212326}
+.rt-edit.is-empty{position:relative}
+.rt-edit.is-empty::before{content:attr(data-placeholder);position:absolute;left:18px;top:16px;color:#9AA0A5;pointer-events:none}
+.rt-edit > :first-child{margin-top:0}
+.rt-edit ul,.rt-edit ol{margin:.5em 0;padding-left:1.4em}
+.rt-edit ul > li{list-style:disc}
+.rt-edit ol > li{list-style:decimal}
+.rt-edit h3{font-size:1.2em;font-weight:700;margin:1em 0 .4em}
+.rt-edit p + p{margin-top:.5em}
+html.ed-on [data-ed="doc"] ul > li{list-style:disc}
+html.ed-on [data-ed="doc"] ol > li{list-style:decimal}
+html.ed-on [data-ed="doc"] ul,html.ed-on [data-ed="doc"] ol{padding-left:1.4em;margin:.5em 0}

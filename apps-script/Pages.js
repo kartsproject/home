@@ -46,6 +46,22 @@ function isPlainObject_(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
+// 글자 칸 하나: 예전 글(문자열, **굵게** ==형광==) 또는 글쓰기 도구로 쓴 { r:[조각], a:'l'|'c'|'r' } (Rich.js, 2026-11-05).
+// 글자는 3,000자까지. 아니면 null
+function cleanPageCell_(v) {
+  if (typeof v === 'string') return cleanPageText_(v);
+  if (!isPlainObject_(v)) return null;
+  var runs = cleanRuns_(v.r == null ? [] : v.r, 300);
+  if (!runs || richRunsText_(runs).length > PAGE_LIMITS_.text) return null;
+  var o = { r: runs };
+  if (v.a != null) {
+    if (RICH_ALIGNS_.indexOf(v.a) === -1) return null;
+    o.a = v.a;
+  }
+  return o;
+}
+function pageCellEmpty_(v) { return typeof v === 'string' ? !v : !v.r.length && !v.a; }
+
 // 통과하면 정리한 내용, 아니면 null(INVALID_INPUT). 빈 칸 · 빈 목록도 그대로 둔다(운영진이 일부러 비운 것)
 function validatePageContent_(c) {
   if (!isPlainObject_(c)) return null;
@@ -56,7 +72,7 @@ function validatePageContent_(c) {
   if (tk.length > PAGE_LIMITS_.texts || lk.length > PAGE_LIMITS_.lists) return null;
   for (var i = 0; i < tk.length; i++) {
     if (!/^k\d{1,4}$/.test(tk[i])) return null;
-    var s = cleanPageText_(t[tk[i]]);
+    var s = cleanPageCell_(t[tk[i]]);
     if (s === null) return null;
     out.t[tk[i]] = s;
   }
@@ -77,7 +93,7 @@ function validatePageContent_(c) {
         o.t = {};
         for (var r = 0; r < rk.length; r++) {
           if (!/^\d{1,3}$/.test(rk[r])) return null;
-          var rs = cleanPageText_(it.t[rk[r]]);
+          var rs = cleanPageCell_(it.t[rk[r]]);
           if (rs === null) return null;
           o.t[rk[r]] = rs;
         }
@@ -113,29 +129,36 @@ function validatePageContent_(c) {
   return JSON.stringify(out).length > PAGE_LIMITS_.json ? null : out;
 }
 
-// 문자열 배열(max개까지)을 정리한다. 아니면 null
+// 글자 칸 배열(max개까지)을 정리한다. 아니면 null
 function cleanPageTexts_(v, max) {
   if (!Array.isArray(v) || v.length > max) return null;
   var out = [];
   for (var i = 0; i < v.length; i++) {
-    var s = cleanPageText_(v[i]);
+    var s = cleanPageCell_(v[i]);
     if (s === null) return null;
     out.push(s);
   }
   return out;
 }
 
-// 더한 구역 하나: { k, h, d?, p?(text · photo), i?(table · cards · steps), ph?(photo) }. 아니면 null
+// 더한 구역 하나: { k, h, d?, b?|p?(text · photo), i?(table · cards · steps), ph?(photo) }. 아니면 null
+//   b: 글 묶음의 문단들(글쓰기 도구 — 소제목 · 목록 가능, 2026-11-05), p: 예전 문단 글 목록
 function cleanPageSection_(sec) {
   if (!isPlainObject_(sec) || PAGE_SEC_KINDS_.indexOf(sec.k) === -1) return null;
-  var h = cleanPageText_(sec.h == null ? '' : sec.h), d = cleanPageText_(sec.d == null ? '' : sec.d);
+  var h = cleanPageCell_(sec.h == null ? '' : sec.h), d = cleanPageCell_(sec.d == null ? '' : sec.d);
   if (h === null || d === null) return null;
   var o = { k: sec.k, h: h };
-  if (d) o.d = d;
+  if (!pageCellEmpty_(d)) o.d = d;
   if (sec.k === 'text' || sec.k === 'photo') {
-    var p = cleanPageTexts_(sec.p == null ? [] : sec.p, PAGE_LIMITS_.secParas);
-    if (!p) return null;
-    o.p = p;
+    if (sec.b != null) {
+      var doc = cleanRichDoc_({ v: 1, b: sec.b }, { blocks: 60, runs: 200, items: 60 });
+      if (!doc || richDocText_(doc).length > PAGE_LIMITS_.text * 3) return null;
+      o.b = doc.b;
+    } else {
+      var p = cleanPageTexts_(sec.p == null ? [] : sec.p, PAGE_LIMITS_.secParas);
+      if (!p) return null;
+      o.p = p;
+    }
     if (sec.k === 'photo' && sec.ph != null) {
       if (typeof sec.ph !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(sec.ph) || sec.ph.length > 48) return null;
       o.ph = sec.ph;

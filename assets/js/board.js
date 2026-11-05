@@ -3,7 +3,8 @@
    게시글(공지 · 언론홍보 · 갤러리 · 표지 사진) 표시 공통 모듈. 관리자 미리보기와 방문자 화면이 같이 쓴다.
    ▣ 운영진이 입력한 값은 모두 textContent로 넣는다 (innerHTML 금지 — CLAUDE.md 보안 5).
    ▣ 본문 서식 (docs/decisions.md 4절)
-       **굵게**   {강조:청록 글자}   {빨강:빨간 글자}   주소(https://…)는 자동 링크
+       2026-11-05부터 글쓰기 도구로 쓴 본문은 post.rich(글 묶음, richtext.js)로 온다 — 그것을 DOM으로 그린다.
+       예전 본문(post.body만 있음): **굵게**   {강조:청록 글자}   {빨강:빨간 글자}   주소(https://…)는 자동 링크
    ============================================================ */
 window.Board = (function(){
 
@@ -121,7 +122,11 @@ window.Board = (function(){
         }else photos.appendChild(img);
       });
     }
-    var body = post.body ? renderBody(post.body) : null;
+    var body = null;
+    if(post.rich && post.rich.b && post.rich.b.length && window.RT){
+      body = el('div', 'post-body rt-doc');
+      RT.docToDom(body, post.rich, { link:true });
+    }else if(post.body) body = renderBody(post.body);
     if(post.photoPosition === 'bottom'){ if(body) art.appendChild(body); if(photos) art.appendChild(photos); }
     else{ if(photos) art.appendChild(photos); if(body) art.appendChild(body); }
 

@@ -136,3 +136,11 @@ html.ed-on .x-sec .p1-ld:empty::before{content:"(제목 밑 설명 — 비워 �
   font:inherit;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:-.02em}
 .cf-eye:hover{border-color:#212326}
 .cf-eye[aria-pressed="true"]{background:#212326;border-color:#212326;color:#fff}
+
+/* ---------- 글쓰기 도구 막대 (richtext.js, 2026-11-05) ---------- */
+.ed-fmt{padding:0;border:0;background:none;box-shadow:none}
+.ed-fmt .rt-bar{max-width:min(820px,calc(100vw - 12px));box-shadow:0 4px 18px rgba(0,0,0,.22)}
+.ed-fmt .rt-bar .ed-b{height:30px;padding:0 10px;font-size:13px}
+.ed-fmt.text-only .rt-bar > .rt-btn,.ed-fmt.text-only .rt-bar > .rt-sep:not(.fx){display:none}
+.ed-fmt.text-only .rt-bar > .rt-sep.fx{display:none}
+html.ed-on [data-ed="doc"]{display:block;min-height:3em}

@@ -157,7 +157,7 @@
   ]);
   function help(){
     window.alert([
-      '글자: 고칠 글자를 눌러 바로 고칩니다. 글자를 끌어 고른 뒤 위에 뜨는 [굵게] · [형광]을 누르면 서식이 바뀝니다. [원래대로]는 처음 글로 되돌립니다.',
+      '글자: 고칠 글자를 눌러 바로 고칩니다. 글자를 끌어 고른 뒤 위에 뜨는 도구로 굵게 · 기울임 · 밑줄 · 형광 · 크기 · 색 · 글꼴 · 링크를 바꾸고, [정렬]로 칸의 문장 정렬을 바꿉니다. [원래대로]는 처음 글로 되돌립니다.',
       '줄 나누기: Enter. 붙여 넣으면 글자만 들어갑니다.',
       '목록: 카드 · 단계 · 표 줄 위에 마우스를 올리면 [앞으로] [뒤로] [복제] [삭제] 단추가 나옵니다.',
       '문단: 문단을 누르면 위에 뜨는 [아래에 문단 추가]로 문단을 더하고, 더한 문단은 [문단 빼기]로 뺍니다.',
@@ -226,6 +226,7 @@
   var CELLS = '[data-e],[data-ei],[data-ap],[data-xf]';   // 고칠 수 있는 칸: HTML 칸 · 목록 항목 칸 · 더한 문단 · 더한 구역 칸
   function prepare(el){
     if(el.hasAttribute('data-et')){ var sp = wrapText(el); if(sp) setEditable(sp, true); return; }
+    if(el.getAttribute('data-xf') === 'tx'){ setEditable(el, false); el.setAttribute('data-ed', 'doc'); return; }   // 더한 구역의 글: 여러 문단
     C.set(el, C.read(el));   // 문장 묶음 · 붙임 공백(줄바꿈 단위, common.js)을 풀어 고치기 쉽게
     setEditable(el, false);
   }
@@ -264,27 +265,6 @@
     return o ? C.read(o) : null;
   }
 
-  // 서식 단추: 고른 글을 b / em.mark로 감싸거나, 이미 그 안이면 풀어 준다
-  function isFmt(n, kind){ return n.nodeType === 1 && (kind === 'b' ? /^(B|STRONG)$/.test(n.nodeName) : n.nodeName === 'EM' && n.classList.contains('mark')); }
-  function unwrap(n){ var p = n.parentNode; while(n.firstChild) p.insertBefore(n.firstChild, n); p.removeChild(n); }
-  function format(kind){
-    var sel = window.getSelection(), ed = sel.rangeCount && editRoot(sel.anchorNode);
-    if(!ed || ed.getAttribute('data-ed') !== 'rich'){ toast('글자 칸 안에서 글자를 먼저 끌어서 골라 주세요.', true); return; }
-    var r = sel.getRangeAt(0);
-    for(var n = r.commonAncestorContainer; n && n !== ed; n = n.parentNode){
-      if(isFmt(n, kind)){ unwrap(n); ed.normalize(); changed(); return; }
-    }
-    if(r.collapsed){ toast('바꿀 글자를 먼저 끌어서 골라 주세요.', true); return; }
-    if(!ed.contains(r.endContainer)) return;
-    var frag = r.extractContents();
-    [].slice.call(frag.querySelectorAll('*')).forEach(function(x){ if(isFmt(x, kind)) unwrap(x); });
-    var w = kind === 'b' ? h('b') : h('em', { class:'mark' });
-    w.appendChild(frag);
-    r.insertNode(w);
-    sel.removeAllRanges();
-    var nr = document.createRange(); nr.selectNodeContents(w); sel.addRange(nr);
-    changed();
-  }
   function revert(){
     var ed = cur.ed; if(!ed) return;
     var cell = cellOf(ed), v = cell && original(cell);
@@ -295,13 +275,22 @@
     place();
   }
 
-  var fmtBar = h('div', { class:'ed-tool ed-fmt', hidden:true }, [
-    btn('굵게', function(){ format('b'); }, 'fb', '고른 글자를 굵게 (다시 누르면 풀림)'),
-    btn('형광', function(){ format('mark'); }, 'fm', '고른 글자에 형광 밑줄 (다시 누르면 풀림)'),
-    btn('원래대로', revert, 'fr', '이 칸을 처음 글로 되돌립니다'),
-    btn('아래에 문단 추가', addPara, 'fa', '이 문단 바로 아래에 새 문단을 더합니다'),
-    btn('문단 빼기', removePara, 'fd warn', '더한 문단을 뺍니다')
-  ]);
+  // 글쓰기 도구(richtext.js): 굵게 · 기울임 · 밑줄 · 형광 · 크기 · 색 · 글꼴 · 정렬 · 링크 · 서식 지우기,
+  // 여러 문단 칸(더한 구역의 글)은 목록 · 소제목도. 뒤에 이 칸의 [원래대로] · [아래에 문단 추가] · [문단 빼기]
+  var rtBar = RT.toolbar({
+    root:function(){ return cur.ed && cur.ed.getAttribute('data-ed') !== 'text' ? cur.ed : null; },
+    mode:function(rt){ return rt.getAttribute('data-ed') === 'doc' ? 'doc' : 'cell'; },
+    alignTarget:function(rt){ return cellOf(rt); },
+    changed:function(){ changed(); place(); },
+    notice:function(m){ toast(m, true); },
+    extra:[
+      h('span', { class:'rt-sep fx' }),
+      btn('원래대로', revert, 'fr', '이 칸을 처음 글로 되돌립니다'),
+      btn('아래에 문단 추가', addPara, 'fa', '이 문단 바로 아래에 새 문단을 더합니다'),
+      btn('문단 빼기', removePara, 'fd warn', '더한 문단을 뺍니다')
+    ]
+  });
+  var fmtBar = h('div', { class:'ed-tool ed-fmt', hidden:true }, [rtBar]);
   var cur = { ed:null, item:null, photo:null, sec:null };
 
   document.addEventListener('focusin', function(ev){
@@ -317,6 +306,8 @@
     var ed = editRoot(ev.target);
     if(!ed) return;
     if(ev.key === 'Escape'){ ed.blur(); return; }
+    if(ed.getAttribute('data-ed') !== 'text' && rtBar.keys(ev)) return;   // Ctrl+B · I · U
+    if(ev.key === 'Enter' && ed.getAttribute('data-ed') === 'doc'){ setTimeout(changed, 0); return; }   // 여러 문단 칸은 새 문단
     if(ev.key === 'Enter'){
       ev.preventDefault();
       if(ed.getAttribute('data-ed') === 'text') return ed.blur();   // 글자만 고치는 칸은 한 줄
@@ -602,11 +593,13 @@
     var pr = cur.ed && cur.ed.getBoundingClientRect();
     fmtBar.hidden = !(pr && vis(pr));
     if(!fmtBar.hidden){
-      var rich = cur.ed.getAttribute('data-ed') === 'rich', cell = cellOf(cur.ed);
-      fmtBar.querySelector('.fb').hidden = !rich; fmtBar.querySelector('.fm').hidden = !rich;
+      var cell = cellOf(cur.ed);
+      fmtBar.classList.toggle('text-only', cur.ed.getAttribute('data-ed') === 'text');
+      rtBar.sync();
       fmtBar.querySelector('.fr').hidden = !(cell && (cell.hasAttribute('data-e') || cell.hasAttribute('data-ei')));
       fmtBar.querySelector('.fa').hidden = !paraCell(cell);
       fmtBar.querySelector('.fd').hidden = !(cell && (cell.hasAttribute('data-ap') || cell.getAttribute('data-xf') === 'p'));
+      fmtBar.querySelector('.fx').hidden = fmtBar.querySelector('.fr').hidden && fmtBar.querySelector('.fa').hidden && fmtBar.querySelector('.fd').hidden;
       fmtBar.style.left = Math.max(6, Math.min(pr.left, window.innerWidth - fmtBar.offsetWidth - 6)) + 'px';
       fmtBar.style.top = Math.max(6, pr.top - fmtBar.offsetHeight - 6) + 'px';
     }

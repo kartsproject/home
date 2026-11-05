@@ -201,13 +201,22 @@ function validateNotice_(p) {
   if (!p) return null;
   var title = cleanText_(p.title), body = cleanText_(p.body, true), link = cleanText_(p.photoLink);
   var date = cleanDate_(p.date), vis = cleanVisibility_(p.visibility);
+  // 글쓰기 도구로 쓴 본문(rich, Rich.js)이 오면 그것을 「본문」 칸에 JSON으로 둔다. 글자 수는 글자만 센다 (2026-11-05)
+  var bodyCell = body;
+  if (p.rich != null) {
+    var doc = cleanRichDoc_(p.rich);
+    if (!doc) return null;
+    body = richDocText_(doc);
+    bodyCell = doc.b.length ? JSON.stringify(doc) : '';
+    if (bodyCell.length > 45000) return null;
+  }
   if (getCategories_().indexOf(p.category) === -1) return null;
   if (!title || title.length > LIMITS_.noticeTitle || body.length > LIMITS_.noticeBody) return null;
   if (!date || !vis) return null;
   if (p.photoPosition !== 'top' && p.photoPosition !== 'bottom') return null;
   if (link && (link.length > LIMITS_.link || !/^https?:\/\/\S+$/i.test(link))) return null;
   return {
-    '분류': p.category, '제목': title, '본문': body, '게시일': date,
+    '분류': p.category, '제목': title, '본문': bodyCell, '게시일': date,
     '상단고정': p.pinned === true ? '예' : '', '사진위치': p.photoPosition === 'bottom' ? '아래' : '위',
     '사진링크': link, '공개여부': vis
   };
@@ -349,13 +358,15 @@ function attachmentsOf_(postId, kind, attachments, admin) {
 }
 
 function noticeFromRow_(r, attachments, admin) {
+  var rb = readRichBody_(r['본문']);   // 글쓰기 도구 본문이면 body는 글자만, rich는 서식 (Rich.js)
   var o = {
-    id: r['글ID'], category: String(r['분류']), title: String(r['제목']), body: String(r['본문']),
+    id: r['글ID'], category: String(r['분류']), title: String(r['제목']), body: rb.body,
     date: formatDateCell_(r['게시일']), pinned: r['상단고정'] === '예',
     photoPosition: r['사진위치'] === '아래' ? 'bottom' : 'top', photoLink: String(r['사진링크']),
     photos: attachmentsOf_(r['글ID'], '사진', attachments, admin),
     files: attachmentsOf_(r['글ID'], '파일', attachments, admin)
   };
+  if (rb.rich) o.rich = rb.rich;
   if (admin) addAdminFields_(o, r);
   return o;
 }

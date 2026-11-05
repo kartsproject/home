@@ -811,3 +811,24 @@ img.ph-none,img[data-photo]{background:#F4F2EC}
   .x-tx p{font-size:16px}
   .x-band{padding-top:64px}
 }
+
+/* ---------- 글쓰기 도구로 넣은 서식 (richtext.js, 2026-11-05) ----------
+   색 · 크기 · 글꼴은 사이트에 맞춘 몇 가지만. 공지 본문 · 사이트 직접 편집 글이 함께 쓴다 */
+.rt-c-teal{color:var(--teal)}
+.rt-c-navy{color:var(--teal-dp)}
+.rt-c-red{color:#C8323F}
+.rt-c-gray{color:var(--gray)}
+.rt-s-s{font-size:.85em}
+.rt-s-l{font-size:1.25em;line-height:1.5}
+.rt-f-g{font-family:"GmarketSans","Pretendard Variable",Pretendard,sans-serif}
+.rt-a-l{text-align:left!important}
+.rt-a-c{text-align:center!important}
+.rt-a-r{text-align:right!important}
+.rt-doc h3.rt-h,.post-body h3.rt-h{font-size:1.2em;font-weight:700;color:var(--ink);margin:1.4em 0 .5em;line-height:1.5}
+.rt-doc ul.rt-ul,.rt-doc ol.rt-ol,.post-body ul.rt-ul,.post-body ol.rt-ol{margin:.5em 0;padding-left:1.4em}
+.rt-doc ul.rt-ul > li,.post-body ul.rt-ul > li{list-style:disc}
+.rt-doc ol.rt-ol > li,.post-body ol.rt-ol > li{list-style:decimal}
+.rt-doc li + li,.post-body .rt-ul li + li,.post-body .rt-ol li + li{margin-top:.25em}
+.rt-doc p + p,.post-body.rt-doc p + p{margin-top:.6em}
+.rt-doc a,.post-body a{color:var(--teal);text-decoration:underline;text-underline-offset:3px}
+.rt-doc u,.post-body u{text-underline-offset:3px}

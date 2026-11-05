@@ -333,6 +333,7 @@
 | 18.10 | 접근코드 칸 — 한글 자판인 채로 쳐도 영문으로 바꾸고, 칸 오른쪽 [보기] · [숨기기] (관리자 페이지 · 편집 화면 로그인, 2026-11-05 사용자) | assets/js/codefield.js · admin.js · editor.js · admin.css · editor.css | 완료 |
 | 18.11 | 접근코드 칸은 영문 · 숫자 · - · _ 만 받음(그 밖의 글자는 뺌), 대소문자 구별 그대로 (2026-11-05 사용자) | codefield.js · admin.js · editor.js | 완료 |
 | 18.12 | 관리자 페이지 「선택 삭제」 — 공지사항 · 언론홍보 · 갤러리 목록에 고르는 칸 · [전체 선택] · [선택 삭제 (n)], 관문 `remove`가 `ids`를 받아 한 번 발행(시간이 모자라면 남은 것을 이어서), 시트 줄 지우기를 이어진 줄끼리 한 번에 (2026-11-05 사용자) | admin.js · admin.css · `apps-script/Posts.js` · Sheets.js | 완료 (관문 흉내 · 가짜 관문 1440 · 390) |
+| 18.13 | 글쓰기 도구 — 공지 본문 · 사이트 직접 편집에 굵게 · 기울임 · 밑줄 · 형광 · 크기 · 색 · 글꼴(사이트 글꼴 2가지) · 정렬 · 링크 · 서식 지우기, 여러 문단 칸은 목록 · 소제목. 조각 · 글 묶음 JSON 저장, DOM으로만 그림, 관문이 다시 검사. 예전 글 형식 그대로 읽음 (2026-11-05 사용자) | `assets/js/richtext.js` · `assets/css/richtext.css` · admin.js · editor.js · content.js · board.js · common.css · `apps-script/Rich.js` · Posts.js · Pages.js | 완료 (관문 흉내 · 브라우저 시험 1440 · 390) |
 
 ---
 

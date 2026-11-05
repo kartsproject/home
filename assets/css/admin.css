@@ -254,3 +254,7 @@ main.mg-in{padding:34px 0 120px}
 .mg-crop .zoom .hint{margin:0;flex-basis:100%}
 .mg-crop .zoom .hint.warn{color:#B42B38}
 .mg-crop .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* 공지 본문 글쓰기 도구 아래 줄 (richtext.js, 2026-11-05) */
+.tools.under{margin:6px 0 0}
+.tools.under .count{margin:0}
