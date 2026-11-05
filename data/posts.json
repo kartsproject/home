@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-05T13:09:51+09:00",
+  "updatedAt": "2026-11-05T13:10:43+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -142,21 +142,6 @@
     }
   ],
   "gallery": [
-    {
-      "id": "G-0007",
-      "title": "분야별 평가회의",
-      "desc": "2026.09",
-      "date": "2026-09-01",
-      "course": "workshop",
-      "field": "",
-      "photos": [
-        {
-          "fileId": "1rl5yADwKAelTMM9_CdeeDVDiDtFOd7Wj",
-          "w": 1600,
-          "h": 1011
-        }
-      ]
-    },
     {
       "id": "G-0006",
       "title": "미술 결과전시",
