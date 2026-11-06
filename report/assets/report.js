@@ -347,8 +347,22 @@
   /* =========================================================
    * 6) 회의 화면 — 띄워 놓고 넘기며 보는 화면
    * ========================================================= */
+  /** 분야 안의 항목을 소제목별로 묶음(실적·계획 짝 맞춤). 소제목이 없는 항목은 「그 밖의 내용」 하나로 */
+  function topics(cat) {
+    var out = [], m = {};
+    [['prev', visible(cat.prev)], ['next', visible(cat.next)]].forEach(function (x) {
+      x[1].forEach(function (b) {
+        var t = String(b.t || '').trim(), k = t.replace(/\s+/g, '');
+        if (!m[k]) { m[k] = { t: t, prev: [], next: [] }; out.push(m[k]); }
+        m[k][x[0]].push(b);
+      });
+    });
+    var none = m[''];
+    if (none) { out.splice(out.indexOf(none), 1); out.push(none); }
+    return out;
+  }
   function counts(doc) { return doc.cats.map(function (c) { return { p: visible(c.prev).length, n: visible(c.next).length }; }); }
-  function meetCard(b, i, showOrg) {
+  function meetCard(b, i, showOrg, big) {
     var lines = String(b.c || '').split('\n'), det = [];
     lines.slice(1).forEach(function (l) { if (l.trim()) det.push(h('li', { class: 'cont' }, [span('', l.trim())])); });
     String(b.d || '').split('\n').forEach(function (l) {
@@ -357,8 +371,8 @@
       if (/^[*※]/.test(t)) det.push(h('li', { class: 'note' }, [span('', t.replace(/^[*※]\s*/, ''))]));
       else det.push(h('li', { class: k }, [span('', t)]));
     });
-    return h('div', { class: 'mc' }, [
-      h('div', { class: 'mc-top' }, [b.t ? h('span', { class: 'mc-tag', style: 'background:' + CAT_C[i][0] + '33;color:' + CAT_C[i][1], text: b.t }) : null, showOrg && b.org ? h('span', { class: 'mc-org', text: b.org }) : null]),
+    return h('div', { class: 'mc' + (big ? ' big' : '') }, [
+      h('div', { class: 'mc-top' }, [b.t && !big ? h('span', { class: 'mc-tag', style: 'background:' + CAT_C[i][0] + '33;color:' + CAT_C[i][1], text: b.t }) : null, showOrg && b.org ? h('span', { class: 'mc-org', text: b.org }) : null]),
       lines[0] ? h('div', { class: 'mc-main' }, [span('', lines[0])]) : null,
       det.length ? h('ul', { class: 'mc-det' }, det) : null,
       boxEl(b.box, 'mc-box')
@@ -377,7 +391,12 @@
     el.appendChild(rail); el.appendChild(h('div', { class: 'm-main' }, [stage, bar]));
     function slides() {
       var doc = getDoc(), c = counts(doc), s = [{ k: 'ov', name: '한눈에 보기' }];
-      c.forEach(function (x, i) { if (x.p || x.n) s.push({ k: 'cat', i: i, name: KR.CAT_SHORT[i], cnt: x }); });
+      c.forEach(function (x, i) {
+        if (!x.p && !x.n) return;
+        var tp = topics(doc.cats[i]), at = s.length;
+        s.push({ k: 'cat', i: i, name: KR.CAT_SHORT[i], cnt: x, topics: tp });
+        tp.forEach(function (t, j) { s.push({ k: 'top', i: i, j: j, n: tp.length, cat: at, t: t.t, prev: t.prev, next: t.next, name: t.t || '그 밖의 내용' }); });
+      });
       s.push({ k: 'cal', name: '다가오는 일정' });
       return s;
     }
@@ -388,8 +407,14 @@
       // 왼쪽 순서
       rail.innerHTML = '';
       rail.appendChild(h('div', { class: 'm-brand' }, [h('div', { class: 'm-kind', text: w.type === 'M' ? '월간업무보고' : '주간업무보고' }), h('div', { class: 'm-name', text: w.type === 'M' ? w.name : w.planName }), h('div', { class: 'm-sub', text: doc.dateLine.replace(/^\/\s*/, '보고일 ') })]));
+      var openCat = cur.k === 'cat' || cur.k === 'top' ? cur.i : -1;
       list.forEach(function (s, j) {
-        rail.appendChild(h('button', { class: 'm-step' + (j === idx ? ' on' : ''), 'aria-current': j === idx ? 'step' : null, onclick: function () { go(j); } }, [
+        if (s.k === 'top') {
+          if (s.i !== openCat) return;
+          rail.appendChild(h('button', { class: 'm-step sub' + (j === idx ? ' on' : ''), style: '--c1:' + CAT_C[s.i][0], 'aria-current': j === idx ? 'step' : null, onclick: function () { go(j); } }, [h('span', { class: 'm-sn', text: s.name })]));
+          return;
+        }
+        rail.appendChild(h('button', { class: 'm-step' + (j === idx ? ' on' : '') + (s.k === 'cat' && s.i === openCat && j !== idx ? ' open' : ''), 'aria-current': j === idx ? 'step' : null, onclick: function () { go(j); } }, [
           h('span', { class: 'm-dot', style: s.k === 'cat' ? 'background:' + CAT_C[s.i][0] : '' , text: s.k === 'cat' ? '' : (s.k === 'ov' ? '◎' : '▦') }),
           h('span', { class: 'm-sn', text: s.name }),
           s.cnt ? h('span', { class: 'm-sc', title: '한 일 ' + s.cnt.p + ' · 할 일 ' + s.cnt.n, text: s.cnt.p + ' · ' + s.cnt.n }) : (s.k === 'cal' ? h('span', { class: 'm-sc', text: String(sch.length) }) : null)
@@ -428,16 +453,35 @@
           }))]) : null
         ]);
       } else if (cur.k === 'cat') {
-        var i = cur.i, cc = doc.cats[i];
-        function col(side, label, period, list2) {
-          return h('div', { class: 'sc-col ' + side }, [
+        var i = cur.i;
+        body = h('div', { class: 's-cat', style: '--c1:' + CAT_C[i][0] + ';--c2:' + CAT_C[i][1] }, [
+          h('div', { class: 'sc-top' }, [h('span', { class: 'sc-n', text: String(i + 1).padStart(2, '0') }), h('h2', { text: KR.CATS[i] }), h('div', { class: 'sc-sum', text: '실적 ' + cur.cnt.p + ' · 계획 ' + cur.cnt.n + ' · 소제목 ' + cur.topics.length + '개' })]),
+          h('div', { class: 'sct-list' }, cur.topics.map(function (t, j) {
+            function first(list2) { var b0 = list2[0]; return b0 ? String(b0.c || '').split('\n')[0] || String(b0.d || '').split('\n')[0].replace(/^\s*[-ㅇ*※]\s*/, '') : ''; }
+            var pv = first(t.prev), nx = first(t.next);
+            return h('button', { class: 'sct', onclick: function () { go(idx + 1 + j); } }, [
+              h('span', { class: 'sct-n', text: String(j + 1) }),
+              h('span', { class: 'sct-t', text: t.t || '그 밖의 내용' }),
+              h('span', { class: 'sct-x' }, [
+                pv ? h('span', { class: 'sct-l' }, [h('em', { text: '실적' }), span('', pv)]) : null,
+                nx ? h('span', { class: 'sct-l nx' }, [h('em', { text: '계획' }), span('', nx)]) : null
+              ]),
+              h('span', { class: 'sct-go', 'aria-hidden': 'true', text: '›' })
+            ]);
+          }))
+        ]);
+      } else if (cur.k === 'top') {
+        var ti = cur.i;
+        function tcol(side, label, period, list2) {
+          return h('div', { class: 'st-col ' + side + (list2.length ? '' : ' none') }, [
             h('div', { class: 'sc-h' }, [h('span', { class: 'sc-l', text: label }), h('span', { class: 'sc-p', text: period })]),
-            h('div', { class: 'sc-list' }, list2.length ? list2.map(function (b) { return meetCard(b, i, showOrg); }) : [h('div', { class: 'sc-none', text: '해당 사항 없음' })])
+            h('div', { class: 'st-list' }, list2.length ? list2.map(function (b) { return meetCard(b, ti, showOrg, true); }) : [h('div', { class: 'sc-none', text: '해당 사항 없음' })])
           ]);
         }
-        body = h('div', { class: 's-cat', style: '--c1:' + CAT_C[i][0] + ';--c2:' + CAT_C[i][1] }, [
-          h('div', { class: 'sc-top' }, [h('span', { class: 'sc-n', text: String(i + 1).padStart(2, '0') }), h('h2', { text: KR.CATS[i] })]),
-          h('div', { class: 'sc-cols' }, [col('prev', doc.headPrev || '지난 실적', doc.periodPrev, visible(cc.prev)), h('div', { class: 'sc-arrow', 'aria-hidden': 'true', text: '→' }), col('next', doc.headNext || '향후 계획', doc.periodNext, visible(cc.next))])
+        body = h('div', { class: 's-top', style: '--c1:' + CAT_C[ti][0] + ';--c2:' + CAT_C[ti][1] }, [
+          h('div', { class: 'st-crumb' }, [h('span', { class: 'sc-n', text: String(ti + 1).padStart(2, '0') }), h('span', { text: KR.CATS[ti] }), h('span', { class: 'st-pos', text: (cur.j + 1) + ' / ' + cur.n })]),
+          h('h2', { class: 'st-t', text: cur.t || '그 밖의 내용' }),
+          h('div', { class: 'st-cols' }, [tcol('prev', doc.headPrev || '지난 실적', doc.periodPrev, cur.prev), tcol('next', doc.headNext || '향후 계획', doc.periodNext, cur.next)])
         ]);
       } else {
         var from = w.type === 'M' ? w.nfirst : w.nmon;
@@ -449,10 +493,11 @@
       body.classList.add('slide-in');
       stage.appendChild(body);
       stage.scrollTop = 0;
+      fit();
       // 아래 막대
       bar.innerHTML = '';
       bar.appendChild(h('button', { class: 'm-btn', 'aria-label': '이전', disabled: idx === 0, onclick: function () { go(idx - 1); } }, '←'));
-      bar.appendChild(h('div', { class: 'm-prog' }, list.map(function (_, j) { return h('i', { class: j === idx ? 'on' : j < idx ? 'done' : '' }); })));
+      bar.appendChild(h('div', { class: 'm-prog' }, list.length > 16 ? [] : list.map(function (_, j) { return h('i', { class: j === idx ? 'on' : j < idx ? 'done' : '' }); })));
       bar.appendChild(h('span', { class: 'm-pg', text: (idx + 1) + ' / ' + list.length }));
       bar.appendChild(h('button', { class: 'm-btn', 'aria-label': '다음', disabled: idx === list.length - 1, onclick: function () { go(idx + 1); } }, '→'));
       bar.appendChild(h('span', { class: 'spacer' }));
@@ -461,7 +506,16 @@
       bar.appendChild(h('button', { class: 'm-btn sm', title: '전체 화면 (F)', onclick: full }, document.fullscreenElement ? '전체화면 끄기' : '전체 화면'));
       if (opts.extra) opts.extra(bar);
     }
-    function zoom(d) { scale = Math.max(0.7, Math.min(1.6, Math.round((scale + d) * 10) / 10)); try { localStorage.setItem('kr3_scale', scale); } catch (e) { } stage.style.setProperty('--ms', scale); }
+    function zoom(d) { scale = Math.max(0.7, Math.min(1.6, Math.round((scale + d) * 10) / 10)); try { localStorage.setItem('kr3_scale', scale); } catch (e) { } stage.style.setProperty('--ms', scale); fit(); }
+    /** 소제목 화면은 크게 보이되, 내용이 많으면 한 화면에 들어오도록 줄임 */
+    function fit() {
+      var body = stage.firstChild;
+      if (!body || !body.classList.contains('s-top')) return;
+      var f = 1; body.style.fontSize = '';
+      while (stage.scrollHeight > stage.clientHeight + 2 && f > 0.6) { f = Math.round((f - 0.05) * 100) / 100; body.style.fontSize = f + 'em'; }
+    }
+    var rz = null;
+    function onResize() { clearTimeout(rz); rz = setTimeout(fit, 120); }
     function full() { if (document.fullscreenElement) document.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen(); }
     function go(j) { idx = j; draw(); }
     function key(e) {
@@ -474,8 +528,10 @@
     function fsChange() { el.classList.toggle('is-full', !!document.fullscreenElement); draw(); }
     document.addEventListener('keydown', key);
     document.addEventListener('fullscreenchange', fsChange);
+    window.addEventListener('resize', onResize);
     draw();
-    return { el: el, go: go, refresh: draw, destroy: function () { document.removeEventListener('keydown', key); document.removeEventListener('fullscreenchange', fsChange); } };
+    requestAnimationFrame(fit);
+    return { el: el, go: go, refresh: draw, destroy: function () { document.removeEventListener('keydown', key); document.removeEventListener('fullscreenchange', fsChange); window.removeEventListener('resize', onResize); } };
   }
 
   /* =========================================================
