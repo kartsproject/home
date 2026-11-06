@@ -694,3 +694,46 @@ body.dark .vtop .sel:focus { box-shadow: 0 0 0 3px rgba(41,151,255,.35); }
   .vtop .in > .btn-ghost-w { padding: 5px 8px; font-size: 12px; }
   .vtop .sel { flex: 1 1 45%; }
 }
+
+/* ---------- 작성: 카드 덱 (한 화면에 카드 한 장, 좌우로 넘김) ---------- */
+.wrap.deckwrap { max-width: 1340px; }
+.deck { position: relative; overflow: hidden; margin: 0 -22px; transition: height .45s var(--ease); }
+.track { display: flex; gap: 28px; align-items: flex-start; padding: 10px 0 30px; transition: transform .6s var(--ease); will-change: transform; }
+.track.instant, .track.instant .slide { transition: none !important; }
+.track.drag { transition: none; translate: var(--drag, 0) 0; }
+.slide { flex: 0 0 min(1100px, calc(100% - 150px)); background: var(--surface); border-radius: 34px; padding: 30px 30px 26px; box-shadow: 0 30px 70px -36px rgba(0,0,0,.3); transition: opacity .5s var(--ease), transform .6s var(--ease), filter .5s; position: relative; overflow: hidden; }
+.slide::before { content: ''; position: absolute; left: -10%; top: -140px; width: 70%; height: 260px; background: radial-gradient(closest-side, color-mix(in srgb, var(--c1, #A970FF) 30%, transparent), transparent); pointer-events: none; }
+.slide > * { position: relative; }
+.slide:not(.on) { opacity: .32; transform: scale(.93); filter: saturate(.5); cursor: pointer; }
+.slide.near:not(.on):hover { opacity: .55; }
+.slide .cat-head { padding: 4px 4px 22px; }
+.slide .ch-n { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.slide .side { background: var(--bg); }
+.slide .be { background: #fff; }
+.slide .be:focus-within { background: #fff; }
+.slide .empty-b, .slide .add-b { background: #fff; }
+.slide .add-b:hover { background: var(--fill-2); }
+.slide .tip { background: var(--bg); margin-bottom: 0; }
+.review-slide { --c1: #2997FF; }
+.review-slide .review-head { padding-top: 6px; }
+.review-slide .paper { background: var(--bg); }
+.review-slide .paper .rdoc { background: #fff; border-radius: 18px; padding: 24px; }
+.review-slide .rv-side { background: var(--bg); position: static; }
+.deck-hint { text-align: center; font-size: 12.5px; color: var(--text-4); margin-top: -10px; }
+.wf-in .btn.primary.lg, .wf-in .btn.gold.lg { min-width: 160px; }
+@media (max-width: 1100px) { .review-slide .review-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .deck { margin: 0 -14px; }
+  .track { gap: 12px; }
+  .slide { flex-basis: calc(100% - 36px); padding: 20px 14px 18px; border-radius: 26px; }
+  .slide:not(.on) { transform: scale(.96); }
+  .slide .side { border-radius: 20px; }
+  .deck-hint { display: none; }
+}
+.slide:not(.on) > * { pointer-events: none; }
+@media (max-width: 760px) {
+  .stepper { position: static; }
+  .slide .cat-head { flex-direction: column; align-items: flex-start; gap: 6px; padding-bottom: 16px; }
+  .slide .ch-n { margin: 0; }
+  .slide .ch-t h2 { font-size: 28px; }
+}

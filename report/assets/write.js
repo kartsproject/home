@@ -5,7 +5,7 @@
   var b = await KR.requireLogin('write');
   KR.topbar(b, 'write');
   var app = document.getElementById('app');
-  app.className = 'wrap';
+  app.className = 'wrap deckwrap';
   var qk = KR.param('key');
   var S = { w: /^W-\d{4}-\d{2}-\d{2}$/.test(qk) ? KR.fromKey(qk) : KR.current(), uid: KR.param('uid') || b.user.id, who: null, team: null, cats: [0, 1, 2, 3, 4],
     data: KR.emptyData(), entry: null, prevEntry: null, sharedVer: '', step: 0, timer: null, saving: false, dirty: false, savedAt: '' };
@@ -116,7 +116,13 @@
     stepBox.appendChild(h('button', { class: 'st final' + (S.step === nstep() ? ' on' : ''), onclick: function () { go(nstep()); } }, [h('span', { class: 'st-n', text: '✔' }), h('span', { class: 'st-t' }, [h('b', { text: '확인·제출' }), h('small', { text: S.entry && S.entry.status === '제출' ? '제출함' : '마지막 단계' })])]));
     stepBox.style.setProperty('--n', S.cats.length + 1);
   }
-  function go(j) { S.step = j; drawSteps(); drawBody(); drawFoot(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function go(j) {
+    j = Math.max(0, Math.min(nstep(), j));
+    if (j === S.step && deck) return;
+    S.step = j; drawSteps(); drawFoot(); place(true);
+    var top = stepBox.getBoundingClientRect().top + window.scrollY - 60;
+    if (window.scrollY > top) window.scrollTo({ top: top, behavior: 'smooth' });
+  }
   function drawFoot() {
     footBox.innerHTML = '';
     var last = S.step === nstep(), c = !last && counts(catAt(S.step));
@@ -130,18 +136,82 @@
     ]));
   }
 
-  /* ---------- 분야 단계 ---------- */
+  /* ---------- 카드 덱: 분야마다 카드 한 장, 좌우로 넘김 ---------- */
+  var deck = null, track = null, slides = [], ro = null;
   function drawBody() {
     bodyBox.innerHTML = '';
-    if (S.step === nstep()) return drawReview();
-    var i = catAt(S.step);
-    bodyBox.appendChild(h('div', { class: 'cat-head', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1] }, [
-      h('div', { class: 'ch-n', text: String(S.step + 1).padStart(2, '0') }),
-      h('div', { class: 'ch-t' }, [h('h2', { text: KR.CATS[i] }), h('p', { text: KR.CAT_HINT[i] })]),
-      h('button', { class: 'btn', onclick: function () { pasteModal(i); } }, '한글 문서에서 붙여넣기')
-    ]));
-    bodyBox.appendChild(h('div', { class: 'pair' }, [sideCard(i, 'prev', '지난 실적', S.w.periodPrev), sideCard(i, 'next', '향후 계획', S.w.periodNext)]));
-    if (S.step === 0 && !S.entry) bodyBox.appendChild(h('div', { class: 'tip' }, [h('b', { text: '처음이라면  ' }), '한글로 쓰던 보고 내용을 통째로 복사해 「한글 문서에서 붙여넣기」에 넣어 보세요. □ 분야, ㅇ(소제목), - 세부 줄을 읽어 분야별로 나눠 넣습니다.']));
+    track = h('div', { class: 'track' });
+    deck = h('div', { class: 'deck', 'aria-roledescription': '카드 넘기기' }, [track]);
+    slides = S.cats.map(function (i, j) { return catSlide(i, j); });
+    slides.push(h('section', { class: 'slide review-slide', 'aria-label': '확인·제출' }));
+    slides.forEach(function (sl, j) {
+      sl.addEventListener('click', function (e) { if (j !== S.step) { e.preventDefault(); e.stopPropagation(); go(j); } }, true);
+      track.appendChild(sl);
+    });
+    bodyBox.appendChild(deck);
+    bodyBox.appendChild(h('div', { class: 'deck-hint', text: '← → 키(입력칸 밖에서), 옆 카드 누르기, 휴대폰에서는 좌우로 밀어서 넘길 수 있어요' }));
+    swipe(deck);
+    place(false);
+  }
+  function catSlide(i, j) {
+    var kids = [
+      h('div', { class: 'cat-head', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1] }, [
+        h('div', { class: 'ch-n', text: String(j + 1).padStart(2, '0') + ' / ' + String(S.cats.length).padStart(2, '0') }),
+        h('div', { class: 'ch-t' }, [h('h2', { text: KR.CATS[i] }), h('p', { text: KR.CAT_HINT[i] })]),
+        h('button', { class: 'btn', onclick: function () { pasteModal(i); } }, '한글 문서에서 붙여넣기')
+      ]),
+      h('div', { class: 'pair' }, [sideCard(i, 'prev', '지난 실적', S.w.periodPrev), sideCard(i, 'next', '향후 계획', S.w.periodNext)])
+    ];
+    if (j === 0 && !S.entry) kids.push(h('div', { class: 'tip' }, [h('b', { text: '처음이라면  ' }), '한글로 쓰던 보고 내용을 통째로 복사해 「한글 문서에서 붙여넣기」에 넣어 보세요. □ 분야, ㅇ(소제목), - 세부 줄을 읽어 분야별로 나눠 넣습니다.']));
+    return h('section', { class: 'slide', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1], 'aria-label': KR.CATS[i] }, kids);
+  }
+  /** 지금 카드를 가운데로 옮기고, 덱 높이를 지금 카드에 맞춤 */
+  function place(animate) {
+    if (!track) return;
+    var cur = slides[S.step];
+    var rv = slides[nstep()];
+    if (S.step >= nstep() - 1) { rv.innerHTML = ''; drawReview(rv); }
+    slides.forEach(function (sl, j) {
+      sl.classList.toggle('on', j === S.step);
+      sl.classList.toggle('near', Math.abs(j - S.step) === 1);
+      sl.setAttribute('aria-hidden', j === S.step ? 'false' : 'true');
+      Array.prototype.forEach.call(sl.children, function (c) { c.inert = j !== S.step; }); // 옆 카드 안은 못 건드리고, 카드 자체를 누르면 넘어감
+    });
+    track.classList.toggle('instant', !animate);
+    var x = cur.offsetLeft - (deck.clientWidth - cur.offsetWidth) / 2;
+    track.style.transform = 'translate3d(' + (-x) + 'px,0,0)';
+    fitHeight();
+    if (ro) ro.disconnect();
+    if (window.ResizeObserver) { ro = new ResizeObserver(fitHeight); ro.observe(cur); }
+    if (!animate) requestAnimationFrame(function () { track.classList.remove('instant'); });
+  }
+  function fitHeight() { var cur = slides[S.step]; if (deck && cur) deck.style.height = (cur.offsetHeight + 40) + 'px'; }
+  window.addEventListener('resize', function () { place(false); });
+  document.addEventListener('keydown', function (e) {
+    if (!deck || document.querySelector('.modal-bg') || e.altKey || e.ctrlKey || e.metaKey) return;
+    var t = (e.target && e.target.tagName) || '';
+    if (/INPUT|TEXTAREA|SELECT/.test(t) || (e.target && e.target.isContentEditable)) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(S.step + 1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(S.step - 1); }
+  });
+  /** 휴대폰·트랙패드: 가로로 민 거리가 충분하면 넘김 (입력칸 안에서 시작한 동작은 무시) */
+  function swipe(el) {
+    var x0 = null, y0 = 0, dx = 0, locked = false;
+    el.addEventListener('touchstart', function (e) {
+      var t = e.target.tagName; if (/INPUT|TEXTAREA|SELECT|BUTTON/.test(t)) { x0 = null; return; }
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; locked = false;
+    }, { passive: true });
+    el.addEventListener('touchmove', function (e) {
+      if (x0 == null) return;
+      dx = e.touches[0].clientX - x0; var dy = e.touches[0].clientY - y0;
+      if (!locked && Math.abs(dy) > Math.abs(dx)) { x0 = null; return; }
+      if (Math.abs(dx) > 10) { locked = true; track.classList.add('drag'); track.style.setProperty('--drag', dx + 'px'); }
+    }, { passive: true });
+    el.addEventListener('touchend', function () {
+      track.classList.remove('drag'); track.style.removeProperty('--drag');
+      if (x0 != null && locked && Math.abs(dx) > 60) go(S.step + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
   }
   function importable(i) {
     if (!S.prevEntry) return [];
@@ -234,19 +304,19 @@
   }
 
   /* ---------- 확인·제출 ---------- */
-  function drawReview() {
+  function drawReview(box) {
     var total = 0; S.cats.forEach(function (i) { var c = counts(i); total += c.p + c.n; });
     var doc = R.newDoc(S.w);
     doc.title = S.who.company + ' · ' + S.who.name;
     doc.cats = S.data.cats.map(function (c, i) { return S.cats.indexOf(i) >= 0 ? { prev: c.prev, next: c.next } : { prev: [], next: [] }; });
     var sch = R.schedule(doc);
-    bodyBox.appendChild(h('div', { class: 'review-head' }, [
+    box.appendChild(h('div', { class: 'review-head' }, [
       h('div', { class: 'eyebrow', text: '마지막 단계' }),
       h('h2', { text: '이렇게 보고됩니다.' }),
       h('p', { text: total ? '케이브레인이 업체별 내용을 모아 한 장으로 취합합니다. 제출한 뒤에도 고칠 수 있어요.' : '아직 쓴 내용이 없습니다. 앞 단계에서 내용을 넣어 주세요.' }),
       h('div', { class: 'rv-chips' }, S.cats.map(function (i, j) { var c = counts(i); return h('button', { class: 'rv-chip' + (c.p + c.n ? '' : ' empty'), style: '--c2:' + R.CAT_C[i][1], onclick: function () { go(j); } }, [h('i'), KR.CAT_SHORT[i] + ' ', h('b', { text: c.p + c.n ? c.p + ' · ' + c.n : '없음' })]); }))
     ]));
-    bodyBox.appendChild(h('div', { class: 'review-grid' }, [
+    box.appendChild(h('div', { class: 'review-grid' }, [
       h('div', { class: 'paper' }, [R.docEl(doc, { showOrg: false })]),
       h('aside', { class: 'rv-side' }, [h('h3', { text: '다가오는 일정에 표시될 것' }), R.agendaEl(sch, { max: 12 })])
     ]));
