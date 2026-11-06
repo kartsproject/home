@@ -625,14 +625,135 @@
   /* =========================================================
    * 7) 인쇄 · 한글 파일
    * ========================================================= */
-  function print(doc) {
-    var box = h('div', { class: 'print-only' }, [docEl(doc)]);
-    document.body.appendChild(box);
-    document.body.classList.add('printing');
-    var done = function () { box.remove(); document.body.classList.remove('printing'); window.removeEventListener('afterprint', done); };
-    window.addEventListener('afterprint', done);
-    setTimeout(function () { window.print(); setTimeout(done, 800); }, 60);
+  /* 인쇄·PDF — 한글 파일(회의록 양식)과 같은 모양을 별도 틀(iframe)에 그려 인쇄.
+   * 화면용 스타일·반응형 규칙의 영향을 받지 않도록 화면과 분리한다. 입력값은 textContent로만 넣는다. */
+  var PRINT_CSS = [
+    "@font-face{font-family:'RHead';src:local('HY헤드라인M'),local('HYHeadLine M'),local('HYHeadLine-Medium'),local('HYHeadLineM');}",
+    "@font-face{font-family:'RHeadFB';font-weight:400;src:local('Malgun Gothic Bold'),local('MalgunGothicBold'),local('맑은 고딕 Bold'),local('AppleSDGothicNeo-Bold'),local('NanumGothicBold'),local('Noto Sans KR Bold'),local('NotoSansKR-Bold'),local('Noto Sans CJK KR Bold');}",
+    "@page{size:A4;margin:15mm 20mm 17mm;@bottom-center{content:'- ' counter(page) ' -';font:10pt 'Malgun Gothic',sans-serif;}}",
+    "html,body{margin:0;background:#fff;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}",
+    "body{font:12pt/1.5 '휴먼명조','HCR Batang','함초롬바탕','HYSinMyeongJo-Medium','Batang','바탕','AppleMyungjo','Noto Serif KR','Noto Serif CJK KR',serif;word-break:keep-all;overflow-wrap:anywhere;}",
+    ".hd{font-family:'RHead','RHeadFB','Malgun Gothic',sans-serif;font-weight:400;}",
+    ".gd{font-family:'한양중고딕','HY중고딕','HYGothic-Medium','Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',sans-serif;}",
+    ".ttl{width:100%;border-collapse:collapse;margin:0 0 2mm;}",
+    ".ttl td{padding:0;}.ttl .b1{height:1.35mm;background:#BBDDFF;}.ttl .b2{height:1.35mm;background:#0000FF;}",
+    ".ttl .t{font-size:18pt;line-height:1.6;text-align:center;padding:1.2mm 0;}",
+    ".dl{text-align:right;font-size:13pt;margin:0 0 3mm;}",
+    ".bd{width:100%;border-collapse:collapse;table-layout:fixed;}",
+    ".bd th,.bd td{border:.12mm solid #000;vertical-align:top;width:50%;}",
+    ".bd thead th{font-size:13pt;text-align:center;padding:1.2mm 1.5mm;background:#DCE6F2;font-weight:400;}",
+    ".bd thead tr.pr th{font-size:11pt;background:#F2F4F7;}",
+    ".bd td{padding:0 1.5mm;}",
+    ".bd td.top{padding-top:2.4mm;}.bd td.bot{padding-bottom:2.4mm;}",
+    ".bd td.ctop{border-bottom:none;}.bd td.cmid{border-top:none;border-bottom:none;}.bd td.cbot{border-top:none;}",
+    ".bd tr{break-inside:avoid;page-break-inside:avoid;}",
+    ".ch{font-size:13pt;line-height:1.5;margin:0 0 .6mm;}",
+    ".it{padding-left:2.4em;text-indent:-1.8em;line-height:1.5;margin:0;}",
+    ".it b{font-weight:700;}",
+    ".ct{padding-left:2.4em;line-height:1.5;margin:0;}",
+    ".sb{padding-left:2.9em;text-indent:-1.1em;line-height:1.45;margin:0;}",
+    ".nt{padding-left:3.8em;text-indent:-1em;font-size:10pt;line-height:1.4;margin:0;}",
+    ".rw{padding-left:2.9em;line-height:1.45;margin:0;}",
+    ".org{font-size:9pt;color:#6E6E73;}",
+    ".bx{border:.12mm dotted #000;margin:.8mm 0 1.2mm 1.6em;padding:1mm 2.2mm;font:10pt/1.45 'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',sans-serif;}",
+    ".bx .bh{font-weight:700;}.bx .bl{padding-left:1.1em;text-indent:-.75em;}",
+    ".gap{height:1.4mm;}"
+  ].join('\n');
+  /** 분야 안 항목을 소제목별로 묶어 행으로 — 한글 파일(hwpx.js rowsOf)과 같은 규칙 */
+  function printRows(pv, nx) {
+    var out = [], m = {}, lp = [], ln = [];
+    function key(b) { return String(b.t || '').replace(/\s+/g, ''); }
+    var nk = {}; nx.forEach(function (b) { var k = key(b); if (k) nk[k] = 1; });
+    var pk = {}; pv.forEach(function (b) { var k = key(b); if (k) pk[k] = 1; });
+    // 실적·계획 양쪽에 같은 소제목이 있으면 같은 행에, 한쪽에만 있는 항목은 순서대로 짝지어 빈칸 없이
+    pv.forEach(function (b) { var k = key(b); if (k && nk[k]) { if (!m[k]) { m[k] = { prev: [], next: [] }; out.push(m[k]); } m[k].prev.push(b); } else lp.push(b); });
+    nx.forEach(function (b) { var k = key(b); if (k && pk[k]) m[k].next.push(b); else ln.push(b); });
+    // 짝 없는 항목: 양쪽을 각각 이어 쓰되 대략 14줄마다 행을 끊어(쪽 나눔 지점) 칸 사이 빈자리를 줄임
+    function lines(b) {
+      var n = Math.ceil(String(String(b.c || '').split('\n')[0]).length / 22) || 1;
+      String(b.c || '').split('\n').slice(1).concat(String(b.d || '').split('\n')).forEach(function (l) { if (l.trim()) n += Math.ceil(l.trim().length / 24); });
+      String(b.box || '').split('\n').forEach(function (l) { if (l.trim()) n += 0.9; });
+      return n + 0.5;
+    }
+    function take(list) { var row = [], h = 0; while (list.length && (!row.length || h + lines(list[0]) <= 14)) { h += lines(list[0]); row.push(list.shift()); } return row; }
+    while (lp.length || ln.length) out.push({ prev: take(lp), next: take(ln) });
+    return out.length ? out : [{ prev: [], next: [] }];
   }
+  function print(doc) {
+    var old = document.getElementById('kr-print'); if (old) old.remove();
+    var fr = document.createElement('iframe');
+    fr.id = 'kr-print'; fr.setAttribute('aria-hidden', 'true'); fr.title = '인쇄용';
+    fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;';
+    document.body.appendChild(fr);
+    var d = fr.contentDocument;
+    d.open(); d.write('<!doctype html><html lang="ko"><head><meta charset="utf-8"><title></title></head><body></body></html>'); d.close();
+    d.title = doc.title || '업무보고';
+    var st = d.createElement('style'); st.textContent = PRINT_CSS; d.head.appendChild(st);
+    function el(tag, cls, text) { var e = d.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+    function add(parent, kids) { kids.forEach(function (k) { if (k) parent.appendChild(k); }); return parent; }
+    // 제목 상자
+    var ttl = el('table', 'ttl'), tb = el('tbody');
+    [['b1', ''], ['t hd', doc.title || ''], ['b2', '']].forEach(function (r) { var tr = el('tr'); tr.appendChild(el('td', r[0], r[1])); tb.appendChild(tr); });
+    ttl.appendChild(tb);
+    var dl = String(doc.dateLine || '').replace(/^\/\s*/, '');
+    var author = doc.author || (KR.boot && KR.boot.author) || '';
+    if (author && dl.indexOf(author) < 0) dl += '/' + author;
+    // 본문 표
+    var bd = el('table', 'bd'), th = el('thead'), tbody = el('tbody');
+    th.appendChild(add(el('tr'), [el('th', 'hd', doc.headPrev || '지난 실적'), el('th', 'hd', doc.headNext || '향후 계획')]));
+    th.appendChild(add(el('tr', 'pr'), [el('th', 'gd', doc.periodPrev || ''), el('th', 'gd', doc.periodNext || '')]));
+    function block(b) {
+      var out = [], cl = String(b.c || '').split('\n');
+      var it = el('p', 'it'); it.appendChild(d.createTextNode('ㅇ '));
+      if (b.t) it.appendChild(el('b', '', '(' + b.t + ') '));
+      it.appendChild(d.createTextNode((cl[0] || '').trim()));
+      if (doc.showOrg && b.org) it.appendChild(el('span', 'org gd', ' [' + b.org + ']'));
+      out.push(it);
+      cl.slice(1).forEach(function (l) { if (l.trim()) out.push(el('p', 'ct', l.trim())); });
+      String(b.d || '').split('\n').forEach(function (l) {
+        if (!l.trim()) return;
+        var k = KR.lineKind(l), t = l.trim();
+        if (/^[*※]/.test(t)) out.push(el('p', 'nt gd', t));
+        else if (k === 'item') out.push(el('p', 'sb', '- ' + t.replace(/^[-–]\s*/, '')));
+        else out.push(el('p', 'rw', t));
+      });
+      var bl = String(b.box || '').split('\n').filter(function (x) { return x.trim(); });
+      if (bl.length) {
+        var bx = el('div', 'bx');
+        bl.forEach(function (l) { var t = l.trim(); bx.appendChild(/^[*※]/.test(t) ? el('div', 'bh', t) : el('div', 'bl', '- ' + t.replace(/^[-–·]\s*/, ''))); });
+        out.push(bx);
+      }
+      return out;
+    }
+    var any = false;
+    doc.cats.forEach(function (c, i) {
+      var pv = visible(c.prev), nx = visible(c.next);
+      if (!pv.length && !nx.length) return;
+      any = true;
+      var groups = printRows(pv, nx), n = groups.length;
+      groups.forEach(function (g, k) {
+        var pos = n === 1 ? '' : k === 0 ? 'ctop' : k === n - 1 ? 'cbot' : 'cmid';
+        var tr = el('tr');
+        [[g.prev, pv], [g.next, nx]].forEach(function (sd) {
+          var td = el('td', [pos, k === 0 ? 'top' : '', k === n - 1 ? 'bot' : ''].join(' ').trim());
+          if (k === 0) td.appendChild(el('p', 'ch hd', '□ ' + KR.CATS[i]));
+          if (!sd[1].length) { if (k === 0) td.appendChild(el('p', 'it', 'ㅇ 해당 사항 없음')); }
+          else sd[0].forEach(function (b, j) { if (j) td.appendChild(el('div', 'gap')); add(td, block(b)); });
+          if (k > 0 && sd[0].length) td.insertBefore(el('div', 'gap'), td.firstChild);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    });
+    if (!any) tbody.appendChild(add(el('tr'), [el('td', 'top bot', 'ㅇ 해당 사항 없음'), el('td', 'top bot', 'ㅇ 해당 사항 없음')]));
+    add(bd, [th, tbody]);
+    add(d.body, [ttl, el('p', 'dl gd', dl), bd]);
+    var w = fr.contentWindow;
+    var go = function () { try { w.focus(); w.print(); } finally { setTimeout(function () { fr.remove(); }, 1000); } };
+    // 글꼴이 준비된 뒤 인쇄
+    if (d.fonts && d.fonts.ready) d.fonts.ready.then(function () { setTimeout(go, 80); }); else setTimeout(go, 200);
+  }
+
   var tplCache = null;
   async function hwpx(doc, ver) {
     if (!root.JSZip) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/vendor/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
