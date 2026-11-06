@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<title>업무보고 · K예술영재 프로젝트</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main id="app"></main>
+<script src="assets/common.js"></script>
+<script src="assets/report.js"></script>
+<script>
+/* 화면 고르기: #/login · #/write · #/hub · #/view · #/admin */
+(function () {
+  var pages = { login: 'login', write: 'write', hub: 'hub', view: 'view', admin: 'admin' };
+  var name = pages[KR.route.name] ? KR.route.name : 'login';
+  document.body.className = 'pg-' + name + (name === 'login' || name === 'view' ? ' dark' : '');
+  window.addEventListener('hashchange', function () { location.reload(); });
+  var s = document.createElement('script');
+  s.src = 'assets/' + pages[name] + '.js';
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>
