@@ -558,15 +558,15 @@
       } else if (cur.k === 'top') {
         var ti = cur.i;
         function tcol(side, label, period, list2) {
-          return h('div', { class: 'st-col ' + side + (list2.length ? '' : ' none') }, [
+          return h('div', { class: 'tp-col ' + side + (list2.length ? '' : ' none') }, [
             h('div', { class: 'sc-h' }, [h('span', { class: 'sc-l', text: label }), h('span', { class: 'sc-p', text: period })]),
-            h('div', { class: 'st-list' }, list2.length ? list2.map(function (b) { return meetCard(b, ti, showOrg, true); }) : [h('div', { class: 'sc-none', text: '해당 사항 없음' })])
+            h('div', { class: 'tp-list' }, list2.length ? list2.map(function (b) { return meetCard(b, ti, showOrg, true); }) : [h('div', { class: 'sc-none', text: '해당 사항 없음' })])
           ]);
         }
         body = h('div', { class: 's-top', style: '--c1:' + CAT_C[ti][0] + ';--c2:' + CAT_C[ti][1] }, [
-          h('div', { class: 'st-crumb' }, [h('span', { class: 'sc-n', text: String(ti + 1).padStart(2, '0') }), h('span', { text: KR.CATS[ti] }), h('span', { class: 'st-pos', text: (cur.j + 1) + ' / ' + cur.n })]),
-          h('h2', { class: 'st-t', text: cur.t || '그 밖의 내용' }),
-          h('div', { class: 'st-cols' }, [tcol('prev', doc.headPrev || '지난 실적', doc.periodPrev, cur.prev), tcol('next', doc.headNext || '향후 계획', doc.periodNext, cur.next)])
+          h('div', { class: 'tp-crumb' }, [h('span', { class: 'sc-n', text: String(ti + 1).padStart(2, '0') }), h('span', { text: KR.CATS[ti] }), h('span', { class: 'tp-pos', text: (cur.j + 1) + ' / ' + cur.n })]),
+          h('h2', { class: 'tp-t', text: cur.t || '그 밖의 내용' }),
+          h('div', { class: 'tp-cols' + (!cur.prev.length || !cur.next.length ? ' one' : '') }, [tcol('prev', doc.headPrev || '지난 실적', doc.periodPrev, cur.prev), tcol('next', doc.headNext || '향후 계획', doc.periodNext, cur.next)])
         ]);
       } else {
         var from = w.type === 'M' ? w.nfirst : w.nmon;
@@ -592,12 +592,15 @@
       if (opts.extra) opts.extra(bar);
     }
     function zoom(d) { scale = Math.max(0.7, Math.min(1.6, Math.round((scale + d) * 10) / 10)); try { localStorage.setItem('kr3_scale', scale); } catch (e) { } stage.style.setProperty('--ms', scale); fit(); }
-    /** 소제목 화면은 크게 보이되, 내용이 많으면 한 화면에 들어오도록 줄임 */
+    /** 분야 표지·소제목 화면은 화면을 채우도록 키우고, 넘치면 줄임(0.6~1.4배) */
     function fit() {
       var body = stage.firstChild;
-      if (!body || !body.classList.contains('s-top')) return;
-      var f = 1; body.style.fontSize = '';
-      while (stage.scrollHeight > stage.clientHeight + 2 && f > 0.6) { f = Math.round((f - 0.05) * 100) / 100; body.style.fontSize = f + 'em'; }
+      if (!body || !(body.classList.contains('s-top') || body.classList.contains('s-cat'))) return;
+      function over(f) { body.style.fontSize = f + 'em'; return stage.scrollHeight > stage.clientHeight + 2; }
+      var lo = 0.6, hi = 1.4;
+      if (!over(hi)) return;
+      for (var k = 0; k < 7; k++) { var mid = (lo + hi) / 2; if (over(mid)) hi = mid; else lo = mid; }
+      body.style.fontSize = Math.floor(lo * 100) / 100 + 'em';
     }
     var rz = null;
     function onResize() { clearTimeout(rz); rz = setTimeout(fit, 120); }
