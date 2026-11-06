@@ -668,14 +668,14 @@
     // 실적·계획 양쪽에 같은 소제목이 있으면 같은 행에, 한쪽에만 있는 항목은 순서대로 짝지어 빈칸 없이
     pv.forEach(function (b) { var k = key(b); if (k && nk[k]) { if (!m[k]) { m[k] = { prev: [], next: [] }; out.push(m[k]); } m[k].prev.push(b); } else lp.push(b); });
     nx.forEach(function (b) { var k = key(b); if (k && pk[k]) m[k].next.push(b); else ln.push(b); });
-    // 짝 없는 항목: 양쪽을 각각 이어 쓰되 대략 14줄마다 행을 끊어(쪽 나눔 지점) 칸 사이 빈자리를 줄임
+    // 짝 없는 항목: 양쪽을 각각 이어 쓰되 대략 8줄마다 행을 끊어(쪽 나눔 지점) 칸 사이 빈자리를 줄임
     function lines(b) {
       var n = Math.ceil(String(String(b.c || '').split('\n')[0]).length / 22) || 1;
       String(b.c || '').split('\n').slice(1).concat(String(b.d || '').split('\n')).forEach(function (l) { if (l.trim()) n += Math.ceil(l.trim().length / 24); });
       String(b.box || '').split('\n').forEach(function (l) { if (l.trim()) n += 0.9; });
       return n + 0.5;
     }
-    function take(list) { var row = [], h = 0; while (list.length && (!row.length || h + lines(list[0]) <= 14)) { h += lines(list[0]); row.push(list.shift()); } return row; }
+    function take(list) { var row = [], h = 0; while (list.length && (!row.length || h + lines(list[0]) <= 8)) { h += lines(list[0]); row.push(list.shift()); } return row; }
     while (lp.length || ln.length) out.push({ prev: take(lp), next: take(ln) });
     return out.length ? out : [{ prev: [], next: [] }];
   }

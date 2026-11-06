@@ -1,8 +1,8 @@
 /* 업무보고 HWPX 생성기 (v5) — 회의록 양식(제목 상자 · 날짜/작성자 줄)에 2단 표(지난 실적 | 향후 계획)
  * template/report_template.hwpx: tools/build_template.py로 회의록 양식에서 만든 템플릿
  *   문단·글자 id는 템플릿에 덧붙인 것(아래 S). 모든 문단은 어절 단위 줄바꿈(KEEP_WORD).
- * 분야 안에서 소제목마다 한 행(같은 분야의 행 사이에는 선 없음) → 실적과 계획이 소제목별로 나란히 놓이고,
- *   행이 작아 쪽 경계에서 행 단위로 자연스럽게 나뉜다(표는 글자처럼 취급하지 않음, 머리행 반복). 상세 박스는 칸 안의 1칸짜리 표.
+ * 분야 안에서 소제목마다 한 행(같은 분야의 행 사이에는 선 없음) → 실적과 계획이 소제목별로 나란히 놓인다.
+ * 표는 글자처럼 취급하고, 행 높이를 어림해 쪽마다 표 하나씩 나눠 넣는다(표마다 머리행, 둘째 표부터 쪽 나눔). 상세 박스는 칸 안의 1칸짜리 표.
  * 브라우저(window.JSZip)와 Node(require('jszip')) 모두에서 동작. */
 (function (root) {
   'use strict';
@@ -52,28 +52,31 @@
     return p(S.P_PLAIN, [run(S.C_ITEM, '  ').replace('</hp:run>', '') + tbl + '<hp:t/></hp:run>']);
   }
 
-  /** 항목 하나(ㅇ 요지 + 세부 + 박스) */
+  /* 높이 어림(HWPUNIT, 1pt = 100). 칸 글자 폭 23050 · 휴먼명조 12pt 한글 한 자 ≈ 1200 → 줄당 약 17자(내어쓰기 뺌)
+   * 줄 높이: 항목 12pt×150% = 1800, 세부 12pt×145% = 1740, 메모·박스 10pt×140% = 1400, 분야 제목 13pt×150% = 1950 */
+  function wlen(t) { var n = 0; String(t || '').replace(/\s+/g, ' ').trim().split('').forEach(function (ch) { n += /[ᄀ-ᇿ㄰-㆏가-힣一-鿿　-〿＀-￯□ㅇ※]/.test(ch) ? 1 : 0.55; }); return n; }
+  function nl(t, per) { return Math.max(1, Math.ceil(wlen(t) / per)); }
+  var LH = { item: 1800, sub: 1740, note: 1400, box: 1400, head: 1950 };
+  /** 항목 하나(ㅇ 요지 + 세부 + 박스) → { xml, h(HWPUNIT) } */
   function blockXml(b, opt) {
-    var out = [], lines = 0, cl = String(b.c || '').split('\n');
+    var out = [], h = 0, cl = String(b.c || '').split('\n');
     var runs = [run(S.C_ITEM, ' ㅇ ')];
     if (b.t) runs.push(run(S.C_ITEMB, '(' + b.t + ') '));
     runs.push(run(S.C_ITEM, (cl[0] || '').trim()));
     if (opt.showOrg && b.org) runs.push(run(S.C_ORG, ' [' + b.org + ']'));
-    out.push(p(S.P_ITEM, runs)); lines += est(cl[0]) * 1.25 + 0.35;
-    cl.slice(1).forEach(function (l) { if (l.trim()) { out.push(p(S.P_ITEM, [run(S.C_ITEM, '    ' + l.trim())])); lines += est(l) * 1.25; } });
+    out.push(p(S.P_ITEM, runs)); h += nl(' ㅇ ' + (b.t ? '(' + b.t + ') ' : '') + cl[0] + (opt.showOrg && b.org ? ' [' + b.org + ']' : ''), 17) * LH.item;
+    cl.slice(1).forEach(function (l) { if (l.trim()) { out.push(p(S.P_ITEM, [run(S.C_ITEM, '    ' + l.trim())])); h += nl('    ' + l, 17) * LH.item; } });
     String(b.d || '').split('\n').forEach(function (l) {
       if (!l.trim()) return;
       var k = lineKind(l), t = l.trim();
-      if (k === 'note') out.push(p(S.P_NOTE, [run(S.C_NOTE, '     ' + t)]));
-      else if (k === 'item') out.push(p(S.P_SUB, [run(S.C_ITEM, '   - ' + t.replace(/^[-–]\s*/, ''))]));
-      else out.push(p(S.P_SUB, [run(S.C_ITEM, '     ' + t)]));
-      lines += est(t) * 1.2;
+      if (k === 'note') { out.push(p(S.P_NOTE, [run(S.C_NOTE, '     ' + t)])); h += nl(t, 19) * LH.note; }
+      else if (k === 'item') { out.push(p(S.P_SUB, [run(S.C_ITEM, '   - ' + t.replace(/^[-–]\s*/, ''))])); h += nl('   - ' + t, 17) * LH.sub; }
+      else { out.push(p(S.P_SUB, [run(S.C_ITEM, '     ' + t)])); h += nl('     ' + t, 17) * LH.sub; }
     });
-    if (String(b.box || '').trim()) { out.push(boxTable(b.box)); lines += 1 + String(b.box).split('\n').filter(function (x) { return x.trim(); }).length * 0.9; }
-    return { xml: out.join(''), lines: lines };
+    var bl = String(b.box || '').split('\n').filter(function (x) { return x.trim(); });
+    if (bl.length) { out.push(boxTable(b.box)); h += 900 + bl.reduce(function (n, l) { return n + nl(l, 18) * LH.box; }, 0); }
+    return { xml: out.join(''), h: h };
   }
-  /** 한 줄에 들어가는 글자 수(반 칸 너비 기준)로 줄 수 어림 */
-  function est(t) { return Math.max(1, Math.ceil(String(t || '').length / 30)); }
   /** 분야 안 항목을 소제목별로 묶어 행으로(실적·계획 짝 맞춤). 소제목 없는 항목은 순서대로 짝지음 */
   function rowsOf(pv, nx) {
     var out = [], m = {}, lp = [], ln = [];
@@ -83,14 +86,14 @@
     // 실적·계획 양쪽에 같은 소제목이 있으면 같은 행에, 한쪽에만 있는 항목은 순서대로 짝지어 빈칸 없이
     pv.forEach(function (b) { var k = key(b); if (k && nk[k]) { if (!m[k]) { m[k] = { prev: [], next: [] }; out.push(m[k]); } m[k].prev.push(b); } else lp.push(b); });
     nx.forEach(function (b) { var k = key(b); if (k && pk[k]) m[k].next.push(b); else ln.push(b); });
-    // 짝 없는 항목: 양쪽을 각각 이어 쓰되 대략 14줄마다 행을 끊어(쪽 나눔 지점) 칸 사이 빈자리를 줄임
+    // 짝 없는 항목: 양쪽을 각각 이어 쓰되 대략 8줄마다 행을 끊어(쪽 나눔 지점) 칸 사이 빈자리를 줄임
     function lines(b) {
       var n = Math.ceil(String(String(b.c || '').split('\n')[0]).length / 22) || 1;
       String(b.c || '').split('\n').slice(1).concat(String(b.d || '').split('\n')).forEach(function (l) { if (l.trim()) n += Math.ceil(l.trim().length / 24); });
       String(b.box || '').split('\n').forEach(function (l) { if (l.trim()) n += 0.9; });
       return n + 0.5;
     }
-    function take(list) { var row = [], h = 0; while (list.length && (!row.length || h + lines(list[0]) <= 14)) { h += lines(list[0]); row.push(list.shift()); } return row; }
+    function take(list) { var row = [], h = 0; while (list.length && (!row.length || h + lines(list[0]) <= 8)) { h += lines(list[0]); row.push(list.shift()); } return row; }
     while (lp.length || ln.length) out.push({ prev: take(lp), next: take(ln) });
     return out.length ? out : [{ prev: [], next: [] }];
   }
@@ -101,38 +104,73 @@
       '<hp:cellAddr colAddr="' + col + '" rowAddr="' + row + '"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="' + COL_W + '" height="' + height + '"/>' +
       '<hp:cellMargin left="' + CELL_M + '" right="' + CELL_M + '" top="' + (o.top != null ? o.top : 141) + '" bottom="' + (o.bottom != null ? o.bottom : 141) + '"/></hp:tc>';
   }
-  function bodyTable(doc) {
-    var opt = { showOrg: !!doc.showOrg }, rows = [], total = 0, r = 0;
-    function add(a, b, bf, hgt, o) { rows.push('<hp:tr>' + cell(0, r, bf, a, hgt, o) + cell(1, r, bf, b, hgt, o) + '</hp:tr>'); total += hgt; r++; }
-    add(p(S.P_TH, [run(S.C_TH, doc.headPrev || '지난 실적')]), p(S.P_TH, [run(S.C_TH, doc.headNext || '향후 계획')]), S.B_TH, 1700, { header: true });
-    add(p(S.P_TH, [run(S.C_PERIOD, doc.periodPrev || '')]), p(S.P_TH, [run(S.C_PERIOD, doc.periodNext || '')]), S.B_PERIOD, 1300, { header: true });
+  /* 쪽 높이 어림: 용지 84188 − 위·아래 여백(4251+머리말 2834)×2 = 본문 70018
+   * 1쪽은 제목 상자·날짜 줄이 약 7800을 쓰고, 표 머리 두 행이 약 3800. 어림이 빗나가도 넘치지 않게 90%만 채움 */
+  var PAGE_H = 70018, FIRST_USED = 7800, HEAD_H = 3800, FILL = 0.9;
+  function tableXml(rowsXml, total, n) {
+    return '<hp:tbl id="' + (tid++) + '" zOrder="1" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="' + n + '" colCnt="2" cellSpacing="0" borderFillIDRef="' + S.B_CELL + '" noAdjust="0">' +
+      '<hp:sz width="' + TBL_W + '" widthRelTo="ABSOLUTE" height="' + total + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+      '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
+      '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="' + CELL_M + '" right="' + CELL_M + '" top="141" bottom="141"/>' +
+      rowsXml + '</hp:tbl>';
+  }
+  /**
+   * 본문: 2단 표를 쪽마다 하나씩(글자처럼 취급) 나눠 넣는다. 표마다 머리행(지난 실적·향후 계획·기간)을 다시 달고,
+   * 둘째 표부터는 쪽 나눔 문단으로 시작한다. 분야가 쪽을 넘어가면 다음 표 첫 행에 「□ 분야」를 다시 적는다.
+   * 반환값은 템플릿의 __BODY__ 자리(문단 안 글자 run 속)에 그대로 들어간다.
+   */
+  function bodyXml(doc) {
+    var opt = { showOrg: !!doc.showOrg }, items = [];
     doc.cats.forEach(function (c, i) {
       var pv = visible(c.prev), nx = visible(c.next);
       if (!pv.length && !nx.length) return;
-      var groups = rowsOf(pv, nx), n = groups.length, head = p(S.P_HEAD, [run(S.C_HEAD, '□ ' + CATS[i])]);
-      var none = p(S.P_ITEM, [run(S.C_ITEM, ' ㅇ 해당 사항 없음')]);
+      var groups = rowsOf(pv, nx);
       groups.forEach(function (g, k) {
         function side(list, all) {
-          var xml = k === 0 ? head : '', ln = k === 0 ? 1.6 : 0;
-          if (!all.length) { if (k === 0) { xml += none; ln += 1.3; } }
-          else list.forEach(function (b) { var x = blockXml(b, opt); xml += x.xml; ln += x.lines + 0.3; });
-          if (!xml) xml = p(S.P_PLAIN, [run(S.C_ITEM, null)]);
-          return { xml: xml, lines: ln };
+          var parts = [], h = 0;
+          if (!all.length) { if (k === 0) { parts.push(p(S.P_ITEM, [run(S.C_ITEM, ' ㅇ 해당 사항 없음')])); h += LH.item; } }
+          else list.forEach(function (b, j) { var x = blockXml(b, opt); parts.push(x.xml); h += x.h + (j ? 300 : 0); });
+          return { xml: parts.join(''), h: h };
         }
-        var a = side(g.prev, pv), b = side(g.next, nx);
-        var top = k === 0 ? 340 : 60, bottom = k === n - 1 ? 340 : 60;
-        var bf = n === 1 ? S.B_CELL : k === 0 ? S.B_CTOP : k === n - 1 ? S.B_CBOT : S.B_CMID;
-        var hgt = Math.max(1200, Math.round(Math.max(a.lines, b.lines) * 640 + top + bottom));
-        add(a.xml, b.xml, bf, hgt, { top: top, bottom: bottom });
+        items.push({ cat: i, first: k === 0, last: k === groups.length - 1, a: side(g.prev, pv), b: side(g.next, nx) });
       });
     });
-    if (r === 2) add(p(S.P_ITEM, [run(S.C_ITEM, ' ㅇ 해당 사항 없음')]), p(S.P_ITEM, [run(S.C_ITEM, ' ㅇ 해당 사항 없음')]), S.B_CELL, 2400, { top: 340, bottom: 340 });
-    // 글자처럼 취급하지 않고 쪽 경계에서 행 단위로 나눔(CELL) — 행을 소제목 단위로 작게 나눴으므로 쪽이 자연스럽게 넘어감. 머리행(지난 실적·기간)은 쪽마다 반복
-    return '<hp:tbl id="' + (tid++) + '" zOrder="1" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="' + r + '" colCnt="2" cellSpacing="0" borderFillIDRef="' + S.B_CELL + '" noAdjust="0">' +
-      '<hp:sz width="' + TBL_W + '" widthRelTo="ABSOLUTE" height="' + total + '" heightRelTo="ABSOLUTE" protect="0"/>' +
-      '<hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
-      '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="' + CELL_M + '" right="' + CELL_M + '" top="141" bottom="141"/>' +
-      rows.join('') + '</hp:tbl>';
+    var head = function (i) { return { xml: p(S.P_HEAD, [run(S.C_HEAD, '□ ' + CATS[i])]), h: LH.head }; };
+    var EMPTY = p(S.P_PLAIN, [run(S.C_ITEM, null)]);
+    // 쪽마다 묶기
+    var pages = [], cur = [], used = 0, cap = (PAGE_H - FIRST_USED - HEAD_H) * FILL;
+    function rowH(it, withHead) {
+      var top = it.first || withHead ? 340 : 60, bottom = it.last ? 340 : 60;
+      var hh = it.first || withHead ? LH.head : 0;
+      return Math.round((Math.max(it.a.h, it.b.h) + hh) * 1.04 + top + bottom);
+    }
+    items.forEach(function (it) {
+      var h = rowH(it, !cur.length && !it.first);
+      if (cur.length && used + h > cap) { pages.push(cur); cur = []; used = 0; cap = (PAGE_H - HEAD_H) * FILL; h = rowH(it, !it.first); }
+      cur.push(it); used += h;
+    });
+    if (cur.length || !pages.length) pages.push(cur);
+    // 표 만들기
+    return pages.map(function (rows, pi) {
+      var r = 0, total = 0, out = [];
+      function add(a, b, bf, hgt, o) { out.push('<hp:tr>' + cell(0, r, bf, a, hgt, o) + cell(1, r, bf, b, hgt, o) + '</hp:tr>'); total += hgt; r++; }
+      add(p(S.P_TH, [run(S.C_TH, doc.headPrev || '지난 실적')]), p(S.P_TH, [run(S.C_TH, doc.headNext || '향후 계획')]), S.B_TH, 1700, { header: true });
+      add(p(S.P_TH, [run(S.C_PERIOD, doc.periodPrev || '')]), p(S.P_TH, [run(S.C_PERIOD, doc.periodNext || '')]), S.B_PERIOD, 1300, { header: true });
+      if (!rows.length) add(p(S.P_ITEM, [run(S.C_ITEM, ' ㅇ 해당 사항 없음')]), p(S.P_ITEM, [run(S.C_ITEM, ' ㅇ 해당 사항 없음')]), S.B_CELL, 2400, { top: 340, bottom: 340 });
+      rows.forEach(function (it, j) {
+        var startsRun = it.first || j === 0;                                  // 이 표 안에서 분야가 시작되는 행
+        var endsRun = it.last || j === rows.length - 1 || rows[j + 1].cat !== it.cat;
+        var showHead = it.first || j === 0;
+        var ha = showHead ? head(it.cat).xml : '', hb = ha;
+        var a = ha + it.a.xml, b = hb + it.b.xml;
+        var bf = startsRun && endsRun ? S.B_CELL : startsRun ? S.B_CTOP : endsRun ? S.B_CBOT : S.B_CMID;
+        var top = startsRun ? 340 : 60, bottom = endsRun ? 340 : 60;
+        add(a || EMPTY, b || EMPTY, bf, rowH(it, showHead && !it.first), { top: top, bottom: bottom });
+      });
+      var tbl = tableXml(out.join(''), total, r);
+      // 둘째 표부터: 앞 문단을 닫고 쪽 나눔 문단을 새로 연다(템플릿의 마지막 닫는 태그가 맨 끝 문단을 닫음)
+      return pi === 0 ? tbl : '<hp:t/></hp:run></hp:p><hp:p id="' + (pid++) + '" paraPrIDRef="' + S.P_PLAIN + '" styleIDRef="0" pageBreak="1" columnBreak="0" merged="0"><hp:run charPrIDRef="' + S.C_ITEM + '">' + tbl;
+    }).join('');
   }
 
   function plainText(doc) {
@@ -156,7 +194,7 @@
     var sec = await zip.file('Contents/section0.xml').async('string');
     var dateLine = String(doc.dateLine || '').replace(/^\/\s*/, '');
     if (doc.author && dateLine.indexOf(doc.author) < 0) dateLine += '/' + doc.author;
-    sec = sec.split('__TITLE__').join(esc(doc.title)).split('__DATELINE__').join(esc(dateLine)).split('__BODY__').join(bodyTable(doc));
+    sec = sec.split('__TITLE__').join(esc(doc.title)).split('__DATELINE__').join(esc(dateLine)).split('__BODY__').join(bodyXml(doc));
     zip.file('Contents/section0.xml', sec);
     var hpf = await zip.file('Contents/content.hpf').async('string');
     hpf = hpf.replace('__DOCTITLE__', esc(doc.title)).replace('__MODIFIED__', new Date().toISOString().replace(/\.\d+Z$/, 'Z'));
