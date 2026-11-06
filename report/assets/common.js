@@ -40,7 +40,7 @@
       name: weekName(mon),            // 실적 주간 이름 (작성 화면 표시용)
       planName: planName,             // 향후 계획 주간 = 대면보고(월요일 Zoom) 주간
       title: '(' + planName + ') 주간업무보고',
-      dateLine: '/ ' + String(fri.getFullYear()).slice(2) + '. ' + (fri.getMonth() + 1) + '. ' + fri.getDate() + '.(' + WD[fri.getDay()] + ')',
+      dateLine: '’' + String(fri.getFullYear()).slice(2) + '. ' + (fri.getMonth() + 1) + '. ' + fri.getDate() + '.(' + WD[fri.getDay()] + ')',
       periodPrev: md(mon) + ' ~ ' + md(fri),
       periodNext: md(nmon) + ' ~ ' + md(nfri),
       prevKey: 'W-' + ymd(add(mon, -7)),
@@ -59,7 +59,7 @@
       type: 'M', key: 'M-' + y + '-' + pad(m), y: y, m: m, first: first, last: last, nfirst: nfirst, nlast: nlast, fri: due,
       name: m + '월', planName: nm + '월', weekKeys: weeks,
       title: '(' + m + '월) 월간업무보고',
-      dateLine: '/ ' + String(due.getFullYear()).slice(2) + '. ' + (due.getMonth() + 1) + '. ' + due.getDate() + '.(' + WD[due.getDay()] + ')',
+      dateLine: '’' + String(due.getFullYear()).slice(2) + '. ' + (due.getMonth() + 1) + '. ' + due.getDate() + '.(' + WD[due.getDay()] + ')',
       periodPrev: md(first) + ' ~ ' + md(last), periodNext: md(nfirst) + ' ~ ' + md(nlast),
       prev: function () { return month(py, pm); }, next: function () { return month(ny, nm); }
     };
@@ -87,7 +87,7 @@
     ((d && d.cats) || []).forEach(function (c, i) { if (e.cats[i]) { e.cats[i].prev = (c.prev || []).slice(); e.cats[i].next = (c.next || []).slice(); } });
     return e;
   }
-  function blockEmpty(b) { return !String(b.t || '').trim() && !String(b.c || '').trim() && !String(b.d || '').trim(); }
+  function blockEmpty(b) { return !String(b.t || '').trim() && !String(b.c || '').trim() && !String(b.d || '').trim() && !String(b.box || '').trim(); }
 
   /** 세부 한 줄의 종류: cont(앞 줄 이어짐) · raw(기호·링크 그대로) · item(- 항목) */
   function lineKind(s) {
@@ -116,6 +116,11 @@
     var cats = CATS.map(function () { return []; }), cur = defCat == null ? 0 : defCat, found = false, b = null;
     String(text || '').replace(/\r/g, '').replace(/[ \t\u00a0]{2,}(?=(?:ㅇ|○)\s*\()/g, '\n').split('\n').forEach(function (raw) {
       var line = raw.replace(/ /g, ' ').replace(/\s+$/, ''), t = line.trim();
+      if (raw.charAt(0) === '\u0007') { // 한글 파일 속 상자(1칸 표) → 상세 박스
+        var bt = raw.slice(1).trim(); if (!bt) return;
+        if (!b) { b = { id: uid(), t: '', c: '', d: '', box: '' }; cats[cur].push(b); }
+        b.box = (b.box ? b.box + '\n' : '') + bt; return;
+      }
       if (!t) return;
       var m;
       if ((m = t.match(/^[□■◻]\s*(.*)$/))) { var ci = catIndex(m[1]); if (ci >= 0) { cur = ci; found = true; } b = null; return; }

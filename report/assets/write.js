@@ -232,7 +232,7 @@
       h('header', {}, [
         h('div', {}, [h('span', { class: 'side-l', text: label }), h('span', { class: 'side-p', text: period })]),
         imp.length ? h('button', { class: 'btn sm tint', title: '지난주에 쓴 「향후 계획」을 이번 주 실적으로 가져옵니다', onclick: function () {
-          imp.forEach(function (x) { list.push({ id: KR.uid(), t: x.t, c: x.c, d: x.d, from: x.id }); });
+          imp.forEach(function (x) { list.push({ id: KR.uid(), t: x.t, c: x.c, d: x.d, box: x.box || '', from: x.id }); });
           touch(); drawBody(); drawSteps(); drawFoot(); KR.toast('지난주 계획 ' + imp.length + '건을 가져왔습니다. 실제 한 일에 맞게 고쳐 주세요');
         } }, '지난주 계획 가져오기 · ' + imp.length) : null
       ]),
@@ -253,17 +253,24 @@
       dates.appendChild(h('span', { class: 'bd-l', text: '일정에 표시' }));
       ds.slice(0, 6).forEach(function (x) { var dt = KR.parse(x.date); dates.appendChild(h('span', { class: 'bd', text: (dt.getMonth() + 1) + '.' + dt.getDate() + ' ' + '일월화수목금토'[dt.getDay()] + (x.time ? ' ' + x.time : '') })); });
     }
-    function upd() { blk.t = t.value; blk.c = c.value; blk.d = d.value; touch(); showDates(); drawStepsLight(); }
+    // 상세 박스: 자세한 내용(주요 의견·검토 의견 등)을 상자 안에 따로 적음. 첫 줄을 「* 제목」으로 쓰면 박스 제목
+    var bx = h('textarea', { class: 'be-box', rows: 3, value: blk.box || '', placeholder: '* 주요 의견\n배경은 무채색 계열로\n2안은 타이포를 달리해 재시안', 'aria-label': '상세 박스' });
+    var bxWrap = h('div', { class: 'be-boxwrap' + (String(blk.box || '').trim() ? ' on' : '') }, [h('div', { class: 'be-boxh' }, [h('span', { text: '상세 박스' }), h('small', { text: '「* 」로 시작하는 줄은 박스 제목, 나머지는 한 줄에 하나씩' }), h('button', { class: 'icon-btn', title: '박스 지우기', 'aria-label': '박스 지우기', onclick: function () { bx.value = ''; bxWrap.classList.remove('on'); boxBtn.hidden = false; upd(); } }, '✕')]), bx]);
+    var boxBtn = h('button', { class: 'chip-btn', hidden: String(blk.box || '').trim() ? true : null, onclick: function () { bxWrap.classList.add('on'); boxBtn.hidden = true; if (!bx.value) bx.value = '* 주요 의견\n'; KR.autosize(bx); bx.focus(); } }, '＋ 상세 박스');
+    function upd() { blk.t = t.value; blk.c = c.value; blk.d = d.value; blk.box = bx.value.replace(/\s+$/, '').replace(/^\* 주요 의견$/, ''); touch(); showDates(); drawStepsLight(); }
+    bx.addEventListener('input', function () { KR.autosize(bx); upd(); });
     [t, c, d].forEach(function (el) { el.addEventListener('input', function () { if (el.tagName === 'TEXTAREA') KR.autosize(el); upd(); }); });
     c.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !c.value.includes('\n')) { e.preventDefault(); d.focus(); } });
-    setTimeout(function () { KR.autosize(c); KR.autosize(d); }, 0);
+    setTimeout(function () { KR.autosize(c); KR.autosize(d); KR.autosize(bx); }, 0);
     showDates();
     function mv(k) { var x = list.splice(j, 1)[0]; list.splice(j + k, 0, x); touch(); redraw(); }
     return h('div', { class: 'be', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1] }, [
       h('div', { class: 'be-row' }, [h('span', { class: 'be-o', text: 'ㅇ' }), t, c]),
       h('div', { class: 'be-row sub' }, [h('span', { class: 'be-dash', text: '–' }), d]),
+      bxWrap,
       dates,
       h('div', { class: 'be-tools' }, [
+        boxBtn,
         blk.from ? h('span', { class: 'be-from', text: '지난주 계획에서' }) : null,
         h('span', { class: 'spacer' }),
         h('button', { class: 'icon-btn', title: '위로', 'aria-label': '위로', disabled: j === 0, onclick: function () { mv(-1); } }, '↑'),
@@ -354,7 +361,7 @@
           if (!pick[i] || S.cats.indexOf(i) < 0) return;
           ['prev', 'next'].forEach(function (sd) {
             if (mode === 'replace') S.data.cats[i][sd] = [];
-            c[sd].forEach(function (b) { S.data.cats[i][sd].push({ id: KR.uid(), t: b.t, c: b.c, d: b.d }); n++; });
+            c[sd].forEach(function (b) { S.data.cats[i][sd].push({ id: KR.uid(), t: b.t, c: b.c, d: b.d, box: b.box || '' }); n++; });
           });
           if (first < 0) first = S.cats.indexOf(i);
         });

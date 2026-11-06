@@ -201,6 +201,11 @@
         h('label', { class: 'field' }, [h('span', { text: '열람 코드 (6자 이상)' }), h('div', { class: 'row' }, [code, h('button', { class: 'btn sm', onclick: function () { var c = 'abcdefghjkmnpqrstuvwxyz23456789', s = 'karts-'; for (var i = 0; i < 4; i++) s += c.charAt(Math.floor(Math.random() * c.length)); code.value = s; } }, '새로 만들기')])])
       ]),
       h('section', { class: 'card set-card' }, [
+        h('h3', { text: 'AI 문장 정리' }),
+        h('p', { class: 'muted', text: st.ai ? '사용 중입니다. 취합 화면의 「✦ 문장 정리」와 월간 초안 만들기에서 Gemini가 실적·계획 문장으로 다듬습니다.' : '꺼져 있습니다. Apps Script → 프로젝트 설정 → 스크립트 속성에 GEMINI_API_KEY를 넣으면 켜집니다. 그 전에는 공백·중복만 정리하는 기본 정리가 동작합니다.' }),
+        h('p', { class: 'muted small', text: '무료 등급은 구글이 입력·출력을 서비스 개선에 쓸 수 있습니다. 학생 이름·연락처 같은 개인정보는 보고 내용에 쓰지 않도록 안내해 주세요.' })
+      ]),
+      h('section', { class: 'card set-card' }, [
         h('h3', { text: '작성' }),
         h('label', { class: 'field' }, [h('span', { text: '작성 마감 (작성 화면에 표시)' }), due]),
         h('p', { class: 'muted small', text: '주체 목록과 순서는 「주체별 권한」 탭에서 바꿉니다.' })

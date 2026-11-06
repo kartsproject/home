@@ -13,7 +13,7 @@
       var maxCol = 0, rows = {};
       nested.cells.forEach(function (c) { if (c.col > maxCol) maxCol = c.col; (rows[c.row] = rows[c.row] || []).push(c); });
       if (maxCol === 0) { // 한 열짜리 상자(피드백 상자 등): 문단을 그대로
-        nested.cells.forEach(function (c) { c.lines.forEach(function (l) { if (l.trim()) cur.lines.push(/^\s*[-*※\[·○]/.test(l) ? l.trim() : '  ' + l.trim()); }); });
+        nested.cells.forEach(function (c) { c.lines.forEach(function (l) { if (l.trim()) cur.lines.push('\u0007' + l.trim()); }); });
       } else {            // 여러 열 표(도메인 표 등): 한 행을 한 줄로
         Object.keys(rows).sort(function (a, b) { return a - b; }).forEach(function (r) {
           var line = rows[r].sort(function (a, b) { return a.col - b.col; }).map(function (c) { return c.lines.join(' ').trim(); }).filter(String).join(' · ');

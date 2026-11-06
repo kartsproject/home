@@ -10,11 +10,12 @@
   /* =========================================================
    * 1) 취합 — 개인 작성분을 분야·구분별로 업체 순서대로 모으기
    * ========================================================= */
-  function sig(b) { return [b.t || '', b.c || '', b.d || ''].join('\u0001'); }
+  function sig(b) { return [b.t || '', b.c || '', b.d || '', b.box || ''].join('\u0001'); }
   function newDoc(w) {
     return {
       type: w.type || 'W', key: w.key, title: w.title, dateLine: w.dateLine,
       headPrev: '지난 실적', headNext: '향후 계획', periodPrev: w.periodPrev, periodNext: w.periodNext,
+      author: (KR.boot && KR.boot.author) || '(주)케이브레인컴퍼니',
       showOrg: false, cats: KR.CATS.map(function () { return { prev: [], next: [] }; }),
       schedOff: {}, schedAdd: []
     };
@@ -34,14 +35,14 @@
         SIDES.forEach(function (s) {
           c[s].forEach(function (b) {
             if (KR.blockEmpty(b)) return;
-            list.push({ src: e.uid + ':' + b.id, cat: i, side: s, org: e.company, by: e.name, t: b.t || '', c: b.c || '', d: b.d || '' });
+            list.push({ src: e.uid + ':' + b.id, cat: i, side: s, org: e.company, by: e.name, t: b.t || '', c: b.c || '', d: b.d || '', box: b.box || '' });
           });
         });
       });
     });
     return list;
   }
-  function fromSource(x) { return { id: KR.uid(), src: x.src, org: x.org, by: x.by, t: x.t, c: x.c, d: x.d, sig: sig(x), edited: false }; }
+  function fromSource(x) { return { id: KR.uid(), src: x.src, org: x.org, by: x.by, t: x.t, c: x.c, d: x.d, box: x.box, sig: sig(x), edited: false }; }
   function compile(entries, companies, w) {
     var doc = newDoc(w);
     sourceBlocks(entries, companies).forEach(function (x) { doc.cats[x.cat][x.side].push(fromSource(x)); });
@@ -72,7 +73,7 @@
         var x = cur[b.src];
         if (!x) return !!b.edited;
         seen[b.src] = 1;
-        if (!b.edited && sig(x) !== b.sig) { b.t = x.t; b.c = x.c; b.d = x.d; b.sig = sig(x); b.org = x.org; b.by = x.by; }
+        if (!b.edited && sig(x) !== b.sig) { b.t = x.t; b.c = x.c; b.d = x.d; b.box = x.box; b.sig = sig(x); b.org = x.org; b.by = x.by; }
         else if (b.edited) b.sig = sig(x); // 원본이 바뀌었어도 손댄 내용 유지
         return true;
       });
@@ -204,7 +205,8 @@
         String(b.c || '').split('\n').forEach(function (x, j) { if (x.trim()) lines.push(j === 0 ? x.trim() : '  ' + x.trim()); });
         lines = lines.concat(String(b.d || '').split('\n'));
       });
-      return { id: KR.uid(), src: '', org: g.orgs.join(', '), by: g.items.length > 1 ? '주간보고 ' + g.items.length + '건 합침' : '주간보고에서', t: g.t, c: cl[0] || '', d: uniqLines(lines).join('\n'), sig: '', edited: false };
+      var boxes = uniqLines(g.items.map(function (b) { return b.box || ''; }).join('\n').split('\n'));
+      return { id: KR.uid(), src: '', org: g.orgs.join(', '), by: g.items.length > 1 ? '주간보고 ' + g.items.length + '건 합침' : '주간보고에서', t: g.t, c: cl[0] || '', d: uniqLines(lines).join('\n'), box: boxes.join('\n'), sig: '', edited: false };
     });
   }
   /** weekDocs: [{key, doc}] 날짜순 */
@@ -239,19 +241,32 @@
   }
   function span(cls, text) { var s = h('span', { class: cls }); s.appendChild(linkify(text)); return s; }
   /** 블록 → 보고서 줄들 (문서 보기·작성 미리보기 공용) */
+  /** 상세 박스 (* 로 시작하는 줄은 박스 제목) */
+  function boxEl(text, cls) {
+    var lines = String(text || '').split('\n').filter(function (l) { return l.trim(); });
+    if (!lines.length) return null;
+    return h('div', { class: cls || 'rb-box' }, lines.map(function (l) {
+      var t = l.trim();
+      if (/^[*※]/.test(t)) return h('div', { class: 'bx-h' }, [span('', t.replace(/^[*※]\s*/, ''))]);
+      return h('div', { class: 'bx-l' }, [span('', t.replace(/^[-–·]\s*/, ''))]);
+    }));
+  }
+  /** 블록 → 보고서 줄들 (문서 보기·작성 미리보기 공용). 글머리: ㅇ→● , -→– , *→※ 모양은 CSS가 그림 */
   function blockEl(b, opts) {
     opts = opts || {};
     var lines = String(b.c || '').split('\n');
-    var head = h('div', { class: 'rb-o' }, [h('span', { class: 'o', text: 'ㅇ' }), b.t ? h('b', { text: '(' + b.t + ')' }) : null, ' ', span('', lines[0] || '')]);
+    var head = h('div', { class: 'rb-o' }, [h('span', { class: 'o', 'aria-hidden': 'true', text: 'ㅇ' }), b.t ? h('b', { class: 'rb-t', text: b.t }) : null, ' ', span('', lines[0] || '')]);
     if (opts.showOrg && b.org) head.appendChild(h('span', { class: 'rb-org', text: b.org }));
     var kids = [head];
     lines.slice(1).forEach(function (l) { if (l.trim()) kids.push(h('div', { class: 'rb-cont' }, [span('', l.trim())])); });
     String(b.d || '').split('\n').forEach(function (l) {
       if (!l.trim()) return;
-      var k = KR.lineKind(l);
-      if (k === 'item') kids.push(h('div', { class: 'rb-d' }, [h('span', { class: 'dash', text: '-' }), span('', l.trim())]));
-      else kids.push(h('div', { class: k === 'cont' ? 'rb-dc' : 'rb-raw' }, [span('', l.trim())]));
+      var k = KR.lineKind(l), t = l.trim();
+      if (k === 'item') kids.push(h('div', { class: 'rb-d' }, [h('span', { class: 'dash', 'aria-hidden': 'true', text: '-' }), span('', t)]));
+      else if (/^[*※]/.test(t)) kids.push(h('div', { class: 'rb-note' }, [span('', t.replace(/^[*※]\s*/, ''))]));
+      else kids.push(h('div', { class: k === 'cont' ? 'rb-dc' : 'rb-raw' }, [span('', t)]));
     });
+    var bx = boxEl(b.box); if (bx) kids.push(bx);
     return h('div', { class: 'rb' + (b.hide ? ' hidden-b' : '') }, kids);
   }
   function visible(list) { return (list || []).filter(function (b) { return !b.hide && !KR.blockEmpty(b); }); }
@@ -263,7 +278,7 @@
       var p = visible(c.prev), n = visible(c.next);
       if (!p.length && !n.length) return;
       function cell(list) {
-        return h('td', {}, [h('div', { class: 'rc-h' }, [h('i', { style: 'background:' + CAT_C[i][1] }), '□ ' + KR.CATS[i]])].concat(
+        return h('td', { style: '--c1:' + CAT_C[i][0] + ';--c2:' + CAT_C[i][1] }, [h('div', { class: 'rc-h' }, [h('i'), KR.CATS[i]])].concat(
           list.length ? list.map(function (b) { return blockEl(b, { showOrg: showOrg }); }) : [h('div', { class: 'rb-none', text: '해당 사항 없음' })]));
       }
       rows.push(h('tr', { class: 'rc' }, [cell(p), cell(n)]));
@@ -271,7 +286,7 @@
     if (!rows.length) rows.push(h('tr', {}, h('td', { colspan: 2, class: 'rb-none', text: '아직 내용이 없습니다' })));
     return h('article', { class: 'rdoc' }, [
       h('h1', { class: 'rd-title', text: doc.title }),
-      h('div', { class: 'rd-date', text: doc.dateLine }),
+      h('div', { class: 'rd-date', text: String(doc.dateLine || '').replace(/^\/\s*/, '') + (doc.author && String(doc.dateLine || '').indexOf(doc.author) < 0 ? '/' + doc.author : '') }),
       h('table', { class: 'rd-table' }, [
         h('thead', {}, [
           h('tr', { class: 'rh' }, [h('th', { text: doc.headPrev || '지난 실적' }), h('th', { text: doc.headNext || '향후 계획' })]),
@@ -323,6 +338,12 @@
     }));
   }
 
+  /** 같은 날짜 일정을 하나로 묶음 */
+  function byDate(list) {
+    var out = [], m = {};
+    list.forEach(function (x) { if (!m[x.date]) { m[x.date] = { date: x.date, items: [] }; out.push(m[x.date]); } m[x.date].items.push(x); });
+    return out;
+  }
   /* =========================================================
    * 6) 회의 화면 — 띄워 놓고 넘기며 보는 화면
    * ========================================================= */
@@ -332,13 +353,15 @@
     lines.slice(1).forEach(function (l) { if (l.trim()) det.push(h('li', { class: 'cont' }, [span('', l.trim())])); });
     String(b.d || '').split('\n').forEach(function (l) {
       if (!l.trim()) return;
-      var k = KR.lineKind(l);
-      det.push(h('li', { class: k }, [span('', l.trim())]));
+      var k = KR.lineKind(l), t = l.trim();
+      if (/^[*※]/.test(t)) det.push(h('li', { class: 'note' }, [span('', t.replace(/^[*※]\s*/, ''))]));
+      else det.push(h('li', { class: k }, [span('', t)]));
     });
     return h('div', { class: 'mc' }, [
       h('div', { class: 'mc-top' }, [b.t ? h('span', { class: 'mc-tag', style: 'background:' + CAT_C[i][0] + '33;color:' + CAT_C[i][1], text: b.t }) : null, showOrg && b.org ? h('span', { class: 'mc-org', text: b.org }) : null]),
       lines[0] ? h('div', { class: 'mc-main' }, [span('', lines[0])]) : null,
-      det.length ? h('ul', { class: 'mc-det' }, det) : null
+      det.length ? h('ul', { class: 'mc-det' }, det) : null,
+      boxEl(b.box, 'mc-box')
     ]);
   }
   /**
@@ -397,9 +420,11 @@
               h('div', { class: 'ovc-tags' }, tags.map(function (t) { return h('span', { text: t }); }))
             ]);
           })),
-          soon.length ? h('div', { class: 'ov-soon' }, [h('div', { class: 'ov-sh', text: '다음 2주 일정' }), h('div', { class: 'ov-strip' }, soon.slice(0, 8).map(function (x) {
-            var dt = KR.parse(x.date);
-            return h('div', { class: 'ov-ev', style: '--c1:' + CAT_C[x.cat || 0][1] }, [h('b', { text: (dt.getMonth() + 1) + '.' + dt.getDate() + ' ' + WD[dt.getDay()] }), h('span', { text: x.text })]);
+          soon.length ? h('div', { class: 'ov-soon' }, [h('div', { class: 'ov-sh', text: '다음 2주 일정' }), h('div', { class: 'ov-strip' }, byDate(soon).slice(0, 8).map(function (g) {
+            var dt = KR.parse(g.date);
+            return h('div', { class: 'ov-ev' }, [h('b', { text: (dt.getMonth() + 1) + '.' + dt.getDate() + ' ' + WD[dt.getDay()] })].concat(g.items.map(function (x) {
+              return h('div', { class: 'ov-ei', style: '--c1:' + CAT_C[x.cat || 0][1] }, [x.time ? h('em', { text: x.time.split('~')[0] }) : null, h('span', { text: x.text })]);
+            })));
           }))]) : null
         ]);
       } else if (cur.k === 'cat') {
@@ -478,7 +503,7 @@
     CAT_C: CAT_C, newDoc: newDoc, compile: compile, diff: diff, remerge: remerge, sortEntries: sortEntries,
     findDates: findDates, blockDates: blockDates, schedule: schedule, freeze: freeze, docSchedule: docSchedule,
     monthCompile: monthCompile, mergeBlocks: mergeBlocks,
-    blockEl: blockEl, docEl: docEl, calendarEl: calendarEl, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
+    blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, calendarEl: calendarEl, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
     print: print, hwpx: hwpx
   };
 })(window);

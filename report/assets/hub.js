@@ -45,7 +45,7 @@
           ]);
         });
         box.appendChild(h('section', { class: 'ed-cat', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1] }, [
-          h('header', {}, [h('span', { class: 'ed-n', text: String(i + 1).padStart(2, '0') }), h('h3', { text: '□ ' + KR.CATS[i] })]),
+          h('header', {}, [h('span', { class: 'ed-n', text: String(i + 1).padStart(2, '0') }), h('h3', { text: KR.CATS[i] })]),
           h('div', { class: 'ed-cols' }, cols)
         ]));
       });
@@ -58,7 +58,7 @@
           blk.org ? h('span', { class: 'ec-org', text: blk.org }) : null,
           blk.by ? h('span', { class: 'ec-by', text: blk.by }) : null,
           !blk.src && !blk.by ? h('span', { class: 'ec-by', text: '직접 추가' }) : null,
-          blk.edited ? h('span', { class: 'ec-ed', text: '편집함' }) : null,
+          blk.edited ? h('span', { class: 'ec-ed', text: blk.ai ? '문장 정리됨' : '편집함' }) : null,
           blk.hide ? h('span', { class: 'ec-ed', text: '보고서에서 뺌' }) : null,
           h('span', { class: 'spacer' }),
           h('button', { class: 'icon-btn', title: '위로', 'aria-label': '위로', disabled: j === 0, onclick: function () { mv(-1); } }, '↑'),
@@ -74,6 +74,7 @@
       blk = blk || { id: KR.uid(), src: '', org: 'MBC C&I', by: '', t: '', c: '', d: '' };
       var t = h('input', { class: 'input', value: blk.t, placeholder: '예: 키비주얼' });
       var c = h('textarea', { class: 'input', rows: 2, value: blk.c, placeholder: '예: 2차 리뷰 시사 보고(11/10,화)' });
+      var bxIn = h('textarea', { class: 'input', rows: 4, value: blk.box || '', placeholder: '* 주요 의견\n배경은 무채색 계열로\n2안은 타이포를 달리해 재시안' });
       var d = h('textarea', { class: 'input', rows: 6, value: blk.d, placeholder: '한 줄에 하나씩 (앞에 - 가 붙습니다)\n앞에 공백을 두면 윗줄에 이어지는 줄\n* ※ [ 로 시작하면 기호 그대로' });
       var orgSel = h('select', { class: 'input' }, S.companies.concat(blk.org && S.companies.indexOf(blk.org) < 0 ? [blk.org] : []).map(function (n) { return h('option', { value: n, text: n, selected: n === blk.org }); }));
       var catSel = h('select', { class: 'input' }, KR.CATS.map(function (n, k) { return h('option', { value: k, text: n, selected: k === ci }); }));
@@ -82,7 +83,7 @@
         var ta = h('textarea', { class: 'input mono', rows: 7, placeholder: '□ 홍보/다큐/아카이빙\nㅇ(언론홍보) 기획기사 음악편 보도(11/6,금)\n- ...' });
         return h('div', {}, [ta, h('button', { class: 'btn sm', style: 'margin-top:6px', onclick: function () {
           var p = KR.parseText(ta.value, Number(catSel.value)), n = 0;
-          p.cats.forEach(function (l, k) { l.forEach(function (x) { doc.cats[k][sideSel.value].push({ id: KR.uid(), src: '', org: orgSel.value, by: '', t: x.t, c: x.c, d: x.d }); n++; }); });
+          p.cats.forEach(function (l, k) { l.forEach(function (x) { doc.cats[k][sideSel.value].push({ id: KR.uid(), src: '', org: orgSel.value, by: '', t: x.t, c: x.c, d: x.d, box: x.box || '' }); n++; }); });
           if (!n) { KR.toast('읽을 내용이 없습니다', true); return; }
           m.close(); changed(); KR.toast(n + '건을 넣었습니다');
         } }, '읽어서 넣기')]);
@@ -92,6 +93,7 @@
         h('div', { class: 'grid2' }, [h('label', { class: 'field' }, [h('span', { text: '소제목 ( ) 안' }), t]), h('label', { class: 'field' }, [h('span', { text: '업체' }), orgSel])]),
         h('label', { class: 'field' }, [h('span', { text: '내용 (ㅇ 줄)' }), c]),
         h('label', { class: 'field' }, [h('span', { text: '세부 내용' }), d]),
+        h('label', { class: 'field' }, [h('span', { text: '상세 박스 (첫 줄을 「* 주요 의견」처럼 쓰면 박스 제목)' }), bxIn]),
         blk.src && blk.edited ? h('p', { class: 'muted small', text: '이 항목은 편집한 상태라 작성자가 원문을 고쳐도 자동으로 바뀌지 않습니다.' }) : null,
         blk.src && !isNew ? h('p', { class: 'muted small', text: '원문 작성: ' + (blk.by || '') + ' (' + (blk.org || '') + ')' }) : null,
         paste
@@ -105,7 +107,7 @@
         h('span', { class: 'spacer' }),
         h('button', { class: 'btn', text: '취소', onclick: function () { m.close(); } }),
         h('button', { class: 'btn primary', text: '저장', onclick: function () {
-          blk.t = t.value.trim(); blk.c = c.value.replace(/\s+$/, ''); blk.d = d.value.replace(/\s+$/, ''); blk.org = orgSel.value;
+          blk.t = t.value.trim(); blk.c = c.value.replace(/\s+$/, ''); blk.d = d.value.replace(/\s+$/, ''); blk.box = bxIn.value.replace(/\s+$/, ''); blk.org = orgSel.value;
           if (KR.blockEmpty(blk)) { KR.toast('내용을 입력하세요', true); return; }
           if (blk.src && !isNew) blk.edited = true;
           var nc = Number(catSel.value), ns = sideSel.value;
@@ -127,15 +129,19 @@
       var all = R.schedule(doc, { all: true });
       box.appendChild(h('div', { class: 'sch-h' }, [h('h3', { text: '다가오는 일정' }), h('span', { class: 'muted small', text: '향후 계획 속 날짜를 자동으로 읽었습니다. 잘못 읽힌 건 빼 주세요.' })]));
       if (!all.length) box.appendChild(h('div', { class: 'ag-empty', text: '날짜가 적힌 계획이 없습니다' }));
-      box.appendChild(h('div', { class: 'sch-list' }, all.map(function (x) {
-        var dt = KR.parse(x.date);
-        return h('div', { class: 'sch-it' + (x.off ? ' off' : '') }, [
-          h('i', { style: 'background:' + R.CAT_C[x.cat || 0][1] }),
-          h('span', { class: 'sch-d', text: (dt.getMonth() + 1) + '.' + dt.getDate() + '(' + '일월화수목금토'[dt.getDay()] + ')' }),
-          x.time ? h('span', { class: 'sch-t', text: x.time }) : null,
-          h('span', { class: 'sch-x', text: x.text }),
-          x.auto ? h('button', { class: 'icon-btn', title: x.off ? '다시 표시' : '일정에서 빼기', onclick: function () { doc.schedOff = doc.schedOff || {}; if (x.off) delete doc.schedOff[x.id]; else doc.schedOff[x.id] = 1; onChange(); draw(); } }, x.off ? '↺' : '−')
-            : h('button', { class: 'icon-btn danger', title: '지우기', onclick: function () { doc.schedAdd = (doc.schedAdd || []).filter(function (y) { return y.id !== x.id; }); onChange(); draw(); } }, '✕')
+      box.appendChild(h('div', { class: 'sch-list' }, R.byDate(all).map(function (g) {
+        var dt = KR.parse(g.date);
+        return h('div', { class: 'sch-day' }, [
+          h('div', { class: 'sch-d' }, [h('b', { text: String(dt.getDate()) }), h('span', { text: (dt.getMonth() + 1) + '월 ' + '일월화수목금토'[dt.getDay()] })]),
+          h('div', { class: 'sch-items' }, g.items.map(function (x) {
+            return h('div', { class: 'sch-it' + (x.off ? ' off' : '') }, [
+              h('i', { style: 'background:' + R.CAT_C[x.cat || 0][1] }),
+              x.time ? h('span', { class: 'sch-t', text: x.time }) : null,
+              h('span', { class: 'sch-x', text: x.text }),
+              x.auto ? h('button', { class: 'icon-btn', title: x.off ? '다시 표시' : '일정에서 빼기', onclick: function () { doc.schedOff = doc.schedOff || {}; if (x.off) delete doc.schedOff[x.id]; else doc.schedOff[x.id] = 1; onChange(); draw(); } }, x.off ? '↺' : '−')
+                : h('button', { class: 'icon-btn danger', title: '지우기', onclick: function () { doc.schedAdd = (doc.schedAdd || []).filter(function (y) { return y.id !== x.id; }); onChange(); draw(); } }, '✕')
+            ]);
+          }))
         ]);
       })));
       var dIn = h('input', { class: 'input', type: 'date' }), tIn = h('input', { class: 'input', placeholder: '시간 (선택)', style: 'max-width:110px' }), xIn = h('input', { class: 'input', placeholder: '일정 내용' });
@@ -185,6 +191,56 @@
         KR.busy(e.target, false);
       } })
     ]);
+  }
+
+  /* =========================================================
+   * AI 문장 정리 — 작성분을 실적·계획 문장으로 다듬어 편집본에 넣음 (되돌리기 가능)
+   * ========================================================= */
+  function payloadOf(doc) {
+    return doc.cats.map(function (c) {
+      function pick(list) { return R.visible(list).map(function (b) { return { id: b.id, t: b.t, c: b.c, d: b.d, box: b.box || '' }; }); }
+      return { prev: pick(c.prev), next: pick(c.next) };
+    });
+  }
+  /** 규칙 기반 기본 정리 (AI를 못 쓸 때): 공백·마침표·중복 줄 정리 */
+  function tidy(cats) {
+    function line(s) { return String(s || '').replace(/[ \t]+/g, ' ').replace(/\s*([,)])/g, '$1').replace(/\(\s+/g, '(').replace(/[.。]\s*$/, '').trim(); }
+    function lines(s) { var seen = {}; return String(s || '').split('\n').map(function (l) { var lead = /^\s+/.test(l) ? '  ' : ''; return lead + line(l); }).filter(function (l) { var k = l.trim(); if (!k || seen[k]) return false; seen[k] = 1; return true; }).join('\n'); }
+    return cats.map(function (c) { function f(list) { return list.map(function (b) { return { from: b.id, t: line(b.t), c: lines(b.c), d: lines(b.d), box: lines(b.box) }; }); } return { prev: f(c.prev), next: f(c.next) }; });
+  }
+  /** cats(결과)를 편집본에 반영. 원래 블록의 업체·원문 연결은 from으로 이어 둠 */
+  function applyRefined(doc, out, src) {
+    var byId = {};
+    doc.cats.forEach(function (c) { ['prev', 'next'].forEach(function (sd) { c[sd].forEach(function (b) { byId[b.id] = b; }); }); });
+    (src || []).forEach(function (c) { ['prev', 'next'].forEach(function (sd) { (c[sd] || []).forEach(function (b) { if (!byId[b.id]) byId[b.id] = b; }); }); });
+    doc.cats.forEach(function (c, i) {
+      ['prev', 'next'].forEach(function (sd) {
+        var hidden = c[sd].filter(function (b) { return b.hide; });
+        c[sd] = (out[i] && out[i][sd] || []).map(function (r) {
+          var o = byId[Array.isArray(r.from) ? r.from[0] : r.from] || {};
+          return { id: KR.uid(), src: o.src || '', org: o.org || '', by: o.by || '', t: r.t, c: r.c, d: r.d, box: r.box || '', sig: o.sig || '', edited: true, ai: true };
+        }).concat(hidden);
+      });
+    });
+  }
+  async function refine(doc, mode, src, onDone) {
+    var before = JSON.parse(JSON.stringify(doc.cats));
+    var wait = KR.modal('문장 정리 중', [h('div', { class: 'ai-wait' }, [h('div', { class: 'ai-orb' }), h('p', { text: b.ai ? 'AI가 실적·계획 문장으로 다듬고 있습니다. 보통 10~40초 걸립니다.' : '기본 정리 중…' })])], [], { locked: true, noFocus: true });
+    var out = null, note = '';
+    if (b.ai) {
+      try { var r = await KR.call('compile.ai', { mode: mode, cats: src || payloadOf(doc) }); out = r.cats; note = 'AI(' + r.model + ')로 정리했습니다'; }
+      catch (e) { note = e.message + ' — 기본 정리만 했습니다'; }
+    } else note = 'AI 키가 없어 기본 정리(공백·중복)만 했습니다';
+    if (!out) out = tidy(src || payloadOf(doc));
+    wait.close();
+    applyRefined(doc, out, src);
+    S.undo = { key: doc.key, cats: before };
+    onDone();
+    KR.toast(note);
+  }
+  function undoBtn(doc, onDone) {
+    if (!S.undo || S.undo.key !== doc.key) return null;
+    return h('button', { class: 'btn ghost', title: '문장 정리 전으로 되돌립니다', onclick: function () { doc.cats = S.undo.cats; S.undo = null; onDone(); KR.toast('정리 전으로 되돌렸습니다'); } }, '↺ 정리 전으로');
   }
 
   /* =========================================================
@@ -262,6 +318,8 @@
       h('button', { class: 'btn primary', onclick: function () { meetPreview(function () { return doc; }); } }, '▶ 회의 화면으로 보기'),
       h('button', { class: 'btn', onclick: function () { docPreview(doc); } }, '문서로 보기'),
       h('label', { class: 'chk' }, [orgChk, ' 업체명 표기']),
+      h('button', { class: 'btn ai', onclick: function () { refine(doc, 'week', null, function () { weekRedraw(); }); } }, '✦ 문장 정리'),
+      undoBtn(doc, function () { weekRedraw(); }),
       h('button', { class: 'btn ghost', onclick: function () { infoModal(doc, w, onChange); } }, '제목·기간 고치기'),
       h('span', { class: 'spacer' }),
       h('button', { class: 'btn ghost', onclick: async function () {
@@ -276,11 +334,14 @@
       P.share ? h('button', { class: 'btn gold', onclick: function () { share(w.key, doc, saveNow, { lastVer: lastShared && lastShared.ver, done: function () { weekTab(); } }); } }, lastShared ? '갱신해서 공유' : '한예종에 공유') : null
     ]));
 
+    function weekRedraw() { st.dirty = true; saveNow().then(function () { weekTab(); }).catch(function () { weekTab(); }); }
     var ed = editor({ doc: doc, w: w, onChange: onChange });
     var sp = schedulePanel(doc, onChange);
     main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [sp.el, sharedList(st.shared, w.key)])]));
     drawDiff();
-    if (st.dirty) { saveNow().catch(function () { }); }
+    // 처음 취합할 때: 작성분을 실적·계획 문장으로 정리해서 넣음
+    if (fresh && entries.length) refine(doc, 'week', null, weekRedraw);
+    else if (st.dirty) { saveNow().catch(function () { }); }
   }
   function sharedList(list, key) {
     if (!list.length) return h('div');
@@ -343,11 +404,23 @@
       var ww = KR.fromKey(x.key);
       return h('span', { class: 'mw ' + (x.doc ? (/공유/.test(x.from) ? 'ok' : 'run') : 'none') }, [h('i'), ww.planName + ' 보고', h('small', { text: '실적 ' + KR.md(ww.mon).slice(0, 5) + '~ · ' + (x.from || '없음') })]);
     }))));
+    /** 월간 정리용 원자료: 그달 주간 최종본의 지난 실적(주차 표시) + 마지막 주의 향후 계획 */
+    function monthSrc() {
+      var docs = weeks.filter(function (x) { return x.doc; });
+      return KR.CATS.map(function (_, i) {
+        var prev = [];
+        docs.forEach(function (x) { var wn = KR.fromKey(x.key).name; R.visible(x.doc.cats[i].prev).forEach(function (bk) { prev.push({ id: bk.id, src: bk.src || '', org: bk.org || '', by: bk.by || '', t: bk.t, c: bk.c, d: bk.d, box: bk.box || '', w: wn }); }); });
+        var last = docs[docs.length - 1];
+        var next = last ? R.visible(last.doc.cats[i].next).map(function (bk) { return { id: bk.id, src: bk.src || '', org: bk.org || '', by: bk.by || '', t: bk.t, c: bk.c, d: bk.d, box: bk.box || '' }; }) : [];
+        return { prev: prev, next: next };
+      });
+    }
     function build() {
       var nd = R.monthCompile(weeks, m);
       if (doc) { ['title', 'dateLine', 'periodPrev', 'periodNext', 'showOrg'].forEach(function (k) { if (doc[k] != null) nd[k] = doc[k]; }); Object.keys(doc).forEach(function (k) { delete doc[k]; }); Object.assign(doc, nd); }
       else doc = nd;
-      st.dirty = true; saveNow().then(function () { monthTab(); }).catch(function (e) { KR.toast(e.message, true); });
+      // 실적은 그달 결과물만으로, 실적 문장으로 정리
+      refine(doc, 'month', monthSrc(), function () { st.dirty = true; saveNow().then(function () { monthTab(); }).catch(function (e) { KR.toast(e.message, true); }); });
     }
     if (!doc) {
       main.appendChild(h('div', { class: 'empty-state' }, [
@@ -363,6 +436,8 @@
       h('button', { class: 'btn primary', onclick: function () { meetPreview(function () { return doc; }); } }, '▶ 회의 화면으로 보기'),
       h('button', { class: 'btn', onclick: function () { docPreview(doc); } }, '문서로 보기'),
       h('label', { class: 'chk' }, [orgChk, ' 업체명 표기']),
+      h('button', { class: 'btn ai', onclick: function () { refine(doc, 'month', monthSrc(), function () { st.dirty = true; saveNow().then(function () { monthTab(); }); }); } }, '✦ 실적으로 다시 정리'),
+      undoBtn(doc, function () { st.dirty = true; saveNow().then(function () { monthTab(); }); }),
       h('button', { class: 'btn ghost', onclick: function () { infoModal(doc, m, onChange); } }, '제목·기간 고치기'),
       h('span', { class: 'spacer' }),
       h('button', { class: 'btn ghost', onclick: async function () { if (await KR.confirm('편집한 내용을 버리고 주간보고에서 다시 만들까요?', '다시 만들기', true)) build(); } }, '주간보고에서 다시 만들기'),

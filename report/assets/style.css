@@ -751,3 +751,74 @@ body.dark .vtop .sel:focus { box-shadow: 0 0 0 3px rgba(41,151,255,.35); }
 .imp-row small { color: var(--text-3); font-size: 12.5px; }
 .imp-row.off { opacity: .5; cursor: default; }
 body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채웁니다'; position: fixed; inset: 14px; border: 3px dashed var(--blue); border-radius: 28px; background: rgba(0,113,227,.08); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: var(--blue); z-index: 300; pointer-events: none; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+
+/* =========================================================
+   v5 다듬기: 분야 제목 배경 · 글머리표 · 상세 박스 · 날짜별 일정 묶음 · 문장 정리
+   ========================================================= */
+/* 분야 제목: □ 대신 색 띠 배경 */
+.rc-h { margin: -2px -4px 12px; padding: 9px 14px; border-radius: 12px; background: color-mix(in srgb, var(--c1, #8E8E93) 20%, #fff); color: color-mix(in srgb, var(--c2, #1D1D1F) 75%, #000); font-size: 15px; letter-spacing: -0.02em; }
+.rc-h i { width: 4px; height: 16px; border-radius: 2px; background: var(--c2, #1D1D1F); }
+.ed-cat > header { background: linear-gradient(90deg, color-mix(in srgb, var(--c1) 22%, #fff), #fff 75%); border-bottom: 1px solid var(--hair); padding-bottom: 14px; }
+/* 글머리표: ㅇ → 색 점, - → 짧은 선, * → 작은 회색 줄 */
+.rb-o { padding-left: 1.15em; text-indent: -1.15em; }
+.rb-o .o { width: 1.15em; font-size: 0; vertical-align: middle; }
+.rb-o .o::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c2, #1D1D1F); transform: translateY(-2px); }
+.rb-t { display: inline-block; text-indent: 0; font-weight: 700; color: color-mix(in srgb, var(--c2, #1D1D1F) 80%, #000); background: color-mix(in srgb, var(--c1, #8E8E93) 16%, #fff); border-radius: 6px; padding: 0 7px; margin-right: 2px; font-size: .95em; line-height: 1.6; }
+.rb-cont { padding-left: 1.15em; }
+.rb-d { padding-left: 2.3em; text-indent: -.9em; }
+.rb-d .dash { width: .9em; font-size: 0; vertical-align: middle; }
+.rb-d .dash::before { content: ''; display: inline-block; width: 7px; height: 1.5px; border-radius: 1px; background: var(--text-4); transform: translateY(-3px); }
+.rb-dc { padding-left: 2.3em; }
+.rb-note { padding-left: 2.3em; text-indent: -1em; font-size: .9em; color: var(--text-3); }
+.rb-note::before { content: '※'; display: inline-block; width: 1em; text-indent: 0; font-size: .85em; color: var(--text-4); }
+/* 상세 박스 */
+.rb-box { margin: 7px 0 4px 1.15em; padding: 10px 14px 11px; border-radius: 12px; background: #FAFAFC; box-shadow: inset 0 0 0 1px var(--hair-2); font-size: .93em; }
+.bx-h { font-weight: 700; color: color-mix(in srgb, var(--c2, #1D1D1F) 80%, #000); margin-bottom: 3px; }
+.bx-l { position: relative; padding-left: .9em; color: var(--text-2); line-height: 1.6; }
+.bx-l::before { content: ''; position: absolute; left: 0; top: .78em; width: 5px; height: 1.5px; background: var(--text-4); }
+.mc-box { margin-top: .6em; padding: .65em .9em .7em; border-radius: .7em; background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); font-size: .84em; }
+.mc-box .bx-h { color: var(--c1); }
+.mc-box .bx-l { color: var(--k-text-2); }
+.mc-box .bx-l::before { background: var(--k-text-3); }
+.mc-det li.note { padding-left: 1em; color: var(--k-text-3); font-size: .95em; }
+.mc-det li.note::before { content: '※'; position: absolute; left: 0; font-size: .8em; top: .15em; }
+/* 다가오는 일정: 같은 날짜는 한 상자 */
+.ov-strip { grid-template-columns: repeat(auto-fill, minmax(15em, 1fr)); }
+.ov-ev { border-left: 0; display: flex; flex-direction: column; gap: .3em; }
+.ov-ev > b { font-size: 1.05em; margin-bottom: .1em; }
+.ov-ei { position: relative; padding-left: .9em; color: var(--k-text-2); }
+.ov-ei::before { content: ''; position: absolute; left: 0; top: .55em; width: .45em; height: .45em; border-radius: 50%; background: var(--c1); }
+.ov-ei em { font-style: normal; color: var(--k-text); font-weight: 600; margin-right: .35em; font-variant-numeric: tabular-nums; }
+.sch-day { display: grid; grid-template-columns: 52px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+.sch-day .sch-d { text-align: center; line-height: 1.1; padding-top: 2px; }
+.sch-day .sch-d b { display: block; font-size: 22px; letter-spacing: -0.03em; }
+.sch-day .sch-d span { font-size: 11px; color: var(--text-4); }
+.sch-items { display: grid; gap: 2px; }
+.sch-day .sch-it { border: 0; padding: 3px 0; }
+/* 문장 정리 버튼 · 대기 */
+.btn.ai { background: linear-gradient(92deg, #2997FF, #A970FF 55%, #FF6482); color: #fff; }
+.btn.ai:hover { filter: brightness(1.08); background: linear-gradient(92deg, #2997FF, #A970FF 55%, #FF6482); }
+.ai-wait { text-align: center; padding: 18px 0 8px; color: var(--text-3); }
+.ai-orb { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: conic-gradient(#2997FF, #A970FF, #FF6482, #2997FF); animation: spin 1.4s linear infinite; -webkit-mask: radial-gradient(circle, transparent 52%, #000 54%); mask: radial-gradient(circle, transparent 52%, #000 54%); }
+/* 작성: 상세 박스 입력 */
+.be-boxwrap { display: none; margin: 8px 0 2px 20px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c2) 35%, #fff); padding: 8px 10px 6px; }
+.be-boxwrap.on { display: block; }
+.be-boxh { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-4); padding: 0 2px 4px; }
+.be-boxh span { font-weight: 700; color: var(--c2); font-size: 12.5px; }
+.be-boxh small { flex: 1; }
+.be-box { width: 100%; border: 0; outline: none; resize: none; background: transparent; font-size: 14px; line-height: 1.6; color: var(--text-2); overflow: hidden; padding: 2px; }
+.chip-btn { border: 0; background: color-mix(in srgb, var(--c1) 18%, #fff); color: var(--c2); font-size: 12px; font-weight: 600; border-radius: 980px; padding: 4px 11px; }
+.chip-btn:hover { background: color-mix(in srgb, var(--c1) 28%, #fff); }
+.be-tools .chip-btn { margin-right: 4px; }
+.be:not(:hover):not(:focus-within) .be-tools .chip-btn { opacity: .9; }
+@media print {
+  .rc-h { background: none !important; padding: 0; margin: 0 0 6px; color: #000; }
+  .rc-h::before { content: '□ '; }
+  .rb-o .o { font-size: inherit; } .rb-o .o::before { display: none; }
+  .rb-d .dash { font-size: inherit; } .rb-d .dash::before { display: none; }
+  .rb-t { background: none; padding: 0; color: #000; } .rb-t::before { content: '('; } .rb-t::after { content: ')'; }
+  .rb-box { background: none; box-shadow: none; border: 1px dashed #000; }
+}
+.be-tools { opacity: 1; }
+.be-tools .icon-btn { opacity: .35; }
+.be:hover .be-tools .icon-btn, .be:focus-within .be-tools .icon-btn { opacity: 1; }
