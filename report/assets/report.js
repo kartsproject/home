@@ -156,12 +156,14 @@
     });
     return res;
   }
+  /** 다가오는 일정은 보고 시점부터 1월 말(겨울캠프 끝)까지 — 2월 이후 보고면 다음 해 1월 말 */
+  function calEnd(from) { return new Date(from.getFullYear() + (from.getMonth() > 0 ? 1 : 0), 0, 31); }
   /** 다가오는 일정: from 이후 날짜만, 같은 날·같은 내용은 하나로 */
   function schedule(doc, opts) {
     opts = opts || {};
     var w = KR.fromKey(doc.key), ref = w.mon || w.first;
     var from = opts.from || (w.type === 'M' ? w.nfirst : w.nmon);
-    var until = opts.until || KR.add(from, 7 * 10);
+    var until = opts.until || calEnd(from);
     var list = [], seen = {};
     doc.cats.forEach(function (c, ci) {
       SIDES.forEach(function (s) {
@@ -181,8 +183,39 @@
     return opts.all ? list : list.filter(function (x) { return !x.off; });
   }
   /** 공유 직전에 일정 목록을 굳혀 넣는다 */
-  function freeze(doc) { var d = JSON.parse(JSON.stringify(doc)); d.schedule = schedule(doc); return d; }
-  function docSchedule(doc) { return doc.schedule || schedule(doc); }
+  function freeze(doc) { var d = JSON.parse(JSON.stringify(doc)); d.schedule = schedule(doc); d.schedUntil = 'jan'; return d; }
+  /** 공유본은 굳힌 목록을 쓰되, 예전(10주까지만 굳힌) 공유본은 그 뒤 ~ 1월 말 일정을 덧붙임 */
+  function docSchedule(doc) {
+    if (!doc.schedule) return schedule(doc);
+    if (doc.schedUntil) return doc.schedule;
+    var w = KR.fromKey(doc.key), from = w.type === 'M' ? w.nfirst : w.nmon, cut = KR.ymd(KR.add(from, 7 * 10));
+    return doc.schedule.concat(schedule(doc).filter(function (x) { return x.date > cut; }));
+  }
+  /** 달력 — 보고 시점이 든 달부터 끝 날짜가 든 달까지, 달마다 넘겨 봄 */
+  function monthCalEl(list, from, end, opts) {
+    opts = opts || {};
+    var months = [], d = new Date(from.getFullYear(), from.getMonth(), 1);
+    while (d <= end) { months.push(new Date(d)); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); }
+    var cur = Math.max(0, Math.min(months.length - 1, opts.month || 0));
+    var wrap = h('div', { class: 'mcal' }), tabs = h('div', { class: 'mcal-tabs', role: 'tablist' }), grid = h('div', { class: 'mcal-grid' });
+    function draw() {
+      tabs.innerHTML = '';
+      months.forEach(function (m, k) {
+        var n = list.filter(function (x) { var dt = KR.parse(x.date); return dt.getFullYear() === m.getFullYear() && dt.getMonth() === m.getMonth(); }).length;
+        tabs.appendChild(h('button', { class: k === cur ? 'on' : '', role: 'tab', 'aria-selected': k === cur ? 'true' : 'false', onclick: function () { cur = k; if (opts.onMonth) opts.onMonth(k); draw(); } }, [(m.getFullYear() !== from.getFullYear() || k === 0 ? (String(m.getFullYear()).slice(2) + '. ') : '') + (m.getMonth() + 1) + '월', n ? h('em', { text: String(n) }) : null]));
+      });
+      var m = months[cur], first = new Date(m.getFullYear(), m.getMonth(), 1), last = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+      var start = KR.add(first, -((first.getDay() + 6) % 7));
+      // 첫 달은 보고 시점이 든 주부터(지난 주는 건너뜀)
+      var fromWk = KR.add(from, -((from.getDay() + 6) % 7)); if (fromWk > start) start = fromWk;
+      var weeks = Math.ceil((Math.round((last - start) / 864e5) + 1) / 7);
+      grid.innerHTML = '';
+      grid.appendChild(calendarEl(list, from, weeks, { maxPer: opts.maxPer, start: start, month: m.getMonth() }));
+    }
+    draw();
+    wrap.appendChild(tabs); wrap.appendChild(grid);
+    return wrap;
+  }
 
   /* =========================================================
    * 3) 월간 합치기 — 그달 주간 최종본들을 분야·소제목별로
@@ -302,7 +335,7 @@
    * ========================================================= */
   function calendarEl(list, from, weeks, opts) {
     opts = opts || {};
-    var start = KR.add(from, -((from.getDay() + 6) % 7)), today = KR.ymd(KR.today()), by = {};
+    var start = opts.start || KR.add(from, -((from.getDay() + 6) % 7)), today = KR.ymd(KR.today()), by = {};
     list.forEach(function (x) { (by[x.date] = by[x.date] || []).push(x); });
     var head = h('div', { class: 'cal-row cal-head' }, '월화수목금토일'.split('').map(function (d, i) { return h('div', { class: i > 4 ? 'we' : '', text: d }); }));
     var rows = [head];
@@ -311,8 +344,10 @@
       for (var d = 0; d < 7; d++) {
         var dt = KR.add(start, wk * 7 + d), k = KR.ymd(dt), ev = by[k] || [];
         var first = dt.getDate() === 1 || (wk === 0 && d === 0);
-        cells.push(h('div', { class: 'cal-cell' + (d > 4 ? ' we' : '') + (k === today ? ' today' : '') + (dt < from ? ' past' : '') + (ev.length ? ' has' : '') }, [
-          h('div', { class: 'cal-n' }, [first ? h('span', { class: 'cal-m', text: (dt.getMonth() + 1) + '월' }) : null, String(dt.getDate())]),
+        var other = opts.month != null && dt.getMonth() !== opts.month;
+        if (other) ev = [];
+        cells.push(h('div', { class: 'cal-cell' + (d > 4 ? ' we' : '') + (k === today ? ' today' : '') + (dt < from ? ' past' : '') + (other ? ' other' : '') + (ev.length ? ' has' : '') }, [
+          h('div', { class: 'cal-n' }, [first && !other && opts.month == null ? h('span', { class: 'cal-m', text: (dt.getMonth() + 1) + '월' }) : null, String(dt.getDate())]),
           h('div', { class: 'cal-ev' }, ev.slice(0, opts.maxPer || 3).map(function (x) {
             return h('div', { class: 'cal-chip', style: 'border-color:' + CAT_C[x.cat || 0][0] + ';background:' + CAT_C[x.cat || 0][0] + '26', title: (x.time ? x.time + ' ' : '') + x.text }, [x.time ? h('b', { text: x.time.split('~')[0] + ' ' }) : null, x.text]);
           }).concat(ev.length > (opts.maxPer || 3) ? [h('div', { class: 'cal-more', text: '+' + (ev.length - (opts.maxPer || 3)) + '건' })] : []))
@@ -385,7 +420,7 @@
    */
   function meeting(getDoc, opts) {
     opts = opts || {};
-    var idx = opts.startAt || 0, scale = Number(localStorage.getItem('kr3_scale') || 1);
+    var calMonth = 0, idx = opts.startAt || 0, scale = Number(localStorage.getItem('kr3_scale') || 1);
     var el = h('section', { class: 'meet', tabindex: '-1' });
     var rail = h('nav', { class: 'm-rail', 'aria-label': '회의 순서' }), stage = h('div', { class: 'm-stage' }), bar = h('div', { class: 'm-bar' });
     el.appendChild(rail); el.appendChild(h('div', { class: 'm-main' }, [stage, bar]));
@@ -487,7 +522,7 @@
         var from = w.type === 'M' ? w.nfirst : w.nmon;
         body = h('div', { class: 's-cal' }, [
           h('div', { class: 'scal-top' }, [h('h2', { text: '다가오는 일정' }), h('div', { class: 'scal-leg' }, KR.CAT_SHORT.map(function (n, k) { return h('span', {}, [h('i', { style: 'background:' + CAT_C[k][1] }), n]); }))]),
-          h('div', { class: 'scal-body' }, [calendarEl(sch, from, 5, { maxPer: 3 }), h('div', { class: 'scal-side' }, [h('div', { class: 'ov-sh', text: '날짜순' }), agendaEl(sch, { max: 14 })])])
+          h('div', { class: 'scal-body' }, [monthCalEl(sch, from, calEnd(from), { maxPer: 3, month: calMonth, onMonth: function (k) { calMonth = k; } }), h('div', { class: 'scal-side' }, [h('div', { class: 'ov-sh', text: '날짜순 · ' + (calEnd(from).getMonth() + 1) + '월 ' + calEnd(from).getDate() + '일까지' }), agendaEl(sch)])])
         ]);
       }
       body.classList.add('slide-in');
@@ -559,7 +594,7 @@
     CAT_C: CAT_C, newDoc: newDoc, compile: compile, diff: diff, remerge: remerge, sortEntries: sortEntries,
     findDates: findDates, blockDates: blockDates, schedule: schedule, freeze: freeze, docSchedule: docSchedule,
     monthCompile: monthCompile, mergeBlocks: mergeBlocks,
-    blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, calendarEl: calendarEl, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
+    blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, calendarEl: calendarEl, monthCalEl: monthCalEl, calEnd: calEnd, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
     print: print, hwpx: hwpx
   };
 })(window);

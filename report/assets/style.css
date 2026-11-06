@@ -893,3 +893,23 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
   .sct { grid-template-columns: 1.6em minmax(0, 1fr) 1em; }
   .sct-x { grid-column: 2 / 3; }
 }
+/* 다가오는 일정 달력: 1월 말까지 달마다 */
+.mcal { display: grid; gap: .7em; min-width: 0; }
+.mcal-tabs { display: flex; gap: .4em; flex-wrap: wrap; }
+.mcal-tabs button { border: 0; border-radius: 980px; padding: .45em 1em; font: inherit; font-size: .85em; font-weight: 600; background: var(--fill-2, #F2F2F7); color: var(--text-2, #3A3A3C); display: inline-flex; align-items: center; gap: .45em; cursor: pointer; }
+.mcal-tabs button em { font-style: normal; font-size: .8em; font-weight: 700; min-width: 1.5em; padding: 0 .4em; border-radius: 980px; background: rgba(0,0,0,.08); text-align: center; }
+.mcal-tabs button.on { background: var(--text, #1D1D1F); color: #fff; }
+.mcal-tabs button.on em { background: rgba(255,255,255,.2); }
+.meet .mcal-tabs button { background: rgba(255,255,255,.08); color: var(--k-text-2); }
+.meet .mcal-tabs button:hover { background: rgba(255,255,255,.14); color: #fff; }
+.meet .mcal-tabs button em { background: rgba(255,255,255,.12); }
+.meet .mcal-tabs button.on { background: #F5F5F7; color: #000; }
+.meet .mcal-tabs button.on em { background: rgba(0,0,0,.1); }
+.cal-cell.other { background: transparent; }
+.cal-cell.other .cal-n { opacity: .25; }
+.meet .cal-cell.other { opacity: 1; }
+.meet .cal-cell { min-height: 5.4em; }
+.scal-side { max-height: none; }
+.scal-body { align-items: stretch; }
+.scal-side { display: flex; flex-direction: column; min-height: 0; }
+.scal-side .agenda { overflow: auto; max-height: 30em; }
