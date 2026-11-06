@@ -1,9 +1,9 @@
-/* 최종본 열람 — 한예종(열람 코드) · 운영자(로그인 상태). 기본은 회의 화면 */
+/* 최종본 열람 — 한예종(열람 계정 또는 열람 코드) · 운영자(로그인 상태). 기본은 문서 보기 */
 (async function () {
   'use strict';
   var KR = window.KR, R = window.KRReport, h = KR.h;
   var app = document.getElementById('app');
-  var S = { code: sessionStorage.getItem('kr4_vcode') || '', list: [], kind: 'W', key: KR.param('key'), ver: KR.param('ver'), mode: KR.param('mode') || 'meet', cur: null, mt: null, isOp: false, me: null, codeOn: true };
+  var S = { code: sessionStorage.getItem('kr4_vcode') || '', list: [], kind: 'W', key: KR.param('key'), ver: KR.param('ver'), mode: KR.param('mode') || 'doc', cur: null, mt: null, isOp: false, me: null, codeOn: true };
   if (S.key) S.kind = S.key[0];
 
   // 「최종본 열람」 권한으로 로그인한 상태면 코드 없이
@@ -43,9 +43,9 @@
       listSel = h('select', { class: 'input sel', 'aria-label': '보고서 고르기', onchange: function () { S.key = listSel.value; S.ver = ''; open(); } }),
       verSel = h('select', { class: 'input sel ver', 'aria-label': '판 고르기', onchange: function () { S.ver = verSel.value; open(); } }),
       h('span', { class: 'spacer' }),
-      modeSeg = h('div', { class: 'seg' }, [['meet', '회의 화면'], ['doc', '문서 보기']].map(function (m) { return h('button', { 'data-m': m[0], class: S.mode === m[0] ? 'on' : '', onclick: function () { S.mode = m[0]; syncUrl(); render(); } }, m[1]); })),
+      modeSeg = h('div', { class: 'seg' }, [['doc', '문서 보기'], ['meet', '회의 화면']].map(function (m) { return h('button', { 'data-m': m[0], class: S.mode === m[0] ? 'on' : '', onclick: function () { S.mode = m[0]; syncUrl(); render(); } }, m[1]); })),
       h('button', { class: 'btn-ghost-w', onclick: function () { if (S.cur) R.print(S.cur.doc); } }, '인쇄·PDF'),
-      h('button', { class: 'btn-ghost-w', onclick: function () { if (S.cur) R.hwpx(S.cur.doc, S.cur.ver).catch(function (e) { KR.toast(e.message, true); }); } }, '한글 파일'),
+      h('button', { class: 'btn-ghost-w', onclick: function () { if (S.cur) R.hwpx(S.cur.doc, S.cur.ver).catch(function (e) { KR.toast(e.message, true); }); } }, '한글 파일 받기'),
       S.isOp ? backLink() : h('button', { class: 'btn-ghost-w', onclick: function () { sessionStorage.removeItem('kr4_vcode'); location.reload(); } }, '나가기')
     ]));
     document.body.insertBefore(top, document.body.firstChild);
@@ -62,7 +62,7 @@
     if (!S.key && list.length) S.key = list[0].key;
     listSel.hidden = !list.length; verSel.hidden = !list.length;
   }
-  function syncUrl() { KR.setParams({ key: S.key, ver: S.ver, mode: S.mode === 'meet' ? '' : S.mode }); }
+  function syncUrl() { KR.setParams({ key: S.key, ver: S.ver, mode: S.mode === 'doc' ? '' : S.mode }); }
   function backLink() {
     var p = S.me.user.perm;
     if (p.compile) return h('a', { class: 'btn-ghost-w', href: '#/hub' }, '취합으로');

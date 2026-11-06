@@ -73,13 +73,13 @@
         h('header', {}, [h('h3', { text: o.name }), h('span', { class: 'muted small', text: list.filter(function (u) { return u.status !== '중지'; }).length + '명 · 기본 권한: ' + (defaults.length ? defaults.join(', ') : '없음') })]),
         list.length ? h('div', { class: 'plist' }, list.map(function (u) {
           return h('div', { class: 'prow' + (u.status === '중지' ? ' off' : '') }, [
-            h('div', { class: 'pname' }, [h('b', { text: u.name }), u.status === '중지' ? h('span', { class: 'tag gray', text: '중지' }) : u.temp ? h('span', { class: 'tag amber', text: '첫 로그인 전' }) : null, h('small', { text: u.lastLogin ? '최근 접속 ' + KR.fmtTime(u.lastLogin) : '접속 기록 없음' })]),
+            h('div', { class: 'pname' }, [h('b', { text: u.name }), u.status === '중지' ? h('span', { class: 'tag gray', text: '중지' }) : u.temp ? (viewOnly(u.perm) ? h('span', { class: 'tag gray', text: '열람 전용 · 기본 비밀번호' }) : h('span', { class: 'tag amber', text: '첫 로그인 전' })) : null, h('small', { text: u.lastLogin ? '최근 접속 ' + KR.fmtTime(u.lastLogin) : '접속 기록 없음' })]),
             permChips(u),
             h('div', { class: 'pacts' }, [
               h('button', { class: 'btn sm', onclick: function () { personModal(u); } }, '권한·정보'),
               h('button', { class: 'btn sm ghost', onclick: async function () {
                 if (!(await KR.confirm(u.name + '님의 비밀번호를 기본 비밀번호로 초기화할까요? 다음 로그인 때 본인 비밀번호로 다시 정하게 됩니다.', '초기화'))) return;
-                try { var r = await KR.call('user.reset', { id: u.id }); await load(); show(); showTemp(u.name, r.temp, true); } catch (e) { KR.toast(e.message, true); }
+                try { var r = await KR.call('user.reset', { id: u.id }); await load(); show(); showTemp(u.name, r.temp, true, u.perm); } catch (e) { KR.toast(e.message, true); }
               } }, '비밀번호 초기화')
             ])
           ]);
@@ -131,17 +131,20 @@
         try {
           var r = await KR.call('user.save', { user: { id: isNew ? '' : u.id, name: name.value, company: org.value, status: active ? '활성' : '중지', own: own } });
           m.close(); await load(); show();
-          if (r.temp) showTemp(r.user.name, r.temp); else KR.toast('저장했습니다');
+          if (r.temp) showTemp(r.user.name, r.temp, false, r.user.perm); else KR.toast('저장했습니다');
         } catch (x) { KR.toast(x.message, true); }
         KR.busy(e.target, false);
       } })
     ], { wide: true });
   }
   /** 기본 비밀번호 안내 (비밀번호 값은 서버가 돌려준 것을 그대로 씀 — 화면 코드에는 두지 않음) */
-  function showTemp(name, pw, isReset) {
-    var text = '[K예술영재 업무보고]\n주소: ' + KR.baseUrl() + '\n이름: ' + name + '\n비밀번호: ' + pw + '\n처음 들어가면 본인 비밀번호로 바꿔 주세요.';
+  /** 열람만 하는 계정은 기본 비밀번호를 그대로 씀(관문도 같은 기준으로 판단) */
+  function viewOnly(p) { return !!(p && p.view && !p.write && !p.team && !p.compile && !p.share && !p.admin); }
+  function showTemp(name, pw, isReset, perm) {
+    var vo = viewOnly(perm);
+    var text = '[K예술영재 업무보고]\n주소: ' + KR.baseUrl() + '\n이름: ' + name + '\n비밀번호: ' + pw + (vo ? '\n공유된 최종본을 문서·회의 화면으로 보고, 인쇄·PDF와 한글 파일로 받을 수 있습니다.' : '\n처음 들어가면 본인 비밀번호로 바꿔 주세요.');
     var m = KR.modal(isReset ? '기본 비밀번호로 초기화했습니다' : '사람을 추가했습니다', [
-      h('p', { style: 'margin:0 0 12px', text: name + '님은 기본 비밀번호로 들어가 바로 본인 비밀번호를 정하게 됩니다. 필요하면 아래 안내문을 보내 주세요.' }),
+      h('p', { style: 'margin:0 0 12px', text: vo ? name + ' 계정은 열람 전용이라 기본 비밀번호를 그대로 씁니다(바꾸지 않아도 됨). 필요하면 아래 안내문을 보내 주세요.' : name + '님은 기본 비밀번호로 들어가 바로 본인 비밀번호를 정하게 됩니다. 필요하면 아래 안내문을 보내 주세요.' }),
       h('pre', { class: 'temp', text: text })
     ], [h('button', { class: 'btn', text: '닫기', onclick: function () { m.close(); } }), h('button', { class: 'btn primary', text: '안내문 복사', onclick: function () { KR.copy(text); } })]);
   }

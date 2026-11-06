@@ -822,3 +822,27 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
 .be-tools { opacity: 1; }
 .be-tools .icon-btn { opacity: .35; }
 .be:hover .be-tools .icon-btn, .be:focus-within .be-tools .icon-btn { opacity: 1; }
+/* =========================================================
+   글머리표 다시: 들여쓰기 대신 왼쪽 여백 + 절대 위치 표시
+   (font-size:0인 표시에 em 너비를 주면 0이 되어 글자와 겹쳤음)
+   ========================================================= */
+.rb-o, .rb-cont { position: relative; padding-left: 20px; text-indent: 0; }
+.rb-o .o { position: absolute; left: 2px; top: 0; width: 10px; height: 1.65em; font-size: inherit; color: transparent; overflow: hidden; user-select: none; }
+.rb-o .o::before { content: ''; position: absolute; left: 1px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--c2, #1D1D1F); transform: none; }
+.rb-t { margin-right: 6px; vertical-align: baseline; }
+.rb-d, .rb-dc { position: relative; padding-left: 36px; text-indent: 0; }
+.rb-d .dash { position: absolute; left: 22px; top: 0; width: 10px; height: 1.65em; font-size: inherit; color: transparent; overflow: hidden; user-select: none; }
+.rb-d .dash::before { content: '–'; position: static; display: inline; width: auto; height: auto; background: none; color: var(--text-4); transform: none; }
+.rb-note { position: relative; padding-left: 50px; text-indent: 0; }
+.rb-note::before { position: absolute; left: 36px; top: 0; width: auto; }
+.rb-box { margin-left: 20px; }
+.rb-raw { padding-left: 20px; }
+@media print {
+  .rb-o, .rb-cont { padding-left: 1.4em; }
+  .rb-o .o { left: 0; width: 1.3em; color: #000; overflow: visible; } .rb-o .o::before { display: none; }
+  .rb-d, .rb-dc { padding-left: 2.4em; }
+  .rb-d .dash { left: 1.4em; width: 1em; color: #000; overflow: visible; } .rb-d .dash::before { display: none; }
+  .rb-note { padding-left: 3.3em; } .rb-note::before { left: 2.4em; }
+  .rb-t { margin-right: 4px; }
+  .rb-box { margin-left: 1.4em; }
+}
