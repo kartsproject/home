@@ -948,3 +948,5 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
 .scal-side { max-height: min(40em, calc(100vh - 230px)); }
 .meet.is-full .scal-side, .meet-ov .scal-side { max-height: min(40em, calc(100vh - 200px)); }
 .sct:hover { transform: none; }
+/* 어두운 화면(열람) 위의 흰 종이: 글자색을 밝은 화면 기준으로 */
+.paper { color: var(--text); }
