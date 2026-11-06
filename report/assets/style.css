@@ -925,3 +925,8 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
 .cal-chip.cont { font-weight: 600; opacity: .85; }
 .scal-side { max-height: 40em; overflow: auto; }
 .scal-side .agenda { max-height: none; overflow: visible; }
+/* 달 버튼이 세로로 늘어나던 문제: 남는 높이를 줄 사이에 나눠 주지 않음 */
+.mcal { align-content: start; align-self: start; }
+.mcal-tabs { align-items: center; }
+.mcal-tabs button { flex: none; height: auto; line-height: 1.3; }
+.scal-body { align-items: start; }
