@@ -88,6 +88,7 @@
           h('button', { class: 'wn-btn', 'aria-label': '다음 주', onclick: function () { move(1); } }, '›')
         ]),
         h('span', { class: 'status-pill ' + st[1], text: st[0] }),
+        h('button', { class: 'btn sm hw-btn', onclick: pickFile, title: '.hwp · .hwpx 보고서를 올리면 분야별로 나눠 채웁니다' }, '한글 파일 불러오기'),
         b.writeDue ? h('span', { class: 'due', text: '작성 마감 · ' + b.writeDue }) : null
       ])
     ]));
@@ -162,7 +163,7 @@
       ]),
       h('div', { class: 'pair' }, [sideCard(i, 'prev', '지난 실적', S.w.periodPrev), sideCard(i, 'next', '향후 계획', S.w.periodNext)])
     ];
-    if (j === 0 && !S.entry) kids.push(h('div', { class: 'tip' }, [h('b', { text: '처음이라면  ' }), '한글로 쓰던 보고 내용을 통째로 복사해 「한글 문서에서 붙여넣기」에 넣어 보세요. □ 분야, ㅇ(소제목), - 세부 줄을 읽어 분야별로 나눠 넣습니다.']));
+    if (j === 0 && !S.entry) kids.push(h('div', { class: 'tip' }, [h('b', { text: '처음이라면  ' }), '한글로 쓴 보고서가 있으면 위쪽 「한글 파일 불러오기」로 올리거나 화면에 끌어다 놓으세요. 표의 왼쪽 칸은 지난 실적, 오른쪽 칸은 향후 계획으로 분야별로 나눠 넣습니다. 글만 복사했다면 「한글 문서에서 붙여넣기」를 쓰세요.']));
     return h('section', { class: 'slide', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1], 'aria-label': KR.CATS[i] }, kids);
   }
   /** 지금 카드를 가운데로 옮기고, 덱 높이를 지금 카드에 맞춤 */
@@ -302,6 +303,78 @@
       } })
     ], { wide: true });
   }
+
+  /* ---------- 한글 파일 불러오기 (.hwp · .hwpx) — 파일은 이 브라우저 안에서만 읽음 ---------- */
+  function pickFile() {
+    var inp = h('input', { type: 'file', accept: '.hwp,.hwpx', style: 'display:none' });
+    inp.addEventListener('change', function () { if (inp.files[0]) importFile(inp.files[0]); inp.remove(); });
+    document.body.appendChild(inp); inp.click();
+  }
+  function loadReader() {
+    if (window.KRHwp) return Promise.resolve();
+    return new Promise(function (ok, no) { var sc = document.createElement('script'); sc.src = 'assets/hwpread.js'; sc.onload = ok; sc.onerror = function () { no(new Error('파일 읽기 도구를 불러오지 못했습니다')); }; document.head.appendChild(sc); });
+  }
+  function digits(s) { return (String(s || '').match(/\d+/g) || []).map(Number).join('.'); }
+  async function importFile(file) {
+    if (!/\.hwpx?$/i.test(file.name)) { KR.toast('.hwp 또는 .hwpx 파일만 불러올 수 있습니다', true); return; }
+    var wait = KR.modal('한글 파일 읽는 중', [h('div', { class: 'loading', style: 'padding:30px 0', text: file.name + ' 읽는 중…' })], [], { locked: true, noFocus: true });
+    var r, got;
+    try { await loadReader(); r = await window.KRHwp.read(file); got = window.KRHwp.toData(r); }
+    catch (e) { wait.close(); KR.toast(e.message || '파일을 읽지 못했습니다', true); return; }
+    wait.close();
+    var rows = [], pick = {}, total = 0;
+    got.cats.forEach(function (c, i) {
+      var n = c.prev.length + c.next.length; if (!n) return;
+      var allowed = S.cats.indexOf(i) >= 0; total += n;
+      if (allowed) pick[i] = true;
+      var tags = c.prev.concat(c.next).map(function (b) { return b.t; }).filter(String);
+      tags = tags.filter(function (t, k) { return tags.indexOf(t) === k; }).slice(0, 5).join(', ');
+      var chk = h('input', { type: 'checkbox', checked: allowed, disabled: !allowed, onchange: function (e) { pick[i] = e.target.checked; } });
+      rows.push(h('label', { class: 'imp-row' + (allowed ? '' : ' off'), style: '--c2:' + R.CAT_C[i][1] }, [
+        chk, h('i'), h('div', {}, [h('b', { text: KR.CATS[i] }), h('small', { text: allowed ? '실적 ' + c.prev.length + ' · 계획 ' + c.next.length + (tags ? '  —  ' + tags : '') : '작성 권한이 없는 분야라 넣지 않습니다' })])
+      ]));
+    });
+    if (!total) { KR.toast('파일에서 보고 내용(□ 분야, ㅇ 항목)을 찾지 못했습니다', true); return; }
+    var mismatch = r.period && digits(r.period) !== digits(S.w.periodPrev);
+    var mode = 'add';
+    var seg = h('div', { class: 'seg light' }, [['add', '지금 내용 뒤에 추가'], ['replace', '고른 분야를 파일 내용으로 바꾸기']].map(function (x, k) {
+      return h('button', { type: 'button', class: k === 0 ? 'on' : '', onclick: function (e) { mode = x[0]; Array.prototype.forEach.call(seg.children, function (bt) { bt.classList.toggle('on', bt === e.currentTarget); }); } }, x[1]);
+    }));
+    var m = KR.modal('한글 파일 불러오기', [
+      h('div', { class: 'imp-file' }, [h('b', { text: file.name }), h('span', { text: [r.title, r.dateLine.replace(/^\/\s*/, ''), r.period ? '지난 실적 ' + r.period : ''].filter(String).join(' · ') })]),
+      mismatch ? h('div', { class: 'notice warn', style: 'margin:0 0 12px' }, '파일의 실적 기간(' + r.period + ')이 지금 쓰는 주(' + S.w.periodPrev + ')와 다릅니다. 지난 보고서라면 날짜를 확인하고 고쳐 주세요.') : null,
+      h('p', { class: 'muted small', style: 'margin:0 0 10px', text: '표의 왼쪽 칸은 「지난 실적」, 오른쪽 칸은 「향후 계획」으로 넣습니다. 넣을 분야를 고르세요.' }),
+      h('div', { class: 'imp-list' }, rows),
+      h('div', { style: 'margin-top:14px' }, [seg])
+    ], [
+      h('button', { class: 'btn', text: '취소', onclick: function () { m.close(); } }),
+      h('button', { class: 'btn primary', text: '넣기', onclick: function () {
+        var n = 0, first = -1;
+        got.cats.forEach(function (c, i) {
+          if (!pick[i] || S.cats.indexOf(i) < 0) return;
+          ['prev', 'next'].forEach(function (sd) {
+            if (mode === 'replace') S.data.cats[i][sd] = [];
+            c[sd].forEach(function (b) { S.data.cats[i][sd].push({ id: KR.uid(), t: b.t, c: b.c, d: b.d }); n++; });
+          });
+          if (first < 0) first = S.cats.indexOf(i);
+        });
+        if (!n) { KR.toast('고른 분야가 없습니다', true); return; }
+        m.close(); touch();
+        if (first >= 0 && S.step !== nstep()) S.step = first;
+        drawBody(); drawSteps(); drawFoot();
+        KR.toast(n + '건을 넣었습니다. 카드를 넘기며 확인해 주세요');
+      } })
+    ], { wide: true });
+  }
+  // 파일을 화면에 끌어다 놓아도 불러옴
+  document.addEventListener('dragover', function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0) { e.preventDefault(); document.body.classList.add('dropping'); } });
+  document.addEventListener('dragleave', function (e) { if (!e.relatedTarget) document.body.classList.remove('dropping'); });
+  document.addEventListener('drop', function (e) {
+    document.body.classList.remove('dropping');
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return; e.preventDefault();
+    if (S.cats.length) importFile(f);
+  });
 
   /* ---------- 확인·제출 ---------- */
   function drawReview(box) {

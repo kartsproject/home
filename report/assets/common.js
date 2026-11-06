@@ -114,7 +114,7 @@
    */
   function parseText(text, defCat) {
     var cats = CATS.map(function () { return []; }), cur = defCat == null ? 0 : defCat, found = false, b = null;
-    String(text || '').replace(/\r/g, '').split('\n').forEach(function (raw) {
+    String(text || '').replace(/\r/g, '').replace(/[ \t\u00a0]{2,}(?=(?:ㅇ|○)\s*\()/g, '\n').split('\n').forEach(function (raw) {
       var line = raw.replace(/ /g, ' ').replace(/\s+$/, ''), t = line.trim();
       if (!t) return;
       var m;
@@ -128,6 +128,7 @@
       }
       if (!b) { b = { id: uid(), t: '', c: t, d: '' }; cats[cur].push(b); return; }
       if ((m = t.match(/^[-–‧]\s*(.*)$/))) { b.d += (b.d ? '\n' : '') + m[1].trim(); return; }
+      if (lineKind(t) === 'raw' && !/^https?:/.test(t)) { b.d += (b.d ? '\n' : '') + t; return; }
       if (b.d) b.d += '\n' + (lineKind(t) === 'raw' ? t : '  ' + t);
       else b.c += (b.c ? '\n' : '') + t;
     });
