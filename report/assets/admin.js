@@ -78,8 +78,8 @@
             h('div', { class: 'pacts' }, [
               h('button', { class: 'btn sm', onclick: function () { personModal(u); } }, '권한·정보'),
               h('button', { class: 'btn sm ghost', onclick: async function () {
-                if (!(await KR.confirm(u.name + '님의 비밀번호를 새 임시 비밀번호로 바꿀까요?', '초기화'))) return;
-                try { var r = await KR.call('user.reset', { id: u.id }); showTemp(u.name, r.temp); await load(); show(); } catch (e) { KR.toast(e.message, true); }
+                if (!(await KR.confirm(u.name + '님의 비밀번호를 기본 비밀번호로 초기화할까요? 다음 로그인 때 본인 비밀번호로 다시 정하게 됩니다.', '초기화'))) return;
+                try { var r = await KR.call('user.reset', { id: u.id }); await load(); show(); showTemp(u.name, r.temp, true); } catch (e) { KR.toast(e.message, true); }
               } }, '비밀번호 초기화')
             ])
           ]);
@@ -126,7 +126,7 @@
       rowsBox
     ], [
       h('button', { class: 'btn', text: '취소', onclick: function () { m.close(); } }),
-      h('button', { class: 'btn primary', text: isNew ? '추가하고 임시 비밀번호 받기' : '저장', onclick: async function (e) {
+      h('button', { class: 'btn primary', text: isNew ? '추가' : '저장', onclick: async function (e) {
         KR.busy(e.target, true);
         try {
           var r = await KR.call('user.save', { user: { id: isNew ? '' : u.id, name: name.value, company: org.value, status: active ? '활성' : '중지', own: own } });
@@ -137,10 +137,11 @@
       } })
     ], { wide: true });
   }
-  function showTemp(name, temp) {
-    var text = '[K예술영재 업무보고]\n주소: ' + KR.baseUrl() + '\n이름: ' + name + '\n임시 비밀번호: ' + temp + '\n처음 들어가면 본인 비밀번호로 바꿔 주세요.';
-    var m = KR.modal('임시 비밀번호', [
-      h('p', { style: 'margin:0 0 12px', text: name + '님에게 아래 내용을 보내 주세요. 이 창을 닫으면 임시 비밀번호를 다시 볼 수 없습니다(필요하면 초기화).' }),
+  /** 기본 비밀번호 안내 (비밀번호 값은 서버가 돌려준 것을 그대로 씀 — 화면 코드에는 두지 않음) */
+  function showTemp(name, pw, isReset) {
+    var text = '[K예술영재 업무보고]\n주소: ' + KR.baseUrl() + '\n이름: ' + name + '\n비밀번호: ' + pw + '\n처음 들어가면 본인 비밀번호로 바꿔 주세요.';
+    var m = KR.modal(isReset ? '기본 비밀번호로 초기화했습니다' : '사람을 추가했습니다', [
+      h('p', { style: 'margin:0 0 12px', text: name + '님은 기본 비밀번호로 들어가 바로 본인 비밀번호를 정하게 됩니다. 필요하면 아래 안내문을 보내 주세요.' }),
       h('pre', { class: 'temp', text: text })
     ], [h('button', { class: 'btn', text: '닫기', onclick: function () { m.close(); } }), h('button', { class: 'btn primary', text: '안내문 복사', onclick: function () { KR.copy(text); } })]);
   }

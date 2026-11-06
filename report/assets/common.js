@@ -304,8 +304,8 @@
       };
       [old, n1, n2].forEach(function (i) { i.addEventListener('keydown', function (e) { if (e.key === 'Enter') btn.click(); }); });
       var m = modal(forced ? '본인 비밀번호 정하기' : '비밀번호 변경', [
-        forced ? h('p', { class: 'muted', style: 'margin:0 0 14px', text: '처음 받은 임시 비밀번호를 본인만 아는 비밀번호로 바꿔 주세요.' }) : null,
-        h('label', { class: 'field' }, [h('span', { text: forced ? '임시 비밀번호' : '현재 비밀번호' }), old]),
+        forced ? h('p', { class: 'muted', style: 'margin:0 0 14px', text: '처음 받은 기본 비밀번호를 본인만 아는 비밀번호로 바꿔 주세요. 바꾸기 전에는 다른 화면을 쓸 수 없습니다.' }) : null,
+        h('label', { class: 'field' }, [h('span', { text: forced ? '기본 비밀번호' : '현재 비밀번호' }), old]),
         h('label', { class: 'field' }, [h('span', { text: '새 비밀번호 (6자 이상)' }), n1]),
         h('label', { class: 'field' }, [h('span', { text: '새 비밀번호 확인' }), n2]), err
       ], [forced ? null : h('button', { class: 'btn', text: '취소', onclick: function () { m.close(); resolve(false); } }), btn], { locked: forced });
