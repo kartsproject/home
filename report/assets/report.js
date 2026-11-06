@@ -157,8 +157,30 @@
     return res;
   }
   /** 늘 보이는 사업 일정(보고마다 넣지 않아도 달력에 나옴). end가 있으면 여러 날 */
+  // 출처: 주간업무보고(11월 1주차) · 주간회의 회의록(10/26, 11/2) · 무용 멘토링 확정 일정(10/15) · 심화과정 수요조사(캠프 기간)
+  // match: 같은 날 보고 내용에서 자동으로 읽힌 일정 중 이 낱말이 든 것은 겹치므로 이 일정 하나로 대신함
   var FIXED_EVENTS = [
-    { id: 'fixed|winter-camp', date: '2027-01-24', end: '2027-01-30', time: '', text: '겨울캠프 · 광주캠퍼스 6박 7일', short: '겨울캠프', cat: 1 }
+    // 심화멘토링 (cat 0)
+    { id: 'fixed|m-dance-1', date: '2026-10-25', time: '11:00~13:00', text: '무용 멘토링 1회차 · 비대면 1:1', cat: 0, match: ['무용'] },
+    { id: 'fixed|m-art-1', date: '2026-10-31', time: '10:00~12:00', text: '미술 멘토링 · 비대면', cat: 0, match: ['미술'] },
+    { id: 'fixed|m-music-1', date: '2026-11-01', time: '10:00~18:00', text: '음악 멘토링 · 서초동캠퍼스', cat: 0, match: ['음악'] },
+    { id: 'fixed|m-trad', date: '2026-11-21', time: '10:00~17:00', text: '전통예술 멘토링 · 석관동캠퍼스', cat: 0, match: ['전통'] },
+    { id: 'fixed|m-dance-2', date: '2026-11-22', time: '11:00~13:00', text: '무용 멘토링 2회차 · 비대면 1:1', cat: 0, match: ['무용'] },
+    { id: 'fixed|m-music-2', date: '2026-11-22', time: '15:00~18:00', text: '음악 멘토링 · 서초동캠퍼스', cat: 0, match: ['음악'] },
+    { id: 'fixed|m-art-2', date: '2026-11-28', time: '10:00~12:00', text: '미술 멘토링 · 비대면', cat: 0, match: ['미술'] },
+    { id: 'fixed|m-dance-3', date: '2026-12-06', time: '17:30~19:30', text: '무용 멘토링 3회차 · 비대면 1:1', cat: 0, match: ['무용'] },
+    // 겨울캠프 (cat 1)
+    { id: 'fixed|camp-review-1110', date: '2026-11-10', time: '', text: '키비주얼 2차 리뷰 · 기념품·웰컴키트·유니폼 샘플 확인(주간회의)', cat: 1, match: ['키비주얼', '기념품', '웰컴', '유니폼'] },
+    { id: 'fixed|camp-venue', date: '2026-12-01', time: '', text: '전통예술 대관 예약 접수 시작(12월 초, YMCA·동구청소년수련관)', cat: 1, match: ['대관'] },
+    { id: 'fixed|winter-camp', date: '2027-01-24', end: '2027-01-30', time: '', text: '겨울캠프 · 광주캠퍼스 6박 7일', short: '겨울캠프', cat: 1 },
+    // 공연 (cat 2)
+    { id: 'fixed|acc-visit', date: '2026-11-09', time: '', text: 'ACC 극장1 현장 답사(휴관일)', cat: 2, match: ['답사'] },
+    { id: 'fixed|perf-program', date: '2026-11-30', time: '', text: '공연 프로그램 구성 기본안 확정(11월 말)', cat: 2, match: ['프로그램 구성'] },
+    { id: 'fixed|perf-cast', date: '2026-12-15', time: '', text: '공연 출연진 명단 확정(12월 중순)', cat: 2, match: ['출연진'] },
+    // 홍보·다큐·아카이빙 (cat 3)
+    { id: 'fixed|video-recheck', date: '2026-11-13', time: '', text: '미스매칭 영상 재검수 마감', cat: 3, match: ['재검수', '미스매칭'] },
+    // 기타 (cat 4)
+    { id: 'fixed|site-open', date: '2026-11-09', time: '', text: '홈페이지 최종 보고·오픈', cat: 4, match: ['홈페이지'] }
   ];
   /** 다가오는 일정은 보고 시점부터 1월 말(겨울캠프 끝)까지 — 2월 이후 보고면 다음 해 1월 말 */
   function calEnd(from) { return new Date(from.getFullYear() + (from.getMonth() > 0 ? 1 : 0), 0, 31); }
@@ -182,22 +204,31 @@
         });
       });
     });
+    list = withFixed(list, doc, from, until);
+    (doc.schedAdd || []).forEach(function (x) { list.push(Object.assign({ auto: false, off: false }, x)); });
+    sortSched(list);
+    return opts.all ? list : list.filter(function (x) { return !x.off; });
+  }
+  function sortSched(list) { list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.time).localeCompare(String(b.time)); }); return list; }
+  /** 고정 일정을 더하고, 보고 내용에서 읽힌 같은 날 같은 일정은 고정 일정 하나로 */
+  function withFixed(list, doc, from, until) {
+    var fixed = [];
     FIXED_EVENTS.forEach(function (x) {
       var a = KR.parse(x.date), z = KR.parse(x.end || x.date); if (z < from || a > until) return;
-      list.push(Object.assign({ org: '', auto: true, fixed: true, off: !!(doc.schedOff || {})[x.id] }, x));
+      fixed.push(Object.assign({ org: '', auto: true, fixed: true, off: !!(doc.schedOff || {})[x.id] }, x));
     });
-    (doc.schedAdd || []).forEach(function (x) { list.push(Object.assign({ auto: false, off: false }, x)); });
-    list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.time).localeCompare(String(b.time)); });
-    return opts.all ? list : list.filter(function (x) { return !x.off; });
+    return list.filter(function (y) {
+      return y.fixed ? false : !fixed.some(function (x) { return !x.off && x.date === y.date && (x.match || []).some(function (w) { return String(y.text).indexOf(w) >= 0; }); });
+    }).concat(fixed);
   }
   /** 공유 직전에 일정 목록을 굳혀 넣는다 */
   function freeze(doc) { var d = JSON.parse(JSON.stringify(doc)); d.schedule = schedule(doc); d.schedUntil = 'jan'; return d; }
-  /** 공유본은 굳힌 목록을 쓰되, 예전(10주까지만 굳힌) 공유본은 그 뒤 ~ 1월 말 일정을 덧붙임 */
+  /** 공유본은 굳힌 목록을 쓰되 고정 일정은 늘 최신으로. 예전(10주까지만 굳힌) 공유본은 1월 말까지 다시 읽음 */
   function docSchedule(doc) {
-    if (!doc.schedule) return schedule(doc);
-    if (doc.schedUntil) return doc.schedule;
-    var w = KR.fromKey(doc.key), from = w.type === 'M' ? w.nfirst : w.nmon, cut = KR.ymd(KR.add(from, 7 * 10));
-    return doc.schedule.concat(schedule(doc).filter(function (x) { return x.date > cut; }));
+    if (!doc.schedule || !doc.schedUntil) return schedule(doc);
+    var w = KR.fromKey(doc.key), from = w.type === 'M' ? w.nfirst : w.nmon;
+    var manual = doc.schedule.filter(function (x) { return !x.auto; }), auto = doc.schedule.filter(function (x) { return x.auto; });
+    return sortSched(withFixed(auto, doc, from, calEnd(from)).filter(function (x) { return !x.off; }).concat(manual));
   }
   /** 달력 — 보고 시점이 든 달부터 끝 날짜가 든 달까지, 달마다 넘겨 봄 */
   function monthCalEl(list, from, end, opts) {
