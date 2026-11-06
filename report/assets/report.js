@@ -156,6 +156,10 @@
     });
     return res;
   }
+  /** 늘 보이는 사업 일정(보고마다 넣지 않아도 달력에 나옴). end가 있으면 여러 날 */
+  var FIXED_EVENTS = [
+    { id: 'fixed|winter-camp', date: '2027-01-24', end: '2027-01-30', time: '', text: '겨울캠프 · 광주캠퍼스 6박 7일', short: '겨울캠프', cat: 1 }
+  ];
   /** 다가오는 일정은 보고 시점부터 1월 말(겨울캠프 끝)까지 — 2월 이후 보고면 다음 해 1월 말 */
   function calEnd(from) { return new Date(from.getFullYear() + (from.getMonth() > 0 ? 1 : 0), 0, 31); }
   /** 다가오는 일정: from 이후 날짜만, 같은 날·같은 내용은 하나로 */
@@ -177,6 +181,10 @@
           });
         });
       });
+    });
+    FIXED_EVENTS.forEach(function (x) {
+      var a = KR.parse(x.date), z = KR.parse(x.end || x.date); if (z < from || a > until) return;
+      list.push(Object.assign({ org: '', auto: true, fixed: true, off: !!(doc.schedOff || {})[x.id] }, x));
     });
     (doc.schedAdd || []).forEach(function (x) { list.push(Object.assign({ auto: false, off: false }, x)); });
     list.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : String(a.time).localeCompare(String(b.time)); });
@@ -205,9 +213,9 @@
         tabs.appendChild(h('button', { class: k === cur ? 'on' : '', role: 'tab', 'aria-selected': k === cur ? 'true' : 'false', onclick: function () { cur = k; if (opts.onMonth) opts.onMonth(k); draw(); } }, [(m.getFullYear() !== from.getFullYear() || k === 0 ? (String(m.getFullYear()).slice(2) + '. ') : '') + (m.getMonth() + 1) + '월', n ? h('em', { text: String(n) }) : null]));
       });
       var m = months[cur], first = new Date(m.getFullYear(), m.getMonth(), 1), last = new Date(m.getFullYear(), m.getMonth() + 1, 0);
-      var start = KR.add(first, -((first.getDay() + 6) % 7));
+      var start = KR.add(first, -first.getDay());
       // 첫 달은 보고 시점이 든 주부터(지난 주는 건너뜀)
-      var fromWk = KR.add(from, -((from.getDay() + 6) % 7)); if (fromWk > start) start = fromWk;
+      var fromWk = KR.add(from, -from.getDay()); if (fromWk > start) start = fromWk;
       var weeks = Math.ceil((Math.round((last - start) / 864e5) + 1) / 7);
       grid.innerHTML = '';
       grid.appendChild(calendarEl(list, from, weeks, { maxPer: opts.maxPer, start: start, month: m.getMonth() }));
@@ -335,9 +343,13 @@
    * ========================================================= */
   function calendarEl(list, from, weeks, opts) {
     opts = opts || {};
-    var start = opts.start || KR.add(from, -((from.getDay() + 6) % 7)), today = KR.ymd(KR.today()), by = {};
-    list.forEach(function (x) { (by[x.date] = by[x.date] || []).push(x); });
-    var head = h('div', { class: 'cal-row cal-head' }, '월화수목금토일'.split('').map(function (d, i) { return h('div', { class: i > 4 ? 'we' : '', text: d }); }));
+    var start = opts.start || KR.add(from, -from.getDay()), today = KR.ymd(KR.today()), by = {};
+    list.forEach(function (x) {
+      if (!x.end || x.end <= x.date) { (by[x.date] = by[x.date] || []).push(x); return; }
+      var a = KR.parse(x.date), z = KR.parse(x.end), n = Math.round((z - a) / 864e5) + 1;
+      for (var q = 0; q < n; q++) { var kq = KR.ymd(KR.add(a, q)); (by[kq] = by[kq] || []).push(q === 0 ? x : Object.assign({}, x, { text: (x.short || x.text) + ' ' + (q + 1) + '일차', time: '', cont: true })); }
+    });
+    var head = h('div', { class: 'cal-row cal-head' }, '일월화수목금토'.split('').map(function (d, i) { return h('div', { class: i === 0 ? 'we sun' : i === 6 ? 'we sat' : '', text: d }); }));
     var rows = [head];
     for (var wk = 0; wk < weeks; wk++) {
       var cells = [];
@@ -346,16 +358,23 @@
         var first = dt.getDate() === 1 || (wk === 0 && d === 0);
         var other = opts.month != null && dt.getMonth() !== opts.month;
         if (other) ev = [];
-        cells.push(h('div', { class: 'cal-cell' + (d > 4 ? ' we' : '') + (k === today ? ' today' : '') + (dt < from ? ' past' : '') + (other ? ' other' : '') + (ev.length ? ' has' : '') }, [
+        cells.push(h('div', { class: 'cal-cell' + (d === 0 ? ' we sun' : d === 6 ? ' we sat' : '') + (k === today ? ' today' : '') + (dt < from ? ' past' : '') + (other ? ' other' : '') + (ev.length ? ' has' : '') }, [
           h('div', { class: 'cal-n' }, [first && !other && opts.month == null ? h('span', { class: 'cal-m', text: (dt.getMonth() + 1) + '월' }) : null, String(dt.getDate())]),
           h('div', { class: 'cal-ev' }, ev.slice(0, opts.maxPer || 3).map(function (x) {
-            return h('div', { class: 'cal-chip', style: 'border-color:' + CAT_C[x.cat || 0][0] + ';background:' + CAT_C[x.cat || 0][0] + '26', title: (x.time ? x.time + ' ' : '') + x.text }, [x.time ? h('b', { text: x.time.split('~')[0] + ' ' }) : null, x.text]);
+            return h('div', { class: 'cal-chip' + (x.end ? ' span' : '') + (x.cont ? ' cont' : ''), style: 'border-color:' + CAT_C[x.cat || 0][0] + ';background:' + CAT_C[x.cat || 0][0] + '26', title: (x.time ? x.time + ' ' : '') + x.text }, [x.time ? h('b', { text: x.time.split('~')[0] + ' ' }) : null, x.text]);
           }).concat(ev.length > (opts.maxPer || 3) ? [h('div', { class: 'cal-more', text: '+' + (ev.length - (opts.maxPer || 3)) + '건' })] : []))
         ]));
       }
       rows.push(h('div', { class: 'cal-row' }, cells));
     }
     return h('div', { class: 'cal' }, rows);
+  }
+  /** 시간 칸: 시간이 있으면 시간, 여러 날 일정이면 「1.24~1.30」 */
+  function timeOf(x) {
+    if (x.time) return x.time;
+    if (!x.end || x.end <= x.date) return '';
+    var a = KR.parse(x.date), z = KR.parse(x.end);
+    return (a.getMonth() + 1) + '.' + a.getDate() + '~' + (z.getMonth() + 1) + '.' + z.getDate();
   }
   function agendaEl(list, opts) {
     opts = opts || {};
@@ -367,7 +386,7 @@
       return h('div', { class: 'ag-day' }, [
         h('div', { class: 'ag-date' }, [h('b', { text: String(dt.getDate()) }), h('span', { text: (dt.getMonth() + 1) + '월 ' + WD[dt.getDay()] }), dd >= 0 && dd <= 30 ? h('em', { text: dd === 0 ? '오늘' : 'D-' + dd }) : null]),
         h('div', { class: 'ag-items' }, by[k].map(function (x) {
-          return h('div', { class: 'ag-it' }, [h('i', { style: 'background:' + CAT_C[x.cat || 0][1] }), x.time ? h('span', { class: 'ag-t', text: x.time }) : null, h('span', { class: 'ag-x', text: x.text }), h('span', { class: 'ag-c', text: KR.CAT_SHORT[x.cat || 0] })]);
+          return h('div', { class: 'ag-it' }, [h('i', { style: 'background:' + CAT_C[x.cat || 0][1] }), timeOf(x) ? h('span', { class: 'ag-t', text: timeOf(x) }) : null, h('span', { class: 'ag-x', text: x.text }), h('span', { class: 'ag-c', text: KR.CAT_SHORT[x.cat || 0] })]);
         }))
       ]);
     }));
@@ -594,7 +613,7 @@
     CAT_C: CAT_C, newDoc: newDoc, compile: compile, diff: diff, remerge: remerge, sortEntries: sortEntries,
     findDates: findDates, blockDates: blockDates, schedule: schedule, freeze: freeze, docSchedule: docSchedule,
     monthCompile: monthCompile, mergeBlocks: mergeBlocks,
-    blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, calendarEl: calendarEl, monthCalEl: monthCalEl, calEnd: calEnd, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
+    blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, timeOf: timeOf, calendarEl: calendarEl, monthCalEl: monthCalEl, calEnd: calEnd, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
     print: print, hwpx: hwpx
   };
 })(window);

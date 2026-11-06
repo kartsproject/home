@@ -913,3 +913,15 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
 .scal-body { align-items: stretch; }
 .scal-side { display: flex; flex-direction: column; min-height: 0; }
 .scal-side .agenda { overflow: auto; max-height: 30em; }
+/* 달력: 일요일 시작 · 일 빨강 · 토 파랑 */
+.cal-head .sun, .cal-cell.sun .cal-n { color: #FF3B30; }
+.cal-head .sat, .cal-cell.sat .cal-n { color: #007AFF; }
+.meet .cal-head .sun, .meet .cal-cell.sun .cal-n { color: #FF6961; }
+.meet .cal-head .sat, .meet .cal-cell.sat .cal-n { color: #4DA3FF; }
+.cal-cell.today .cal-n { color: #fff !important; }
+.cal-cell.other.sun .cal-n, .cal-cell.other.sat .cal-n { opacity: .3; }
+/* 여러 날 일정(겨울캠프 등) */
+.cal-chip.span { font-weight: 700; }
+.cal-chip.cont { font-weight: 600; opacity: .85; }
+.scal-side { max-height: 40em; overflow: auto; }
+.scal-side .agenda { max-height: none; overflow: visible; }

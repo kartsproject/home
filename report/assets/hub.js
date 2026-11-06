@@ -136,7 +136,7 @@
           h('div', { class: 'sch-items' }, g.items.map(function (x) {
             return h('div', { class: 'sch-it' + (x.off ? ' off' : '') }, [
               h('i', { style: 'background:' + R.CAT_C[x.cat || 0][1] }),
-              x.time ? h('span', { class: 'sch-t', text: x.time }) : null,
+              R.timeOf(x) ? h('span', { class: 'sch-t', text: R.timeOf(x) }) : null,
               h('span', { class: 'sch-x', text: x.text }),
               x.auto ? h('button', { class: 'icon-btn', title: x.off ? '다시 표시' : '일정에서 빼기', onclick: function () { doc.schedOff = doc.schedOff || {}; if (x.off) delete doc.schedOff[x.id]; else doc.schedOff[x.id] = 1; onChange(); draw(); } }, x.off ? '↺' : '−')
                 : h('button', { class: 'icon-btn danger', title: '지우기', onclick: function () { doc.schedAdd = (doc.schedAdd || []).filter(function (y) { return y.id !== x.id; }); onChange(); draw(); } }, '✕')
