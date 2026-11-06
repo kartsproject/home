@@ -49,6 +49,7 @@
   if (KR.token()) KR.call('me').then(after).catch(function () { sessionStorage.removeItem('kr4_token'); });
   form.addEventListener('submit', async function (e) {
     e.preventDefault(); err.textContent = '';
+    if (/[\u3131-\u318E\uAC00-\uD7A3]/.test(pw.value)) { err.textContent = '비밀번호가 한글로 입력됐습니다. 한/영 키를 눌러 영문으로 바꾼 뒤 다시 입력하세요.'; pw.value = ''; pw.focus(); return; }
     KR.busy(go, true);
     try {
       var b = await KR.call('login', { name: name.value.trim(), password: pw.value });
@@ -57,5 +58,7 @@
     } catch (x) { err.textContent = x.message; }
     KR.busy(go, false);
   });
+  // Caps Lock이 켜져 있으면 미리 알려 줌
+  pw.addEventListener('keyup', function (e) { if (e.getModifierState) err.textContent = e.getModifierState('CapsLock') ? 'Caps Lock이 켜져 있습니다.' : (err.textContent === 'Caps Lock이 켜져 있습니다.' ? '' : err.textContent); });
   name.focus();
 })();
