@@ -78,8 +78,8 @@
       S.cur = null; stage.innerHTML = '';
       var sn = soonOf(S.kind);
       stage.appendChild(h('div', { class: 'empty-state' }, [h('div', { class: 'es-ic', text: S.kind === 'M' ? '▦' : '◎' }),
-        h('h3', { text: sn ? (sn.title || KR.fromKey(sn.key).title) + ' 공개 예정' : (S.kind === 'M' ? '월간' : '주간') + ' 보고서가 아직 공유되지 않았습니다' }),
-        h('p', { text: sn ? window.KROpen.when(sn.openAt) + '부터 이곳에서 볼 수 있습니다.' : '케이브레인컴퍼니에서 공유하면 이곳에 나타납니다.' })]));
+        h('h3', { text: sn ? (sn.title || KR.fromKey(sn.key).title) + ' 공개 예정' : S.kind === 'M' ? '월간 보고서가 아직 공개되지 않았습니다' : '주간 보고서가 아직 공유되지 않았습니다' }),
+        h('p', { text: sn ? window.KROpen.when(sn.openAt) + '부터 이곳에서 볼 수 있습니다.' : '케이브레인컴퍼니에서 ' + (S.kind === 'M' ? '공개' : '공유') + '하면 이곳에 나타납니다.' })]));
       return;
     }
     stage.innerHTML = '<div class="loading">불러오는 중…</div>';

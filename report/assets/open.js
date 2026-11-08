@@ -5,7 +5,7 @@
   var KR = root.KR, h = KR.h;
   var WD = ['일', '월', '화', '수', '목', '금', '토'];
   var RULE_W = [['now', '공유하는 즉시'], ['fri', '보고일 (실적 주 금요일)'], ['mon', '대면보고일 (다음 주 월요일)'], ['tue', '다음 주 화요일']];
-  var RULE_M = [['now', '공유하는 즉시'], ['due', '보고일 (말일 · 주말이면 앞 평일)'], ['first', '다음 달 1일'], ['firstwd', '다음 달 첫 평일']];
+  var RULE_M = [['hold', '비공개 (작성자가 공개할 때까지)'], ['now', '공유하는 즉시'], ['due', '보고일 (말일 · 주말이면 앞 평일)'], ['first', '다음 달 1일'], ['firstwd', '다음 달 첫 평일']];
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function when(iso) { if (!iso) return ''; var d = new Date(iso); return (d.getMonth() + 1) + '. ' + d.getDate() + '.(' + WD[d.getDay()] + ') ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
@@ -14,12 +14,12 @@
   function ruleName(key, r) {
     var isM = key[0] === 'M', list = isM ? RULE_M : RULE_W, mode = isM ? r.m : r.w;
     var n = (list.filter(function (x) { return x[0] === mode; })[0] || list[0])[1];
-    return mode === 'now' ? n : n.replace(/ \(.*\)$/, '') + ' ' + (isM ? r.mt : r.wt);
+    return mode === 'now' || mode === 'hold' ? n.replace(/ \(.*\)$/, '') : n.replace(/ \(.*\)$/, '') + ' ' + (isM ? r.mt : r.wt);
   }
 
   /** 한 주체의 상태 → [알약 종류, 글] */
   function stateOf(it, s) {
-    if (s.hold) return ['none', '공개 안 함'];
+    if (s.hold) return ['none', '비공개'];
     if (!it.ver) return ['none', s.at ? '공유 후 ' + when(s.at) + '부터' : '공유하면 바로'];
     if (s.open) return ['ok', s.at ? '공개 중 · ' + when(s.at) + '부터' : '공개 중'];
     return ['run', when(s.at) + ' 공개 예정'];
@@ -41,6 +41,7 @@
         h('button', { class: 'btn sm', onclick: function () { editor(key, { data: r, done: draw, reload: reload }); } }, '바꾸기')
       ]));
       if (!r.targets.length) { box.appendChild(h('p', { class: 'muted small', text: '공개 시점을 정할 주체가 없습니다. 취합 권한이 없는 주체만 대상입니다.' })); return; }
+      if (key[0] === 'M') box.appendChild(pubSwitch(key, r, it, draw));
       box.appendChild(h('ul', { class: 'ob-list' }, r.targets.map(function (o) {
         var s = it.st[o], k = stateOf(it, s);
         return h('li', {}, [
@@ -57,6 +58,27 @@
     return box;
   }
 
+  /** 월간: 작성을 마친 뒤 한 번에 공개 · 비공개 (기본은 비공개) */
+  function pubSwitch(key, r, it, draw) {
+    var sts = r.targets.map(function (o) { return it.st[o]; });
+    var pub = sts.filter(function (s) { return !s.hold && (s.open || s.mode === 'now'); }).length;
+    var state = pub === sts.length ? 'on' : pub ? 'part' : 'off';
+    async function set(v, btn) {
+      var over = {}; r.targets.forEach(function (o) { over[o] = v; });
+      KR.busy(btn, true);
+      try { draw(await KR.call('open.save', { key: key, over: over })); KR.toast(v === 'now' ? '다른 주체에 공개했습니다' : '비공개로 돌렸습니다'); }
+      catch (e) { KR.toast(e.message, true); KR.busy(btn, false); }
+    }
+    return h('div', { class: 'ob-pub ' + state }, [
+      h('div', { class: 'ob-pub-t' }, [
+        h('b', { text: state === 'on' ? '공개 중' : state === 'part' ? '일부 주체에만 공개' : '비공개' }),
+        h('small', { text: !it.ver ? '작성을 마치고 공유본을 올린 뒤 공개할 수 있습니다' : state === 'on' ? '모든 주체가 이 월간보고를 봅니다' : '취합 담당만 봅니다. 공개하면 다른 주체도 봅니다' })
+      ]),
+      state !== 'on' ? h('button', { class: 'btn sm gold', disabled: !it.ver, onclick: function (e) { set('now', e.target); } }, '공개하기') : null,
+      state !== 'off' ? h('button', { class: 'btn sm', onclick: function (e) { set('hold', e.target); } }, '비공개로') : null
+    ]);
+  }
+
   /** 보고서 하나의 주체별 공개 시점 정하기 */
   async function editor(key, opts) {
     opts = opts || {};
@@ -69,7 +91,7 @@
         ['rule', '기본 규칙대로 — ' + ruleName(key, rule) + (s.ruleAt ? ' (' + when(s.ruleAt) + ')' : '')],
         ['now', '지금 바로 공개 (공유되어 있으면 즉시)'],
         ['at', '날짜·시각 직접 정하기'],
-        ['hold', '공개 안 함 (보류)']
+        ['hold', '비공개 (보류)']
       ].map(function (x) { return h('option', { value: x[0], text: x[1], selected: x[0] === cur }); }));
       function sync() { dt.hidden = sel.value !== 'at'; }
       sync();
@@ -103,8 +125,8 @@
     var r = await load('');
     function timeIn(v, label) { return h('input', { class: 'input t', type: 'time', value: v, 'aria-label': label }); }
     function ruleSel(list, v, label, t) {
-      var s = h('select', { class: 'input', 'aria-label': label, onchange: function () { t.disabled = s.value === 'now'; } }, list.map(function (x) { return h('option', { value: x[0], text: x[1], selected: x[0] === v }); }));
-      t.disabled = v === 'now';
+      var s = h('select', { class: 'input', 'aria-label': label, onchange: function () { t.disabled = s.value === 'now' || s.value === 'hold'; } }, list.map(function (x) { return h('option', { value: x[0], text: x[1], selected: x[0] === v }); }));
+      t.disabled = v === 'now' || v === 'hold';
       return s;
     }
     var rows = r.targets.map(function (o) {
@@ -117,7 +139,7 @@
       ]) };
     });
     var m = KR.modal('주체별 기본 공개 규칙', [
-      h('p', { class: 'muted small', style: 'margin:0 0 14px', text: '공유본이 각 주체의 열람 화면에 언제부터 보일지 정합니다. 보고서마다 따로 정한 값이 있으면 그 값이 먼저입니다. 정한 시각보다 늦게 공유하면 공유하는 즉시 보입니다.' }),
+      h('p', { class: 'muted small', style: 'margin:0 0 14px', text: '공유본이 각 주체의 열람 화면에 언제부터 보일지 정합니다. 보고서마다 따로 정한 값이 있으면 그 값이 먼저입니다. 정한 시각보다 늦게 공유하면 공유하는 즉시 보입니다. 월간은 기본이 비공개로, 작성자가 「공개하기」를 눌러야 보입니다.' }),
       r.targets.length ? h('div', { class: 'ob-rules' }, rows.map(function (x) { return x.el; })) : h('p', { class: 'muted', text: '대상 주체가 없습니다.' }),
       h('p', { class: 'ob-note', text: '취합 권한이 있는 주체(케이브레인컴퍼니 등)와 관리자 · 공개 시점 설정 권한자는 언제나 모두 봅니다.' })
     ], [

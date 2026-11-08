@@ -169,17 +169,25 @@
   /** 공유 */
   async function share(key, doc, saveFirst, after) {
     var memo = h('input', { class: 'input', placeholder: '고친 내용 메모 (선택, 예: 공연 일정 수정)' });
-    var last = after.lastVer;
-    var m = KR.modal('한예종에 공유', [
-      h('p', { style: 'margin:0 0 10px', text: last ? '이미 v' + last + '가 공유되어 있습니다. 지금 내용으로 v' + (Number(last) + 1) + '을 공유하면 한예종 화면이 새 판으로 바뀝니다(이전 판도 열람 가능).' : '지금 편집본을 최종본(v1)으로 공유합니다. 한예종은 열람 주소와 코드로 이 화면만 봅니다.' }),
-      last ? h('label', { class: 'field' }, [h('span', { text: '메모' }), memo]) : null
+    var last = after.lastVer, isM = key[0] === 'M', canPub = isM && window.KROpen.can(P);
+    var pubChk = h('input', { type: 'checkbox' });
+    var m = KR.modal(isM ? '월간보고 공유본 올리기' : '한예종에 공유', [
+      isM ? h('p', { class: 'notice info', style: 'margin:0 0 12px', text: '월간보고는 기본이 비공개입니다. 올린 뒤 「공개하기」를 눌러야 다른 주체(한예종 포함)가 봅니다.' }) : null,
+      h('p', { style: 'margin:0 0 10px', text: isM ? (last ? '이미 v' + last + '가 올라가 있습니다. 지금 내용으로 v' + (Number(last) + 1) + '을 올립니다. 공개 상태는 그대로 유지됩니다.' : '지금 편집본을 최종본(v1)으로 올립니다.') : last ? '이미 v' + last + '가 공유되어 있습니다. 지금 내용으로 v' + (Number(last) + 1) + '을 공유하면 한예종 화면이 새 판으로 바뀝니다(이전 판도 열람 가능).' : '지금 편집본을 최종본(v1)으로 공유합니다. 한예종은 열람 주소와 코드로 이 화면만 봅니다.' }),
+      last ? h('label', { class: 'field' }, [h('span', { text: '메모' }), memo]) : null,
+      canPub ? h('label', { class: 'chk' }, [pubChk, h('span', { text: '올리면서 바로 모든 주체에 공개' })]) : null
     ], [
       h('button', { class: 'btn', text: '취소', onclick: function () { m.close(); } }),
-      h('button', { class: 'btn gold', text: '공유하기', onclick: async function (e) {
+      h('button', { class: 'btn gold', text: isM ? '올리기' : '공유하기', onclick: async function (e) {
         KR.busy(e.target, true);
         try {
           await saveFirst();
           var r = await KR.call('compile.share', { key: key, doc: R.freeze(doc), memo: memo.value });
+          if (canPub && pubChk.checked) {
+            var og = await KR.call('open.get', { keys: [key] }), over = {};
+            og.targets.forEach(function (o) { over[o] = 'now'; });
+            await KR.call('open.save', { key: key, over: over });
+          }
           m.close(); after.done(r);
           var hub = await KR.call('hub.week', { key: key }).catch(function () { return {}; });
           KR.modal('공유했습니다 · v' + r.ver, [
@@ -411,7 +419,7 @@
         h('div', {}, [h('div', { class: 'hh-t', text: (doc && doc.title) || m.title }), h('div', { class: 'hh-s', text: '실적 ' + m.periodPrev + ' · 계획 ' + m.periodNext })]),
         h('button', { class: 'wn-btn', 'aria-label': '다음 달', onclick: async function () { if (st.dirty) await saveNow(); S.m = m.next(); syncUrl(); monthTab(); } }, '›')
       ]),
-      h('div', { class: 'hh-r' }, [lastShared ? h('span', { class: 'status-pill ok', text: '한예종 공유 v' + lastShared.ver + ' · ' + KR.fmtTime(lastShared.at) }) : h('span', { class: 'status-pill none', text: '아직 공유 전' }), saveState])
+      h('div', { class: 'hh-r' }, [lastShared ? h('span', { class: 'status-pill ok', text: '공유본 v' + lastShared.ver + ' · ' + KR.fmtTime(lastShared.at) }) : h('span', { class: 'status-pill none', text: '아직 올리기 전' }), saveState])
     ]));
     // 재료 1: 주체별 월간 입력
     var mEntries = entries.filter(function (e) { return KR.normData(e.data).cats.some(function (c) { return c.prev.concat(c.next).some(function (x) { return !KR.blockEmpty(x); }); }); });
@@ -481,7 +489,7 @@
       h('button', { class: 'btn ghost', onclick: async function () { if (await KR.confirm('편집한 내용을 버리고 주간보고와 월간 입력으로 다시 만들까요?', '다시 만들기', true)) build(); } }, '처음부터 다시 만들기'),
       h('button', { class: 'btn', onclick: function () { R.print(doc); } }, '인쇄·PDF'),
       h('button', { class: 'btn', onclick: function () { R.hwpx(doc, lastShared ? lastShared.ver : '1').catch(function (e) { KR.toast(e.message, true); }); } }, '한글 파일'),
-      P.share ? h('button', { class: 'btn gold', onclick: function () { share(m.key, doc, saveNow, { lastVer: lastShared && lastShared.ver, done: function () { monthTab(); } }); } }, lastShared ? '갱신해서 공유' : '한예종에 공유') : null
+      P.share ? h('button', { class: 'btn gold', onclick: function () { share(m.key, doc, saveNow, { lastVer: lastShared && lastShared.ver, done: function () { monthTab(); } }); } }, lastShared ? '새 판 올리기' : '공유본 올리기') : null
     ]));
     main.appendChild(diffBox); drawDiff();
     main.appendChild(h('div', { class: 'tip' }, [h('b', { text: '월간 초안 ' }), '주간보고 실적과 주체별 월간 입력을 같은 소제목끼리 합쳤습니다. 주간보고 뒤에 고친 내용은 「처음부터 다시 만들기」, 월간 입력이 바뀌면 위 알림의 「편집본에 반영」으로 가져옵니다.']));
