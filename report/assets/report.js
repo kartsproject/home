@@ -49,9 +49,11 @@
     return doc;
   }
   /** 편집본과 지금 작성분 비교 → {added, changed, removed} */
+  /** 정리(AI)하면서 다른 항목에 합쳐진 원본: 내용이 그대로면 없는 셈 친다 */
+  function absorbed(doc, x) { var a = doc.absorbed || {}; return Object.prototype.hasOwnProperty.call(a, x.src) && a[x.src] === sig(x); }
   function diff(doc, entries, companies) {
     var cur = {}, seen = {}, r = { added: 0, changed: 0, removed: 0 }, gone = doc.removed || {};
-    sourceBlocks(entries, companies).forEach(function (x) { if (!gone[x.src]) cur[x.src] = x; });
+    sourceBlocks(entries, companies).forEach(function (x) { if (!gone[x.src] && !absorbed(doc, x)) cur[x.src] = x; });
     doc.cats.forEach(function (c) { SIDES.forEach(function (s) { c[s].forEach(function (b) {
       if (!b.src) return;
       seen[b.src] = 1;
@@ -59,14 +61,15 @@
       if (!x) { if (!b.edited) r.removed++; }
       else if (sig(x) !== b.sig) r.changed++;
     }); }); });
-    Object.keys(cur).forEach(function (k) { if (!seen[k]) r.added++; });
+    var ab = doc.absorbed || {};
+    Object.keys(cur).forEach(function (k) { if (!seen[k]) { if (Object.prototype.hasOwnProperty.call(ab, k)) r.changed++; else r.added++; } });
     r.total = r.added + r.changed + r.removed;
     return r;
   }
   /** 변경분 반영: 손대지 않은 블록은 새 내용으로, 손댄 블록은 그대로, 새 블록은 같은 업체 뒤에 */
   function remerge(doc, entries, companies) {
     var cur = {}, seen = {}, gone = doc.removed || {};
-    sourceBlocks(entries, companies).forEach(function (x) { if (!gone[x.src]) cur[x.src] = x; });
+    sourceBlocks(entries, companies).forEach(function (x) { if (!gone[x.src] && !absorbed(doc, x)) cur[x.src] = x; });
     doc.cats.forEach(function (c) { SIDES.forEach(function (s) {
       c[s] = c[s].filter(function (b) {
         if (!b.src) return true;
@@ -282,15 +285,23 @@
     });
   }
   /** weekDocs: [{key, doc}] 날짜순 */
-  function monthCompile(weekDocs, m) {
+  /**
+   * 월간 초안 = 그달 주간보고(지난 실적, 같은 소제목끼리 합침 · 마지막 주의 향후 계획) + 주체별 월간 입력
+   * 월간 입력 블록은 출처(src)를 달아 두어, 나중에 입력이 바뀌면 주간처럼 「편집본에 반영」으로 따라감.
+   * 다음 달 계획은 월간 입력이 먼저, 그 뒤에 마지막 주 계획.
+   */
+  function monthCompile(weekDocs, m, entries, companies) {
     var doc = newDoc(m), docs = weekDocs.filter(function (x) { return x.doc; });
+    var mine = sourceBlocks(entries || [], companies || []);
     KR.CATS.forEach(function (_, ci) {
       var prev = [], next = [];
       docs.forEach(function (x) { (x.doc.cats[ci].prev || []).forEach(function (b) { if (!b.hide) prev.push(b); }); });
       var last = docs[docs.length - 1];
       if (last) (last.doc.cats[ci].next || []).forEach(function (b) { if (!b.hide) next.push(b); });
-      doc.cats[ci].prev = mergeBlocks(prev);
-      doc.cats[ci].next = mergeBlocks(next);
+      var mp = mine.filter(function (x) { return x.cat === ci && x.side === 'prev'; }).map(fromSource);
+      var mn = mine.filter(function (x) { return x.cat === ci && x.side === 'next'; }).map(fromSource);
+      doc.cats[ci].prev = mergeBlocks(prev).concat(mp);
+      doc.cats[ci].next = mn.concat(mergeBlocks(next));
     });
     doc.showOrg = docs.some(function (x) { return x.doc.showOrg; });
     doc.fromWeeks = docs.map(function (x) { return x.key; });
@@ -765,7 +776,7 @@
   }
 
   root.KRReport = {
-    CAT_C: CAT_C, newDoc: newDoc, compile: compile, diff: diff, remerge: remerge, sortEntries: sortEntries,
+    CAT_C: CAT_C, newDoc: newDoc, compile: compile, sig: sig, diff: diff, remerge: remerge, sortEntries: sortEntries,
     findDates: findDates, blockDates: blockDates, schedule: schedule, freeze: freeze, docSchedule: docSchedule,
     monthCompile: monthCompile, mergeBlocks: mergeBlocks,
     blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, timeOf: timeOf, calendarEl: calendarEl, monthCalEl: monthCalEl, calEnd: calEnd, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,

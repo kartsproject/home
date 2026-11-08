@@ -950,3 +950,6 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
 .sct:hover { transform: none; }
 /* 어두운 화면(열람) 위의 흰 종이: 글자색을 밝은 화면 기준으로 */
 .paper { color: var(--text); }
+/* 월간 취합: 주체별 월간 입력 현황 */
+.subm-sec { margin: 0 0 16px; }
+.subm-l { font-size: 14px; font-weight: 700; color: var(--text-2); margin: 0 0 8px; }

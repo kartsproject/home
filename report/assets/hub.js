@@ -222,6 +222,11 @@
         }).concat(hidden);
       });
     });
+    // 정리하면서 다른 항목에 합쳐진 원본은 「흡수됨」으로 기록 → 원본이 그대로면 변경 알림에서 빼고, 바뀌면 새 항목으로 알림
+    var present = {};
+    doc.cats.forEach(function (c) { ['prev', 'next'].forEach(function (sd) { c[sd].forEach(function (b) { if (b.src) present[b.src] = 1; }); }); });
+    doc.absorbed = doc.absorbed || {};
+    Object.keys(byId).forEach(function (k) { var o = byId[k]; if (o.src && !present[o.src]) doc.absorbed[o.src] = o.sig || ''; });
   }
   async function refine(doc, mode, src, onDone) {
     var before = JSON.parse(JSON.stringify(doc.cats));
@@ -246,6 +251,27 @@
   /* =========================================================
    * 주간 취합
    * ========================================================= */
+  /** 주체별 제출 현황(주간·월간 공용) */
+  function submCards(users, entries, label) {
+    var writers = users.filter(function (u) { return u.status !== '중지'; });
+    var byUid = {}; entries.forEach(function (e) { byUid[e.uid] = e; });
+    var box = h('div', { class: 'subm' }, S.companies.filter(function (co) { return writers.some(function (u) { return u.company === co; }); }).map(function (co) {
+      var people = writers.filter(function (u) { return u.company === co; });
+      var es = entries.filter(function (e) { return e.company === co; });
+      var done = es.filter(function (e) { return e.status === '제출'; }).length;
+      return h('div', { class: 'sb-co' }, [
+        h('div', { class: 'sb-h' }, [h('b', { text: co }), h('span', { class: done ? 'ok' : 'none', text: done ? '제출 ' + done + '명' : '아직 없음' })]),
+        h('div', { class: 'sb-people' }, people.map(function (u) {
+          var e = byUid[u.id], cls = !e ? 'none' : e.status === '제출' ? 'ok' : 'run';
+          var lb = !e ? '미작성' : e.status === '제출' ? '제출 ' + KR.fmtTime(e.submitted).split(' ').pop() + (e.updated > e.submitted ? ' · 이후 수정' : '') : '작성 중';
+          return h('button', { class: 'sb-p ' + cls, disabled: !e, title: e ? '작성 내용 보기' : '', onclick: function () { personModal(e); } }, [h('i'), h('b', { text: u.name }), h('span', { text: lb })]);
+        }))
+      ]);
+    }));
+    if (!label) return box;
+    return h('section', { class: 'subm-sec' }, [h('div', { class: 'subm-l', text: label }), box]);
+  }
+
   async function weekTab() {
     var w = S.w, data;
     try { data = await KR.call('hub.week', { key: w.key }); } catch (e) { main.innerHTML = ''; main.appendChild(h('div', { class: 'notice warn', text: e.message })); return; }
@@ -282,21 +308,7 @@
     setSave(st.savedAt ? '편집본 저장됨 ' + KR.fmtTime(st.savedAt) : (fresh ? '작성분을 모아 새로 취합했습니다' : ''));
 
     // 제출 현황
-    var writers = data.users.filter(function (u) { return u.status !== '중지'; });
-    var byUid = {}; entries.forEach(function (e) { byUid[e.uid] = e; });
-    main.appendChild(h('div', { class: 'subm' }, S.companies.filter(function (co) { return writers.some(function (u) { return u.company === co; }); }).map(function (co) {
-      var people = writers.filter(function (u) { return u.company === co; });
-      var es = entries.filter(function (e) { return e.company === co; });
-      var done = es.filter(function (e) { return e.status === '제출'; }).length;
-      return h('div', { class: 'sb-co' }, [
-        h('div', { class: 'sb-h' }, [h('b', { text: co }), h('span', { class: done ? 'ok' : 'none', text: done ? '제출 ' + done + '명' : '아직 없음' })]),
-        h('div', { class: 'sb-people' }, people.map(function (u) {
-          var e = byUid[u.id], cls = !e ? 'none' : e.status === '제출' ? 'ok' : 'run';
-          var label = !e ? '미작성' : e.status === '제출' ? '제출 ' + KR.fmtTime(e.submitted).split(' ').pop() + (e.updated > e.submitted ? ' · 이후 수정' : '') : '작성 중';
-          return h('button', { class: 'sb-p ' + cls, disabled: !e, title: e ? '작성 내용 보기' : '', onclick: function () { personModal(e); } }, [h('i'), h('b', { text: u.name }), h('span', { text: label })]);
-        }))
-      ]);
-    })));
+    main.appendChild(submCards(data.users, entries));
 
     // 변경 알림
     var diffBox = h('div');
@@ -380,6 +392,8 @@
       data = await KR.call('hub.week', { key: m.key });
       weeks = (await KR.call('hub.weeks', { keys: m.weekKeys })).weeks;
     } catch (e) { main.innerHTML = ''; main.appendChild(h('div', { class: 'notice warn', text: e.message })); return; }
+    S.companies = b.companies.slice();
+    var entries = data.entries || [];
     var doc = data.draft && data.draft.doc, st = { dirty: false, shared: data.shared };
     main.innerHTML = '';
     var saveState = h('span', { class: 'savestate', text: data.draft ? '편집본 저장됨 ' + KR.fmtTime(data.draft.updated) : '' });
@@ -388,7 +402,7 @@
       saveState.textContent = '저장 중…';
       var r = await KR.call('compile.save', { key: m.key, doc: doc }); st.dirty = false; saveState.textContent = '편집본 저장됨 ' + KR.fmtTime(r.updated).split(' ').pop();
     }
-    function onChange() { st.dirty = true; saveState.textContent = '편집 중…'; clearTimeout(S.saveTimer); S.saveTimer = setTimeout(function () { saveNow().catch(function (e) { KR.toast(e.message, true); }); }, 1200); if (sp) sp.draw(); }
+    function onChange() { st.dirty = true; saveState.textContent = '편집 중…'; clearTimeout(S.saveTimer); S.saveTimer = setTimeout(function () { saveNow().catch(function (e) { KR.toast(e.message, true); }); }, 1200); if (sp) sp.draw(); drawDiff(); }
     var lastShared = st.shared.length ? st.shared[st.shared.length - 1] : null;
     main.appendChild(h('div', { class: 'hub-head' }, [
       h('div', { class: 'weeknav big' }, [
@@ -398,25 +412,46 @@
       ]),
       h('div', { class: 'hh-r' }, [lastShared ? h('span', { class: 'status-pill ok', text: '한예종 공유 v' + lastShared.ver + ' · ' + KR.fmtTime(lastShared.at) }) : h('span', { class: 'status-pill none', text: '아직 공유 전' }), saveState])
     ]));
-    // 포함 주차
+    // 재료 1: 주체별 월간 입력
+    var mEntries = entries.filter(function (e) { return KR.normData(e.data).cats.some(function (c) { return c.prev.concat(c.next).some(function (x) { return !KR.blockEmpty(x); }); }); });
+    main.appendChild(submCards(data.users, entries, '주체별 월간 입력'));
+    // 재료 2: 포함 주차
     var have = weeks.filter(function (x) { return x.doc; });
     main.appendChild(h('div', { class: 'mweeks' }, [h('b', { text: '이 달에 포함되는 주간보고' })].concat(weeks.map(function (x) {
       var ww = KR.fromKey(x.key);
       return h('span', { class: 'mw ' + (x.doc ? (/공유/.test(x.from) ? 'ok' : 'run') : 'none') }, [h('i'), ww.planName + ' 보고', h('small', { text: '실적 ' + KR.md(ww.mon).slice(0, 5) + '~ · ' + (x.from || '없음') })]);
     }))));
-    /** 월간 정리용 원자료: 그달 주간 최종본의 지난 실적(주차 표시) + 마지막 주의 향후 계획 */
+    /** 월간 정리용 원자료: 그달 주간 최종본의 지난 실적(주차 표시) + 주체별 월간 입력 + 다음 달 계획(월간 입력 → 마지막 주 계획) */
     function monthSrc() {
       var docs = weeks.filter(function (x) { return x.doc; });
+      function mine(i, side) {
+        var out = [];
+        entries.forEach(function (e) { KR.normData(e.data).cats[i][side].forEach(function (bk) { if (KR.blockEmpty(bk)) return; out.push({ id: e.uid + ':' + bk.id, src: e.uid + ':' + bk.id, org: e.company, by: e.name, t: bk.t || '', c: bk.c || '', d: bk.d || '', box: bk.box || '', sig: R.sig(bk), w: '월간 입력' }); }); });
+        return out;
+      }
       return KR.CATS.map(function (_, i) {
         var prev = [];
-        docs.forEach(function (x) { var wn = KR.fromKey(x.key).name; R.visible(x.doc.cats[i].prev).forEach(function (bk) { prev.push({ id: bk.id, src: bk.src || '', org: bk.org || '', by: bk.by || '', t: bk.t, c: bk.c, d: bk.d, box: bk.box || '', w: wn }); }); });
+        docs.forEach(function (x) { var wn = KR.fromKey(x.key).name; R.visible(x.doc.cats[i].prev).forEach(function (bk) { prev.push({ id: bk.id, src: '', org: bk.org || '', by: bk.by || '', t: bk.t, c: bk.c, d: bk.d, box: bk.box || '', w: wn }); }); });
+        prev = prev.concat(mine(i, 'prev'));
         var last = docs[docs.length - 1];
-        var next = last ? R.visible(last.doc.cats[i].next).map(function (bk) { return { id: bk.id, src: bk.src || '', org: bk.org || '', by: bk.by || '', t: bk.t, c: bk.c, d: bk.d, box: bk.box || '' }; }) : [];
+        var next = mine(i, 'next').concat(last ? R.visible(last.doc.cats[i].next).map(function (bk) { return { id: bk.id, src: '', org: bk.org || '', by: bk.by || '', t: bk.t, c: bk.c, d: bk.d, box: bk.box || '' }; }) : []);
         return { prev: prev, next: next };
       });
     }
+    // 월간 입력이 바뀌면 알림 → 편집본에 반영(손댄 항목은 그대로)
+    var diffBox = h('div');
+    function drawDiff() {
+      diffBox.innerHTML = '';
+      if (!doc) return;
+      var d = R.diff(doc, entries, S.companies);
+      if (!d.total) return;
+      diffBox.appendChild(h('div', { class: 'notice gold' }, [
+        h('span', {}, [h('b', { text: '월간 입력이 바뀌었습니다 ' }), [d.added ? '새 항목 ' + d.added : '', d.changed ? '수정 ' + d.changed : '', d.removed ? '삭제 ' + d.removed : ''].filter(String).join(' · ')]),
+        h('button', { class: 'btn sm primary', onclick: function () { R.remerge(doc, entries, S.companies); onChange(); saveNow().then(function () { monthTab(); }); KR.toast('반영했습니다. 직접 편집한 항목은 그대로 두었습니다'); } }, '편집본에 반영')
+      ]));
+    }
     function build() {
-      var nd = R.monthCompile(weeks, m);
+      var nd = R.monthCompile(weeks, m, entries, S.companies);
       if (doc) { ['title', 'dateLine', 'periodPrev', 'periodNext', 'showOrg'].forEach(function (k) { if (doc[k] != null) nd[k] = doc[k]; }); Object.keys(doc).forEach(function (k) { delete doc[k]; }); Object.assign(doc, nd); }
       else doc = nd;
       // 실적은 그달 결과물만으로, 실적 문장으로 정리
@@ -426,8 +461,10 @@
       main.appendChild(h('div', { class: 'empty-state' }, [
         h('div', { class: 'es-ic', text: '▦' }),
         h('h3', { text: m.name + ' 월간보고 초안이 아직 없습니다' }),
-        h('p', { text: have.length ? '주간보고 ' + have.length + '개의 지난 실적을 분야·소제목별로 합치고, 마지막 주의 향후 계획을 가져와 초안을 만듭니다. 만든 뒤 자유롭게 고칠 수 있어요.' : '이 달에 취합된 주간보고가 없습니다. 주간 취합을 먼저 진행하세요.' }),
-        h('button', { class: 'btn primary lg', disabled: !have.length, onclick: build }, '주간보고로 월간 초안 만들기')
+        h('p', { text: have.length || mEntries.length
+          ? '주간보고 ' + have.length + '개의 지난 실적과 주체별 월간 입력 ' + mEntries.length + '건을 분야·소제목별로 합쳐 「한 달 실적」으로 정리하고, 월간 입력의 다음 달 계획과 마지막 주의 향후 계획으로 계획을 채웁니다. 만든 뒤 자유롭게 고칠 수 있어요.'
+          : '이 달에 취합된 주간보고도, 주체별 월간 입력도 아직 없습니다. 주간 취합을 진행하거나 작성 화면 「월간」에서 내용을 넣어 주세요.' }),
+        h('button', { class: 'btn primary lg', disabled: !(have.length || mEntries.length), onclick: build }, '주간보고 + 월간 입력으로 초안 만들기')
       ]));
       return;
     }
@@ -440,12 +477,13 @@
       undoBtn(doc, function () { st.dirty = true; saveNow().then(function () { monthTab(); }); }),
       h('button', { class: 'btn ghost', onclick: function () { infoModal(doc, m, onChange); } }, '제목·기간 고치기'),
       h('span', { class: 'spacer' }),
-      h('button', { class: 'btn ghost', onclick: async function () { if (await KR.confirm('편집한 내용을 버리고 주간보고에서 다시 만들까요?', '다시 만들기', true)) build(); } }, '주간보고에서 다시 만들기'),
+      h('button', { class: 'btn ghost', onclick: async function () { if (await KR.confirm('편집한 내용을 버리고 주간보고와 월간 입력으로 다시 만들까요?', '다시 만들기', true)) build(); } }, '처음부터 다시 만들기'),
       h('button', { class: 'btn', onclick: function () { R.print(doc); } }, '인쇄·PDF'),
       h('button', { class: 'btn', onclick: function () { R.hwpx(doc, lastShared ? lastShared.ver : '1').catch(function (e) { KR.toast(e.message, true); }); } }, '한글 파일'),
       P.share ? h('button', { class: 'btn gold', onclick: function () { share(m.key, doc, saveNow, { lastVer: lastShared && lastShared.ver, done: function () { monthTab(); } }); } }, lastShared ? '갱신해서 공유' : '한예종에 공유') : null
     ]));
-    main.appendChild(h('div', { class: 'tip' }, [h('b', { text: '월간 초안 ' }), '같은 소제목은 한 항목으로 합쳤습니다. 주차별로 겹치는 줄은 정리하고, 결과 위주로 다듬어 주세요.']));
+    main.appendChild(diffBox); drawDiff();
+    main.appendChild(h('div', { class: 'tip' }, [h('b', { text: '월간 초안 ' }), '주간보고 실적과 주체별 월간 입력을 같은 소제목끼리 합쳤습니다. 주간보고 뒤에 고친 내용은 「처음부터 다시 만들기」, 월간 입력이 바뀌면 위 알림의 「편집본에 반영」으로 가져옵니다.']));
     var ed = editor({ doc: doc, w: m, onChange: onChange });
     var sp = schedulePanel(doc, onChange);
     main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [sp.el, sharedList(st.shared, m.key)])]));

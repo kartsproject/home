@@ -7,10 +7,16 @@
   var app = document.getElementById('app');
   app.className = 'wrap deckwrap';
   var qk = KR.param('key');
-  var S = { w: /^W-\d{4}-\d{2}-\d{2}$/.test(qk) ? KR.fromKey(qk) : KR.current(), uid: KR.param('uid') || b.user.id, who: null, team: null, cats: [0, 1, 2, 3, 4],
+  var S = { w: /^W-\d{4}-\d{2}-\d{2}$/.test(qk) || /^M-\d{4}-\d{2}$/.test(qk) ? KR.fromKey(qk) : KR.current(), uid: KR.param('uid') || b.user.id, who: null, team: null, cats: [0, 1, 2, 3, 4],
     data: KR.emptyData(), entry: null, prevEntry: null, sharedVer: '', step: 0, timer: null, saving: false, dirty: false, savedAt: '' };
 
   function nstep() { return S.cats.length; }
+  /** 주간·월간에 따라 바뀌는 말 */
+  function L() {
+    return S.w.type === 'M'
+      ? { unit: '달', cur: '이번 달', nxt: '다음 달', last: '지난달', name: S.w.name + ' 월간', title: S.w.name + ' 월간보고', start: S.w.first, nstart: S.w.nfirst }
+      : { unit: '주', cur: '이번 주', nxt: '다음 주', last: '지난주', name: S.w.planName, title: S.w.planName + ' 업무보고', start: S.w.mon, nstart: S.w.nmon };
+  }
   function catAt(step) { return S.cats[step]; }
   function lsKey() { return 'kr4_local_' + S.uid + '_' + S.w.key; }
   async function load() {
@@ -74,18 +80,21 @@
     headBox.appendChild(h('div', { class: 'wh-in' }, [
       h('div', { class: 'wh-l' }, [
         h('div', { class: 'eyebrow', text: (S.who ? S.who.company + ' · ' + S.who.name : '') + (forOther ? ' (대신 작성)' : '') }),
-        h('h1', {}, [S.w.planName + ' 업무보고']),
+        h('h1', {}, [L().title]),
         h('div', { class: 'wh-meta' }, [
-          h('span', {}, [h('b', { text: '지난 실적 ' }), S.w.periodPrev]),
-          h('span', {}, [h('b', { text: '향후 계획 ' }), S.w.periodNext]),
-          h('span', {}, [h('b', { text: '대면보고 ' }), KR.kd(S.w.nmon)])
+          h('span', {}, [h('b', { text: (S.w.type === 'M' ? '이달 실적 ' : '지난 실적 ') }), S.w.periodPrev]),
+          h('span', {}, [h('b', { text: (S.w.type === 'M' ? '다음 달 계획 ' : '향후 계획 ') }), S.w.periodNext]),
+          S.w.type === 'M' ? h('span', {}, [h('b', { text: '서면보고 ' }), KR.kd(S.w.fri) + ' 17:00까지']) : h('span', {}, [h('b', { text: '대면보고 ' }), KR.kd(S.w.nmon)])
         ])
       ]),
       h('div', { class: 'wh-r' }, [
+        h('div', { class: 'seg light', role: 'tablist', 'aria-label': '보고 종류' }, [['W', '주간'], ['M', '월간']].map(function (x) {
+          return h('button', { class: S.w.type === x[0] || (x[0] === 'W' && S.w.type !== 'M') ? 'on' : '', role: 'tab', 'aria-selected': (S.w.type === 'M') === (x[0] === 'M') ? 'true' : 'false', onclick: function () { switchKind(x[0]); } }, x[1]);
+        })),
         h('div', { class: 'weeknav' }, [
-          h('button', { class: 'wn-btn', 'aria-label': '이전 주', onclick: function () { move(-1); } }, '‹'),
-          h('span', { text: S.w.planName }),
-          h('button', { class: 'wn-btn', 'aria-label': '다음 주', onclick: function () { move(1); } }, '›')
+          h('button', { class: 'wn-btn', 'aria-label': '이전 ' + L().unit, onclick: function () { move(-1); } }, '‹'),
+          h('span', { text: L().name }),
+          h('button', { class: 'wn-btn', 'aria-label': '다음 ' + L().unit, onclick: function () { move(1); } }, '›')
         ]),
         h('span', { class: 'status-pill ' + st[1], text: st[0] }),
         h('button', { class: 'btn sm hw-btn', onclick: pickFile, title: '.hwp · .hwpx 보고서를 올리면 분야별로 나눠 채웁니다' }, '한글 파일 불러오기'),
@@ -98,9 +107,15 @@
         return h('button', { class: 'team-p ' + cls + (m.id === S.uid ? ' on' : ''), onclick: async function () { if (m.id === S.uid) return; if (S.dirty) await save(); S.uid = m.id; S.step = 0; sync(); load(); } }, [h('i'), m.name + (m.id === b.user.id ? ' (나)' : ''), h('small', { text: m.status === '제출' ? '제출' : m.status ? '작성 중' : '미작성' })]);
       }))));
     }
-    if (S.sharedVer) headBox.appendChild(h('div', { class: 'wh-note', text: '이 주차 보고서는 한예종에 공유되었습니다(v' + S.sharedVer + '). 지금 고치면 취합 화면에 변경 알림이 표시됩니다.' }));
+    if (S.w.type === 'M') headBox.appendChild(h('div', { class: 'wh-note', text: '월간 입력은 주간보고에 없던 내용(이달 전체 성과·수치, 다음 달 계획 등)을 적는 곳입니다. 주간보고 내용은 취합할 때 자동으로 합쳐지니 다시 쓰지 않아도 됩니다.' }));
+    if (S.sharedVer) headBox.appendChild(h('div', { class: 'wh-note', text: '이 ' + (S.w.type === 'M' ? '월간' : '주차') + ' 보고서는 한예종에 공유되었습니다(v' + S.sharedVer + '). 지금 고치면 취합 화면에 변경 알림이 표시됩니다.' }));
   }
   function sync() { KR.setParams({ key: S.w.key, uid: S.uid === b.user.id ? '' : S.uid }); }
+  async function switchKind(k) {
+    if ((S.w.type === 'M') === (k === 'M')) return;
+    if (S.dirty) await save();
+    S.w = k === 'M' ? KR.currentMonth() : KR.current(); S.step = 0; sync(); load();
+  }
   async function move(d) {
     if (S.dirty) await save();
     S.w = d < 0 ? S.w.prev() : S.w.next(); S.step = 0; sync(); load();
@@ -223,7 +238,7 @@
     var list = S.data.cats[i][side], listBox = h('div', { class: 'blocks' });
     function redraw() {
       listBox.innerHTML = '';
-      if (!list.length) listBox.appendChild(h('div', { class: 'empty-b', text: side === 'prev' ? '이번 주에 한 일이 없으면 비워 두세요' : '다음 주에 할 일이 없으면 비워 두세요' }));
+      if (!list.length) listBox.appendChild(h('div', { class: 'empty-b', text: side === 'prev' ? L().cur + '에 한 일이 없으면 비워 두세요' : L().nxt + '에 할 일이 없으면 비워 두세요' }));
       list.forEach(function (blk, j) { listBox.appendChild(blockEditor(i, side, list, j, redraw)); });
     }
     redraw();
@@ -231,10 +246,10 @@
     return h('section', { class: 'side ' + side }, [
       h('header', {}, [
         h('div', {}, [h('span', { class: 'side-l', text: label }), h('span', { class: 'side-p', text: period })]),
-        imp.length ? h('button', { class: 'btn sm tint', title: '지난주에 쓴 「향후 계획」을 이번 주 실적으로 가져옵니다', onclick: function () {
+        imp.length ? h('button', { class: 'btn sm tint', title: L().last + '에 쓴 「향후 계획」을 ' + L().cur + ' 실적으로 가져옵니다', onclick: function () {
           imp.forEach(function (x) { list.push({ id: KR.uid(), t: x.t, c: x.c, d: x.d, box: x.box || '', from: x.id }); });
-          touch(); drawBody(); drawSteps(); drawFoot(); KR.toast('지난주 계획 ' + imp.length + '건을 가져왔습니다. 실제 한 일에 맞게 고쳐 주세요');
-        } }, '지난주 계획 가져오기 · ' + imp.length) : null
+          touch(); drawBody(); drawSteps(); drawFoot(); KR.toast(L().last + ' 계획 ' + imp.length + '건을 가져왔습니다. 실제 한 일에 맞게 고쳐 주세요');
+        } }, L().last + ' 계획 가져오기 · ' + imp.length) : null
       ]),
       listBox,
       h('button', { class: 'add-b', onclick: function () { list.push({ id: KR.uid(), t: '', c: '', d: '' }); touch(); redraw(); drawSteps(); drawFoot(); var t = listBox.querySelectorAll('.be-t'); if (t.length) t[t.length - 1].focus(); } }, '＋ 항목 추가')
@@ -248,7 +263,7 @@
     var dates = h('div', { class: 'be-dates' });
     function showDates() {
       dates.innerHTML = '';
-      var ds = R.blockDates(blk, S.w.mon).filter(function (x) { return KR.parse(x.date) >= S.w.nmon || side === 'next'; });
+      var ds = R.blockDates(blk, L().start).filter(function (x) { return KR.parse(x.date) >= L().nstart || side === 'next'; });
       if (!ds.length) return;
       dates.appendChild(h('span', { class: 'bd-l', text: '일정에 표시' }));
       ds.slice(0, 6).forEach(function (x) { var dt = KR.parse(x.date); dates.appendChild(h('span', { class: 'bd', text: (dt.getMonth() + 1) + '.' + dt.getDate() + ' ' + '일월화수목금토'[dt.getDay()] + (x.time ? ' ' + x.time : '') })); });
@@ -271,7 +286,7 @@
       dates,
       h('div', { class: 'be-tools' }, [
         boxBtn,
-        blk.from ? h('span', { class: 'be-from', text: '지난주 계획에서' }) : null,
+        blk.from ? h('span', { class: 'be-from', text: L().last + ' 계획에서' }) : null,
         h('span', { class: 'spacer' }),
         h('button', { class: 'icon-btn', title: '위로', 'aria-label': '위로', disabled: j === 0, onclick: function () { mv(-1); } }, '↑'),
         h('button', { class: 'icon-btn', title: '아래로', 'aria-label': '아래로', disabled: j === list.length - 1, onclick: function () { mv(1); } }, '↓'),
@@ -349,7 +364,7 @@
     }));
     var m = KR.modal('한글 파일 불러오기', [
       h('div', { class: 'imp-file' }, [h('b', { text: file.name }), h('span', { text: [r.title, r.dateLine.replace(/^\/\s*/, ''), r.period ? '지난 실적 ' + r.period : ''].filter(String).join(' · ') })]),
-      mismatch ? h('div', { class: 'notice warn', style: 'margin:0 0 12px' }, '파일의 실적 기간(' + r.period + ')이 지금 쓰는 주(' + S.w.periodPrev + ')와 다릅니다. 지난 보고서라면 날짜를 확인하고 고쳐 주세요.') : null,
+      mismatch ? h('div', { class: 'notice warn', style: 'margin:0 0 12px' }, '파일의 실적 기간(' + r.period + ')이 지금 쓰는 ' + L().unit + '(' + S.w.periodPrev + ')와 다릅니다. 지난 보고서라면 날짜를 확인하고 고쳐 주세요.') : null,
       h('p', { class: 'muted small', style: 'margin:0 0 10px', text: '표의 왼쪽 칸은 「지난 실적」, 오른쪽 칸은 「향후 계획」으로 넣습니다. 넣을 분야를 고르세요.' }),
       h('div', { class: 'imp-list' }, rows),
       h('div', { style: 'margin-top:14px' }, [seg])
@@ -409,7 +424,7 @@
     KR.busy(btn, false);
     if (ok) {
       drawSteps(); drawFoot();
-      var m = KR.modal('제출했습니다', [h('div', { class: 'done-mark', text: '✓' }), h('p', { style: 'text-align:center;margin:0', text: S.w.planName + ' 보고 내용을 제출했습니다. 고칠 일이 생기면 언제든 다시 들어와 고치면 됩니다.' })], [h('button', { class: 'btn primary', text: '확인', onclick: function () { m.close(); } })]);
+      var m = KR.modal('제출했습니다', [h('div', { class: 'done-mark', text: '✓' }), h('p', { style: 'text-align:center;margin:0', text: L().name + ' 보고 내용을 제출했습니다. 고칠 일이 생기면 언제든 다시 들어와 고치면 됩니다.' })], [h('button', { class: 'btn primary', text: '확인', onclick: function () { m.close(); } })]);
     }
   }
 
