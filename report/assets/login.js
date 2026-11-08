@@ -31,7 +31,7 @@
   ]));
   KR.demoBar();
   function goHome(b) {
-    var p = b.user.perm || {}, ok = { write: p.write, hub: p.compile, view: p.view || p.compile, admin: p.admin };
+    var p = b.user.perm || {}, ok = { write: p.write, hub: p.compile, view: p.view || p.compile || p.open || p.admin, admin: p.admin };
     KR.go(next && ok[next] ? '#/' + next : KR.homeOf(p));
   }
   async function after(b) {
@@ -46,7 +46,8 @@
     box.appendChild(h('div', { class: 'da-h', text: '한예종 열람 코드 · karts-demo' }));
     demoBox.appendChild(box);
   }
-  if (KR.token()) KR.call('me').then(after).catch(function () { sessionStorage.removeItem('kr4_token'); });
+  if (KR.token()) KR.me().then(after).catch(function () { sessionStorage.removeItem('kr4_token'); });
+  else KR.call('ping').catch(function () { });   // 이름·비밀번호를 치는 동안 서버를 미리 깨움
   form.addEventListener('submit', async function (e) {
     e.preventDefault(); err.textContent = '';
     if (/[\u3131-\u318E\uAC00-\uD7A3]/.test(pw.value)) { err.textContent = '비밀번호가 한글로 입력됐습니다. 한/영 키를 눌러 영문으로 바꾼 뒤 다시 입력하세요.'; pw.value = ''; pw.focus(); return; }
@@ -54,6 +55,7 @@
     try {
       var b = await KR.call('login', { name: name.value.trim(), password: pw.value });
       sessionStorage.setItem('kr4_token', b.token);
+      KR.meSave(b);
       await after(b);
     } catch (x) { err.textContent = x.message; }
     KR.busy(go, false);

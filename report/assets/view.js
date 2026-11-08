@@ -7,7 +7,7 @@
   if (S.key) S.kind = S.key[0];
 
   // 「최종본 열람」 권한으로 로그인한 상태면 코드 없이
-  if (KR.token()) { try { var b = await KR.call('me'); var pp = b.user.perm || {}; if (pp.view || pp.compile || pp.open || pp.admin) { S.isOp = true; S.me = b; KR.boot = b; } } catch (e) { } }
+  if (KR.token()) { try { var b = await KR.me(); var pp = b.user.perm || {}; if (pp.view || pp.compile || pp.open || pp.admin) { S.isOp = true; S.me = b; KR.boot = b; } } catch (e) { } }
   if (!S.isOp) { try { S.codeOn = (await KR.call('view.info')).codeOn; } catch (e) { } }
 
   async function api(action, data) { return KR.call(action, Object.assign({ code: S.code }, data || {})); }
@@ -32,7 +32,19 @@
     app.appendChild(h('div', { class: 'login single' }, [f]));
     inp.focus();
   }
-  async function loadList() { var r = await api('view.list'); S.list = r.list; S.soon = r.soon || []; }
+  async function loadList() {
+    // 목록과 처음 열 보고서를 한 번에 받음
+    var r = await api('view.list', { first: { key: S.key, ver: S.ver, kind: S.kind } });
+    S.list = r.list; S.soon = r.soon || [];
+    if (r.cur) { DOCS[r.cur.key + '|' + r.cur.ver] = r.cur; if (!S.key || S.key !== r.cur.key) { S.key = r.cur.key; S.kind = r.cur.key[0]; } }
+  }
+  var DOCS = {};   // 한 번 받은 판은 다시 받지 않음 (판은 바뀌지 않으므로)
+  async function getDoc(key, ver) {
+    var lv = ver || ((S.list.filter(function (x) { return x.key === key; })[0] || {}).ver) || '';
+    if (lv && DOCS[key + '|' + lv]) return DOCS[key + '|' + lv];
+    var d = await api('view.get', { key: key, ver: ver });
+    DOCS[d.key + '|' + d.ver] = d; return d;
+  }
   function canOpen() { return S.isOp && window.KROpen && window.KROpen.can(S.me.user.perm); }
   function soonOf(kind) { return (S.soon || []).filter(function (x) { return x.key[0] === kind; })[0]; }
   function soonLine(x) { return h('p', {}, [h('b', { text: x.title || KR.fromKey(x.key).title }), document.createTextNode('는 ' + window.KROpen.when(x.openAt) + '에 공개됩니다.')]); }
@@ -83,7 +95,7 @@
       return;
     }
     stage.innerHTML = '<div class="loading">불러오는 중…</div>';
-    try { S.cur = await api('view.get', { key: S.key, ver: S.ver }); }
+    try { S.cur = await getDoc(S.key, S.ver); }
     catch (e) { stage.innerHTML = ''; stage.appendChild(h('div', { class: 'notice warn', text: e.message })); return; }
     verSel.innerHTML = '';
     S.cur.versions.slice().reverse().forEach(function (v, i) { verSel.appendChild(h('option', { value: v.ver, text: 'v' + v.ver + (i === 0 ? ' (최신)' : '') + ' · ' + KR.fmtTime(v.at) + (v.memo ? ' · ' + v.memo : ''), selected: v.ver === S.cur.ver })); });

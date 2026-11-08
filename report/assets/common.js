@@ -170,6 +170,20 @@
 
   /* ===== API ===== */
   function token() { return sessionStorage.getItem('kr4_token') || ''; }
+  /* 로그인 정보(me) 기억 — 화면을 옮길 때마다 서버를 기다리지 않도록 이 탭 안에 잠시 둠.
+   * 권한 판단은 서버가 요청마다 다시 하므로 화면 표시용일 뿐. 뒤에서 새로 받아 바뀌었으면 다시 그림 */
+  var ME_KEY = 'kr4_me', ME_TTL = 10 * 60 * 1000;
+  function meCached() { try { var c = JSON.parse(sessionStorage.getItem(ME_KEY) || 'null'); return c && c.t === token() && Date.now() - c.at < ME_TTL ? c.b : null; } catch (e) { return null; } }
+  function meSave(b) { try { var x = Object.assign({}, b); delete x.token; sessionStorage.setItem(ME_KEY, JSON.stringify({ t: token(), at: Date.now(), b: x })); } catch (e) { } }
+  function meClear() { try { sessionStorage.removeItem(ME_KEY); } catch (e) { } }
+  async function me() {
+    var c = meCached();
+    if (c) {
+      call('me').then(function (b) { var changed = JSON.stringify(b) !== JSON.stringify(c); meSave(b); if (changed) location.reload(); }).catch(function () { });
+      return c;
+    }
+    var b = await call('me'); meSave(b); return b;
+  }
   async function call(action, data) {
     var q = Object.assign({ action: action, token: token() }, data || {}), j;
     if (DEMO) {
@@ -227,7 +241,7 @@
   };
   async function requireLogin(permKey) {
     if (!token()) { go('#/login?next=' + ROUTE.name); return new Promise(function () { }); }
-    var b = await call('me');
+    var b = await me();
     if (b.user.mustChange) { go('#/login'); return new Promise(function () { }); }
     var p = b.user.perm || {};
     if (permKey && !p[permKey] && !(permKey === 'view' && p.compile)) { toast('이 화면을 볼 권한이 없습니다', true); go(homeOf(p)); return new Promise(function () { }); }
@@ -304,7 +318,7 @@
         if (n1.value.length < 6) { err.textContent = '6자 이상으로 정하세요'; return; }
         if (n1.value !== n2.value) { err.textContent = '새 비밀번호가 서로 다릅니다'; return; }
         busy(btn, true);
-        try { await call('password', { old: old.value, next: n1.value }); m.close(); toast('비밀번호를 바꿨습니다'); resolve(true); }
+        try { await call('password', { old: old.value, next: n1.value }); meClear(); m.close(); toast('비밀번호를 바꿨습니다'); resolve(true); }
         catch (e) { err.textContent = e.message; }
         busy(btn, false);
       };
@@ -345,7 +359,7 @@
 
   root.KR = {
     CONFIG: CONFIG, CATS: CATS, CAT_SHORT: CAT_SHORT, CAT_HINT: CAT_HINT, DEMO: DEMO,
-    call: call, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
+    call: call, me: me, meSave: meSave, meClear: meClear, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
     PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
     week: week, month: month, fromKey: fromKey, current: current, currentMonth: currentMonth, dday: dday, kd: kd, md: md, ymd: ymd, parse: parse, add: add, today: today, fmtTime: fmtTime, fileBase: fileBase,
     uid: uid, emptyData: emptyData, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, parseText: parseText, catIndex: catIndex,

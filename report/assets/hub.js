@@ -398,8 +398,8 @@
   async function monthTab() {
     var m = S.m, data, weeks;
     try {
-      data = await KR.call('hub.week', { key: m.key });
-      weeks = (await KR.call('hub.weeks', { keys: m.weekKeys })).weeks;
+      var both = await Promise.all([KR.call('hub.week', { key: m.key }), KR.call('hub.weeks', { keys: m.weekKeys })]);   // 동시에 받음
+      data = both[0]; weeks = both[1].weeks;
     } catch (e) { main.innerHTML = ''; main.appendChild(h('div', { class: 'notice warn', text: e.message })); return; }
     S.companies = b.companies.slice();
     var entries = data.entries || [];
