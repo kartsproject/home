@@ -953,3 +953,56 @@ body.dropping::after { content: '여기에 놓으면 한글 파일을 읽어 채
 /* 월간 취합: 주체별 월간 입력 현황 */
 .subm-sec { margin: 0 0 16px; }
 .subm-l { font-size: 14px; font-weight: 700; color: var(--text-2); margin: 0 0 8px; }
+
+/* ===== 공개 시점 (주체별) ===== */
+.openbox { background: var(--surface); border-radius: var(--r); padding: 18px; }
+.openbox .loading.sm { padding: 6px 0; font-size: 13px; text-align: left; }
+.ob-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.ob-h h3 { font-size: 17px; }
+.ob-list { list-style: none; margin: 0; padding: 0; }
+.ob-list li { display: grid; grid-template-columns: minmax(64px, auto) 1fr; column-gap: 10px; row-gap: 2px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--hair); }
+.ob-list li:last-child { border-bottom: 0; }
+.ob-list b { font-size: 14px; font-weight: 600; }
+.ob-list .status-pill { justify-self: start; white-space: normal; }
+.ob-list small { grid-column: 2; color: var(--text-4); font-size: 12px; }
+.ob-note { margin: 10px 0 0; font-size: 12.5px; color: var(--text-3); }
+.modal:has(.ob-rows), .modal:has(.ob-rules) { max-width: 720px; }
+.ob-rows, .ob-rules { display: grid; gap: 10px; }
+.ob-row, .ob-rule { display: grid; grid-template-columns: 110px 1fr; gap: 8px 14px; align-items: center; padding: 14px 16px; background: var(--fill-2); border-radius: 14px; }
+.ob-row b, .ob-rule b { font-size: 15px; }
+.ob-ctl { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.ob-ctl input[type=datetime-local] { max-width: 260px; }
+.ob-rule b { grid-row: span 2; align-self: start; padding-top: 10px; }
+.ob-pair { display: grid; grid-template-columns: 34px 1fr 150px; gap: 8px; align-items: center; }
+.ob-pair > span { font-size: 13px; font-weight: 600; color: var(--text-3); }
+.ob-pair .input:disabled { opacity: .45; }
+/* 열람 화면(어두운 바탕) 위 띠 */
+.openstrip { max-width: 1180px; margin: 18px auto 0; padding: 0 22px; }
+.openbox.dark { background: var(--k-card); color: var(--k-text); padding: 14px 18px; }
+.openbox.dark .ob-h { margin-bottom: 4px; }
+.openbox.dark .ob-h h3 { font-size: 15px; }
+.openbox.dark .ob-list { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.openbox.dark .ob-list li { display: flex; gap: 8px; border: 0; padding: 4px 0; }
+.openbox.dark .ob-list small { color: var(--k-text-3); }
+.openbox.dark .status-pill.none { background: rgba(255,255,255,.1); color: var(--k-text-2); }
+.openbox.dark .status-pill.ok { background: rgba(52,199,89,.18); color: #5DE38A; }
+.openbox.dark .status-pill.run { background: rgba(255,159,10,.18); color: #FFB340; }
+.openbox.dark .ob-note { color: var(--k-text-3); }
+.openbox.dark .btn.sm { background: rgba(255,255,255,.12); color: var(--k-text); }
+.v-soon { max-width: 1180px; margin: 14px auto 0; padding: 0 22px; }
+.v-soon p { margin: 0; padding: 12px 18px; border-radius: 14px; background: var(--k-card); color: var(--k-text-2); font-size: 14px; }
+.v-soon b { color: var(--k-text); font-weight: 600; }
+@media (max-width: 640px) {
+  .ob-row, .ob-rule { grid-template-columns: 1fr; }
+  .ob-rule b { grid-row: auto; padding-top: 0; }
+  .ob-pair { grid-template-columns: 34px 1fr 128px; }
+}
+.ob-in-modal { margin-top: 14px; }
+.ob-in-modal .openbox { background: var(--fill-2); }
+/* 어두운 화면(열람) 위에 뜨는 창은 밝은 입력칸으로 */
+body.dark .modal .input { background: #fff; border: 1px solid var(--hair-2); color: var(--text); margin-bottom: 0; padding: 11px 14px; font-size: 15px; }
+body.dark .modal select.input { background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%2386868B' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; padding-right: 36px; }
+body.dark .modal .input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(0,113,227,.15); }
+body.dark .modal .btn.primary { background: var(--text); color: #fff; }
+body.dark .modal .btn.primary:hover { background: #333336; }
+.vstage > .empty-state { width: calc(100% - 44px); max-width: 1136px; margin: 18px auto 0; }

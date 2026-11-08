@@ -139,7 +139,7 @@
   }
   /** 기본 비밀번호 안내 (비밀번호 값은 서버가 돌려준 것을 그대로 씀 — 화면 코드에는 두지 않음) */
   /** 열람만 하는 계정은 기본 비밀번호를 그대로 씀(관문도 같은 기준으로 판단) */
-  function viewOnly(p) { return !!(p && p.view && !p.write && !p.team && !p.compile && !p.share && !p.admin); }
+  function viewOnly(p) { return !!(p && p.view && !p.write && !p.team && !p.compile && !p.share && !p.admin && !p.open); }
   function showTemp(name, pw, isReset, perm) {
     var vo = viewOnly(perm);
     var text = '[K예술영재 업무보고]\n주소: ' + KR.baseUrl() + '\n이름: ' + name + '\n비밀번호: ' + pw + (vo ? '\n공유된 최종본을 문서·회의 화면으로 보고, 인쇄·PDF와 한글 파일로 받을 수 있습니다.' : '\n처음 들어가면 본인 비밀번호로 바꿔 주세요.');
@@ -202,6 +202,12 @@
         h('div', { class: 'copyrow' }, [h('code', { text: url }), h('button', { class: 'btn sm', onclick: function () { KR.copy(url); } }, '복사')]),
         h('div', { class: 'perm-row' }, [h('div', {}, [h('b', { text: '열람 코드 사용' }), h('small', { text: '코드를 바꾸면 이전 코드는 바로 막힙니다' })]), sw(on, function (v) { on = v; })]),
         h('label', { class: 'field' }, [h('span', { text: '열람 코드 (6자 이상)' }), h('div', { class: 'row' }, [code, h('button', { class: 'btn sm', onclick: function () { var c = 'abcdefghjkmnpqrstuvwxyz23456789', s = 'karts-'; for (var i = 0; i < 4; i++) s += c.charAt(Math.floor(Math.random() * c.length)); code.value = s; } }, '새로 만들기')])])
+      ]),
+      h('section', { class: 'card set-card' }, [
+        h('h3', { text: '공개 시점' }),
+        h('p', { class: 'muted', text: '공유한 주간·월간 보고서가 주체별로 언제부터 보일지 정합니다. 기본 규칙은 여기서, 보고서 하나만 다르게 할 때는 취합 화면 옆 「주체별 공개 시점」이나 최종본 화면 위에서 바꿉니다.' }),
+        h('p', { class: 'muted small', text: '관리자와 「공개 시점 설정」 권한이 있는 사람이 바꿀 수 있습니다. 권한은 「사람」 탭에서 개인별로 줍니다.' }),
+        h('div', { class: 'row' }, [h('button', { class: 'btn', onclick: function () { window.KROpen.rules(); } }, '기본 규칙 정하기')])
       ]),
       h('section', { class: 'card set-card' }, [
         h('h3', { text: 'AI 문장 정리' }),

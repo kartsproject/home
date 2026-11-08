@@ -185,7 +185,8 @@
           KR.modal('공유했습니다 · v' + r.ver, [
             h('p', { style: 'margin:0 0 12px', text: '한예종 담당자에게 아래 주소를 알려 주세요. 처음 한 번만 알려 주면 이후 공유본은 같은 주소에서 바로 보입니다.' }),
             h('div', { class: 'copyrow' }, [h('code', { text: viewUrl() }), h('button', { class: 'btn sm', onclick: function () { KR.copy(viewUrl()); } }, '복사')]),
-            hub.viewCode ? h('div', { class: 'copyrow' }, [h('code', { text: '열람 코드: ' + hub.viewCode }), h('button', { class: 'btn sm', onclick: function () { KR.copy(hub.viewCode); } }, '복사')]) : h('p', { class: 'muted small', text: '열람 코드를 꺼 두었습니다. 한예종 계정으로 로그인해서 봅니다.' })
+            hub.viewCode ? h('div', { class: 'copyrow' }, [h('code', { text: '열람 코드: ' + hub.viewCode }), h('button', { class: 'btn sm', onclick: function () { KR.copy(hub.viewCode); } }, '복사')]) : h('p', { class: 'muted small', text: '열람 코드를 꺼 두었습니다. 한예종 계정으로 로그인해서 봅니다.' }),
+            window.KROpen.can(P) ? h('div', { class: 'ob-in-modal' }, [window.KROpen.panel(key)]) : null
           ], [h('button', { class: 'btn primary', text: '확인', onclick: function () { document.querySelector('.modal-bg').close(); } })]);
         } catch (x) { KR.toast(x.message, true); }
         KR.busy(e.target, false);
@@ -349,7 +350,7 @@
     function weekRedraw() { st.dirty = true; saveNow().then(function () { weekTab(); }).catch(function () { weekTab(); }); }
     var ed = editor({ doc: doc, w: w, onChange: onChange });
     var sp = schedulePanel(doc, onChange);
-    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [sp.el, sharedList(st.shared, w.key)])]));
+    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [window.KROpen.can(P) ? window.KROpen.panel(w.key) : null, sp.el, sharedList(st.shared, w.key)])]));
     drawDiff();
     // 처음 취합할 때: 작성분을 실적·계획 문장으로 정리해서 넣음
     if (fresh && entries.length) refine(doc, 'week', null, weekRedraw);
@@ -486,7 +487,7 @@
     main.appendChild(h('div', { class: 'tip' }, [h('b', { text: '월간 초안 ' }), '주간보고 실적과 주체별 월간 입력을 같은 소제목끼리 합쳤습니다. 주간보고 뒤에 고친 내용은 「처음부터 다시 만들기」, 월간 입력이 바뀌면 위 알림의 「편집본에 반영」으로 가져옵니다.']));
     var ed = editor({ doc: doc, w: m, onChange: onChange });
     var sp = schedulePanel(doc, onChange);
-    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [sp.el, sharedList(st.shared, m.key)])]));
+    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [window.KROpen.can(P) ? window.KROpen.panel(m.key) : null, sp.el, sharedList(st.shared, m.key)])]));
   }
 
   drawTabs(); show();

@@ -215,14 +215,15 @@
   }
   function baseUrl() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
 
-  var PERM_LABEL = { write: '보고 작성', team: '업체 작성분 관리', view: '최종본 열람', compile: '취합·편집', share: '한예종 공유', admin: '관리자' };
+  var PERM_LABEL = { write: '보고 작성', team: '업체 작성분 관리', view: '최종본 열람', compile: '취합·편집', share: '한예종 공유', admin: '관리자', open: '공개 시점 설정' };
   var PERM_DESC = {
     write: '분야 단계를 넘기며 본인의 실적·계획을 작성·제출',
     team: '같은 주체 사람들의 작성분을 보고 대신 작성(업체 대표용)',
     view: '한예종에 공유된 최종본(회의 화면·문서) 열람',
     compile: '작성분 취합·편집, 주간·월간 회의자료 만들기',
     share: '취합본을 한예종에 공유(판 올리기)',
-    admin: '사람 등록, 주체·개인 권한, 열람 코드 관리'
+    admin: '사람 등록, 주체·개인 권한, 열람 코드 관리 (공개 시점도 정할 수 있음)',
+    open: '주간·월간 공유본을 주체별로 언제부터 보여 줄지 정함'
   };
   async function requireLogin(permKey) {
     if (!token()) { go('#/login?next=' + ROUTE.name); return new Promise(function () { }); }
@@ -233,7 +234,7 @@
     root.KR.boot = b;
     return b;
   }
-  function homeOf(p) { p = p || {}; return p.compile ? '#/hub' : p.write ? '#/write' : p.view ? '#/view' : p.admin ? '#/admin' : '#/login'; }
+  function homeOf(p) { p = p || {}; return p.compile ? '#/hub' : p.write ? '#/write' : p.view || p.open ? '#/view' : p.admin ? '#/admin' : '#/login'; }
 
   /* ===== 화면 도우미 ===== */
   function h(tag, attrs, kids) {
@@ -322,7 +323,7 @@
     var u = b.user, p = u.perm || {}, nav = [];
     if (p.write) nav.push(['write', '작성']);
     if (p.compile) nav.push(['hub', '취합']);
-    if (p.view || p.compile) nav.push(['view', '최종본']);
+    if (p.view || p.compile || p.open || p.admin) nav.push(['view', '최종본']);
     if (p.admin) nav.push(['admin', '관리']);
     var bar = h('header', { class: 'topbar' }, h('div', { class: 'in' }, [
       h('a', { class: 'brand', href: homeOf(p) }, [h('span', { class: 'mark', 'aria-hidden': 'true' }), h('span', { text: 'K예술영재 업무보고' })]),
@@ -345,7 +346,7 @@
   root.KR = {
     CONFIG: CONFIG, CATS: CATS, CAT_SHORT: CAT_SHORT, CAT_HINT: CAT_HINT, DEMO: DEMO,
     call: call, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
-    PERMS: ['write', 'team', 'view', 'compile', 'share', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
+    PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
     week: week, month: month, fromKey: fromKey, current: current, currentMonth: currentMonth, dday: dday, kd: kd, md: md, ymd: ymd, parse: parse, add: add, today: today, fmtTime: fmtTime, fileBase: fileBase,
     uid: uid, emptyData: emptyData, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, parseText: parseText, catIndex: catIndex,
     h: h, toast: toast, modal: modal, confirm: confirmBox, autosize: autosize, busy: busy, copy: copy, passwordModal: passwordModal, topbar: topbar, demoBar: demoBar, resetDemo: resetDemo

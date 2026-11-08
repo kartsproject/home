@@ -7,7 +7,7 @@
   if (S.key) S.kind = S.key[0];
 
   // 「최종본 열람」 권한으로 로그인한 상태면 코드 없이
-  if (KR.token()) { try { var b = await KR.call('me'); var pp = b.user.perm || {}; if (pp.view || pp.compile) { S.isOp = true; S.me = b; KR.boot = b; } } catch (e) { } }
+  if (KR.token()) { try { var b = await KR.call('me'); var pp = b.user.perm || {}; if (pp.view || pp.compile || pp.open || pp.admin) { S.isOp = true; S.me = b; KR.boot = b; } } catch (e) { } }
   if (!S.isOp) { try { S.codeOn = (await KR.call('view.info')).codeOn; } catch (e) { } }
 
   async function api(action, data) { return KR.call(action, Object.assign({ code: S.code }, data || {})); }
@@ -32,7 +32,10 @@
     app.appendChild(h('div', { class: 'login single' }, [f]));
     inp.focus();
   }
-  async function loadList() { S.list = (await api('view.list')).list; }
+  async function loadList() { var r = await api('view.list'); S.list = r.list; S.soon = r.soon || []; }
+  function canOpen() { return S.isOp && window.KROpen && window.KROpen.can(S.me.user.perm); }
+  function soonOf(kind) { return (S.soon || []).filter(function (x) { return x.key[0] === kind; })[0]; }
+  function soonLine(x) { return h('p', {}, [h('b', { text: x.title || KR.fromKey(x.key).title }), document.createTextNode('는 ' + window.KROpen.when(x.openAt) + '에 공개됩니다.')]); }
 
   var shell, listSel, verSel, stage, modeSeg;
   function start() {
@@ -73,7 +76,10 @@
     if (S.mt) { S.mt.destroy(); S.mt = null; }
     if (!S.key || !S.list.some(function (x) { return x.key === S.key; })) {
       S.cur = null; stage.innerHTML = '';
-      stage.appendChild(h('div', { class: 'empty-state' }, [h('div', { class: 'es-ic', text: S.kind === 'M' ? '▦' : '◎' }), h('h3', { text: (S.kind === 'M' ? '월간' : '주간') + ' 보고서가 아직 공유되지 않았습니다' }), h('p', { text: '케이브레인컴퍼니에서 공유하면 이곳에 바로 나타납니다.' })]));
+      var sn = soonOf(S.kind);
+      stage.appendChild(h('div', { class: 'empty-state' }, [h('div', { class: 'es-ic', text: S.kind === 'M' ? '▦' : '◎' }),
+        h('h3', { text: sn ? (sn.title || KR.fromKey(sn.key).title) + ' 공개 예정' : (S.kind === 'M' ? '월간' : '주간') + ' 보고서가 아직 공유되지 않았습니다' }),
+        h('p', { text: sn ? window.KROpen.when(sn.openAt) + '부터 이곳에서 볼 수 있습니다.' : '케이브레인컴퍼니에서 공유하면 이곳에 나타납니다.' })]));
       return;
     }
     stage.innerHTML = '<div class="loading">불러오는 중…</div>';
@@ -93,7 +99,9 @@
     if (S.mode === 'meet') { S.mt = R.meeting(function () { return doc; }); stage.appendChild(S.mt.el); stage.classList.add('is-meet'); }
     else {
       stage.classList.remove('is-meet');
-      var sch = R.docSchedule(doc);
+      var sch = R.docSchedule(doc), sn = soonOf(S.kind);
+      if (canOpen()) stage.appendChild(h('div', { class: 'openstrip' }, [window.KROpen.panel(S.key, { dark: true })]));
+      else if (sn && sn.key > S.key) stage.appendChild(h('div', { class: 'v-soon' }, [soonLine(sn)]));
       stage.appendChild(h('div', { class: 'docwrap' }, [
         h('div', { class: 'paper big' }, [R.docEl(doc)]),
         sch.length ? h('section', { class: 'paper sched' }, [h('h2', { text: '다가오는 일정' }), R.agendaEl(sch)]) : null
