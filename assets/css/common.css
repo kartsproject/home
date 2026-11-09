@@ -46,9 +46,10 @@ section[id]{scroll-margin-top:var(--hd)}
 [data-rv][data-d="3"]{transition-delay:.30s}[data-rv][data-d="4"]{transition-delay:.40s}
 
 /* ============ HEADER (WBS 11.3 시안 1) ============
-   모든 페이지(메인 포함) 늘 흰 띠 72px · 아래 옅은 줄. 왼쪽 「☰ MENU」(전체메뉴) · 가운데 이름(누르면 첫 화면) · 오른쪽 메뉴 4개(지금 페이지는 노란 밑칠).
-   메인 표지 위 투명 머리 · 밝기에 따른 머리 색 바꾸기는 쓰지 않는다. 768px 이하는 이름 + 오른쪽 ☰만 */
-#header{position:fixed;top:0;left:0;width:100%;height:var(--hd);z-index:100;background:#fff;border-bottom:1px solid var(--line-lt)}
+   흰 띠 72px · 아래 옅은 줄. 왼쪽 「☰ MENU」(전체메뉴) · 가운데 이름(누르면 첫 화면) · 오른쪽 메뉴 4개(지금 페이지는 노란 밑칠).
+   메인은 표지가 보이는 동안 투명 머리(아래 「메인 표지 위 머리」, 2026-11-09 사용자 · WBS 20.1). 768px 이하는 이름 + 오른쪽 ☰만 */
+#header{position:fixed;top:0;left:0;width:100%;height:var(--hd);z-index:100;background:#fff;border-bottom:1px solid var(--line-lt);
+  transition:background-color .3s,border-color .3s}
 #header .hd-in{position:relative;height:100%;display:flex;align-items:center;justify-content:space-between}
 .ham{display:flex;align-items:center;gap:12px;padding:8px 0;background:none;border:0;cursor:pointer;color:var(--ink);font-size:13px;font-weight:600;letter-spacing:.02em}
 .ham:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
@@ -76,6 +77,23 @@ body.menu-open .ham-i span:nth-child(3){transform:translateY(-6px) rotate(-45deg
 #gnb > li > a{position:relative;z-index:0;display:block;padding:6px 0;font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.02em;transition:opacity .25s}
 #gnb > li > a:hover{opacity:.6}
 #gnb > li.on > a::after{content:"";position:absolute;left:-2px;right:-2px;bottom:4px;height:7px;background:var(--yel);border-radius:4px;z-index:-1}
+/* ---------- 메인 표지 위 머리 (2026-11-09 사용자 · WBS 20.1) ----------
+   메인은 표지가 머리 뒤 맨 위까지 올라오고(main.css), 표지가 보이는 동안 main.js가 #header.on-hero를 붙여 띠를 투명하게 한다.
+   main.js가 지금 칸 사진에서 ☰ · 이름 · 메뉴가 놓인 자리의 밝기를 재서, 진한 글자가 잘 안 보이는 자리만 흰색으로 바꾼다
+   (.tw-ham · .tw-logo · .tw-nav — 사진이 없거나 못 재면 모두 흰색). 흰 글자가 있으면 머리 뒤에 옅은 그늘(.has-white).
+   메뉴 판(.nav-open) · 전체메뉴(body.menu-open)를 열면 그 동안은 흰 띠 · 진한 글자로 돌아간다 */
+.logo .nm{transition:filter .4s}
+.ham,#gnb > li > a,.hd-sns{transition:color .4s,opacity .25s}
+#header::before{content:"";position:absolute;left:0;right:0;top:0;height:calc(var(--hd) + 56px);z-index:-1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,.12) 60%,rgba(0,0,0,0));opacity:0;transition:opacity .4s}
+body:not(.menu-open) #header.on-hero:not(.nav-open){background:transparent;border-bottom-color:transparent}
+body:not(.menu-open) #header.on-hero.has-white:not(.nav-open)::before{opacity:1}
+body:not(.menu-open) #header.on-hero.tw-ham:not(.nav-open) .ham{color:#fff}
+body:not(.menu-open) #header.on-hero.tw-logo:not(.nav-open) .logo .nm{filter:brightness(0) invert(1)}
+body:not(.menu-open) #header.on-hero.tw-nav:not(.nav-open) #gnb > li > a,
+body:not(.menu-open) #header.on-hero.tw-nav:not(.nav-open) .hd-sns{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.28)}
+body:not(.menu-open) #header.on-hero.tw-nav:not(.nav-open) .hd-sns::before{background:rgba(255,255,255,.55)}
+
 /* ---------- 머리 메뉴 판 (common.js · WBS 8.12 → 11.3) ----------
    PC(1101px 이상)에서 메뉴 줄에 마우스를 올리거나 Tab으로 들어가면 #header.nav-open — 머리 바로 아래 전체 폭 흰 판(.gnb-panel, 높이 --gnb-panel-h)이
    옅은 아래 줄과 함께 내려오고(그림자 없음), 메뉴마다 목록(.gnb-list)이 그 글자 가운데 밑에 놓인다 */

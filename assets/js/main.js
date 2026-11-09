@@ -7,7 +7,8 @@
    동영상을 올린 칸(data/posts.json의 heroVideo, 2안)은 그 칸 사진(첫 장면)을 대기 사진으로 깔고 영상을 소리 없이 튼다 —
    영상은 영상 전용 저장소(MEDIA_BASE)에 있다. 드라이브 영상은 다른 사이트에서 재생되지 않음(2026-10-16 시험).
    넘김 단추는 왼쪽 아래 분야 목록 하나다(시안 1, WBS 11.4 — 번호 + 이름, 지금 분야만 크게). 목록은 실제로 있는 칸만, 칸 순서대로.
-   시안 1은 머리가 늘 흰색이라 표지 사진 밝기로 머리 글자색을 바꾸던 판정(2안 WBS 8.13 data-tone)은 뺐다 */
+   머리는 표지가 보이는 동안 투명하고, 지금 칸 사진의 밝기를 재서 진한 글자가 잘 안 보이는 자리만 흰색으로 바꾼다
+   (아래 「머리 글자색」, 2026-11-09 사용자 · WBS 20.1 — 2안 8.13 data-tone과 비슷하지만 ☰ · 이름 · 메뉴를 자리마다 따로 잰다) */
 (function(){
   var hero=document.getElementById('hero');
   if(!hero) return;
@@ -41,7 +42,7 @@
       var s=document.createElement('div');
       s.className='slide s-'+k+(i===0?' on':'');
       /* 파일ID는 관문이 만든 영숫자라 따옴표가 들어갈 일이 없고, photoUrl이 한 번 더 인코딩한다 */
-      if(custom[k]) s.style.setProperty('--img-hero-'+k,'url("'+Board.photoUrl(custom[k].fileId,photoWidth())+'")');
+      if(custom[k]){ s.style.setProperty('--img-hero-'+k,'url("'+Board.photoUrl(custom[k].fileId,photoWidth())+'")'); s._photo=custom[k]; }
       else if(attached) s.style.setProperty('--img-hero-'+k,'none');   /* 사진이 하나도 없을 때의 바탕색 칸 */
       if(custom[k] && videos[k] && videos[k].src && useVideo){ s._video=videos[k]; s.classList.add('vd'); }   /* 영상은 차례가 가까워지면 부른다(prep) */
       else if(custom[k] && custom[k].fg) addDepth(s,custom[k]);
@@ -63,6 +64,7 @@
     tabsBox.hidden=list.length<2;
     idx=0;
     markTab();
+    tone();
     return list[0];
   }
   /* 2.5D 입체 효과 (관리자 페이지에서 켠 칸) — 누끼(인물만 오려 낸 PNG)를 사진 위에 겹쳐 배경보다 더 키운다(main.css .pz).
@@ -85,6 +87,71 @@
   }
   window.addEventListener('resize',function(){ slides.forEach(place); });
 
+  /* ---------- 머리 글자색 (2026-11-09 사용자 · WBS 20.1) ----------
+     표지가 머리 뒤에 보이는 동안 #header.on-hero(투명 띠, common.css). 지금 칸 사진을 화면에 깔린 대로(cover · 가로 위치 · 표지 덧칠 반영)
+     작은 캔버스에 그려 ☰ · 이름 · 메뉴(+ SNS) 자리 밝기를 따로 잰다. 진한 글자(--ink)보다 흰 글자가 더 잘 보이는 자리
+     (평균 상대 휘도 0.22 미만), 또는 어두운 부분이 30% 넘게 섞인 자리는 흰색(.tw-*) — 8.17 때 「한쪽만 어두운 자리에서 검정 글자가 묻힌」 일을 막는다.
+     사진이 없는 칸 · 아직 못 받은 사진 · 잴 수 없는 사진(드라이브 lh3는 CORS 허용)은 어두운 바탕이라 모두 흰색. 동영상 칸은 대기 사진으로, 2.5D는 배경으로 잰다 */
+  var hdEl=document.getElementById('header'), toneCache={}, TONE_PARTS={ ham:'.ham', logo:'.logo .nm', nav:'#gnb, .hd-sns' };
+  function toneSet(white){
+    if(!hdEl) return;
+    var any=false;
+    Object.keys(TONE_PARTS).forEach(function(k){ var w=white ? white[k]===true : true; hdEl.classList.toggle('tw-'+k,w); if(w) any=true; });   /* 숨은 자리(휴대폰 메뉴)는 재지 않아 흰색으로 치지 않음 */
+    hdEl.classList.toggle('has-white',any);
+  }
+  function toneImage(id,cb){
+    var o=toneCache[id];
+    if(o){ if(o.img) cb(o.img); else if(o.wait) o.wait.push(cb); return; }
+    o=toneCache[id]={ wait:[cb] };
+    var img=new Image(); img.crossOrigin='anonymous';
+    img.onload=function(){ o.img=img; var w=o.wait; o.wait=null; w.forEach(function(f){ f(img); }); };
+    img.onerror=function(){ o.wait=null; };
+    img.src=Board.photoUrl(id,800);
+  }
+  function lin(c){ c/=255; return c<=.04045 ? c/12.92 : Math.pow((c+.055)/1.055,2.4); }
+  function measure(s,img){
+    var W=hero.clientWidth, H=hero.clientHeight, hh=hdEl.offsetHeight;
+    if(!W || !H || !hh) return null;
+    var SC=Math.min(1,480/W), cw=Math.max(1,Math.round(W*SC)), ch=Math.max(1,Math.round(hh*SC));
+    var iw=img.naturalWidth, ih=img.naturalHeight, sc=Math.max(W/iw,H/ih), dw=iw*sc, dh=ih*sc;
+    var px=parseFloat(getComputedStyle(s,'::before').backgroundPositionX); px=isNaN(px) ? .5 : px/100;
+    var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+    var cx=cv.getContext('2d'), data;
+    cx.drawImage(img,(W-dw)*px*SC,(H-dh)/2*SC,dw*SC,dh*SC);
+    try{ data=cx.getImageData(0,0,cw,ch).data; }catch(e){ return null; }   /* 잴 수 없는 사진(CORS) */
+    var hr=hdEl.getBoundingClientRect(), out={};
+    Object.keys(TONE_PARTS).forEach(function(k){
+      var box=null;
+      hdEl.querySelectorAll(TONE_PARTS[k]).forEach(function(el){
+        var r=el.getBoundingClientRect(); if(!r.width || !r.height) return;
+        box=box ? { l:Math.min(box.l,r.left), r:Math.max(box.r,r.right), t:Math.min(box.t,r.top), b:Math.max(box.b,r.bottom) } : { l:r.left, r:r.right, t:r.top, b:r.bottom };
+      });
+      if(!box) return;   /* 휴대폰처럼 숨은 자리 */
+      var x0=Math.max(0,Math.floor((box.l-8)*SC)), x1=Math.min(cw,Math.ceil((box.r+8)*SC)),
+          y0=Math.max(0,Math.floor((box.t-hr.top-6)*SC)), y1=Math.min(ch,Math.ceil((box.b-hr.top+6)*SC)), n=0, sum=0, dark=0;
+      for(var y=y0;y<y1;y++) for(var x=x0;x<x1;x++){
+        var i=(y*cw+x)*4, X=x/SC, Y=y/SC,
+            aL=X<W*.45 ? .45*(1-X/(W*.45)) : 0, aT=Y<H*.3 ? .25*(1-Y/(H*.3)) : 0, keep=(1-aL)*(1-aT),   /* 표지 덧칠(.slide::after) */
+            L=keep*(.2126*lin(data[i])+.7152*lin(data[i+1])+.0722*lin(data[i+2]));
+        sum+=L; n++; if(L<.12) dark++;
+      }
+      if(n) out[k]=(sum/n<.22 || dark/n>.3);
+    });
+    return out;
+  }
+  function tone(){
+    var s=slides[idx], ph=s && s._photo;
+    if(!ph || !hdEl){ toneSet(null); return; }
+    toneImage(ph.fileId,function(img){ if(slides[idx]===s) toneSet(measure(s,img)); });
+    if(!toneCache[ph.fileId].img) toneSet(null);   /* 사진을 받는 동안은 흰색 */
+  }
+  /* 표지가 머리 뒤에 보이는 동안만 투명 띠 */
+  function overHero(){ if(hdEl) hdEl.classList.toggle('on-hero', window.scrollY < hero.offsetHeight-hdEl.offsetHeight-1); }
+  var toneT=null;
+  window.addEventListener('scroll',overHero,{passive:true});
+  window.addEventListener('resize',function(){ overHero(); clearTimeout(toneT); toneT=setTimeout(tone,200); });
+  overHero(); toneSet(null);
+
   /* 영상 칸의 <video>를 만든다(지금 칸과 다음 칸만 — 전송량 절약). 재생이 시작되면 대기 사진 위로 서서히 보이고,
      불러오지 못하면 영상을 빼고 사진 칸처럼 넘어간다 */
   function prep(s){
@@ -106,7 +173,7 @@
   }
   function go(n){ if(!slides.length) return; idx=(n+slides.length)%slides.length;
     slides.forEach(function(s,i){s.classList.toggle('on',i===idx)});
-    markTab(); }
+    markTab(); tone(); }
   function next(){ go(idx+1); play(); }
   /* 지금 칸에 맞춰 다음으로 넘어갈 때를 정한다. 사진 칸 6초, 영상 칸은 처음부터 다시 틀고 영상 길이만큼(6~20초,
      6초보다 짧으면 반복). 영상이 3초 안에 시작하지 못하면 사진 칸처럼 모두 6초 */

@@ -18,9 +18,11 @@
 .mn-in .lnk:focus-visible,.mn-nw-list a:focus-visible{outline:2px solid var(--ink);outline-offset:5px}
 
 /* ============ 표지 ============ */
-/* 흰 머리(--hd, 늘 흰색 · common.css) 아래부터. 높이 = 화면 − 머리(최소 560 · 최대 900). 표지 아래 흐르는 글자 띠는 2026-10-28 차장님 피드백으로 뺌 */
-#hero{position:relative;margin-top:var(--hd);height:clamp(560px,calc(100vh - var(--hd)),900px);overflow:hidden;background:#111}
-@supports (height:100svh){ #hero{height:clamp(560px,calc(100svh - var(--hd)),900px)} }
+/* 화면 맨 위부터 — 머리(--hd)는 표지 위에 투명하게 겹친다(2026-11-09 사용자 · WBS 20.1, common.css 「메인 표지 위 머리」).
+   높이 = 화면(최소 머리 + 560 · 최대 머리 + 900 — 머리 아래 보이는 표지는 예전과 같음). 글자 · 로고(.hero-in)는 머리 높이만큼 내려 둔다.
+   표지 아래 흐르는 글자 띠는 2026-10-28 차장님 피드백으로 뺌 */
+#hero{position:relative;height:clamp(calc(560px + var(--hd)),100vh,calc(900px + var(--hd)));overflow:hidden;background:#111}
+@supports (height:100svh){ #hero{height:clamp(calc(560px + var(--hd)),100svh,calc(900px + var(--hd)))} }
 .slide{position:absolute;inset:0;opacity:0;transition:opacity 1.4s ease}
 .slide.on{opacity:1}
 #hero.wait .slide{opacity:0}   /* 사진 목록을 받기 전 (main.js) — 기본 사진이 올린 사진으로 바뀌며 깜박이지 않게 */
@@ -54,7 +56,7 @@
   background:linear-gradient(90deg,rgba(0,0,0,.45),rgba(0,0,0,0) 45%),
              linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,0) 30%,rgba(0,0,0,0) 65%,rgba(0,0,0,.45))}
 /* 글 — 왼쪽 위 제목 · 설명 · 단추, 왼쪽 아래 분야 목록, 오른쪽 아래 주최 · 주관 로고 */
-.hero-in{position:relative;z-index:5;height:100%;color:#fff}
+.hero-in{position:relative;z-index:5;height:100%;padding-top:var(--hd);color:#fff}
 .hero-in .mn-in{height:100%}
 .mn-tt{position:absolute;left:0;top:72px}
 .h-title{margin-top:8px;font-size:58px;font-weight:700;line-height:1.15;letter-spacing:-.045em}
