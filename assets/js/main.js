@@ -90,13 +90,15 @@
   /* ---------- 머리 글자색 (2026-11-09 사용자 · WBS 20.1) ----------
      표지가 머리 뒤에 보이는 동안 #header.on-hero(투명 띠, common.css). 지금 칸 사진을 화면에 깔린 대로(cover · 가로 위치 · 표지 덧칠 반영)
      작은 캔버스에 그려 ☰ · 이름 · 메뉴(+ SNS) 자리 밝기를 따로 잰다. 진한 글자(--ink)보다 흰 글자가 더 잘 보이는 자리
-     (평균 상대 휘도 0.22 미만), 또는 어두운 부분이 30% 넘게 섞인 자리는 흰색(.tw-*) — 8.17 때 「한쪽만 어두운 자리에서 검정 글자가 묻힌」 일을 막는다.
+     (평균 상대 휘도 0.22 미만), 또는 어두운 부분이 30% 넘게 섞인 자리가 하나라도 있으면 모두 흰색(.tw-*) — 8.17 때 「한쪽만 어두운 자리에서 검정 글자가 묻힌」 일을 막는다.
      사진이 없는 칸 · 아직 못 받은 사진 · 잴 수 없는 사진(드라이브 lh3는 CORS 허용)은 어두운 바탕이라 모두 흰색. 동영상 칸은 대기 사진으로, 2.5D는 배경으로 잰다 */
   var hdEl=document.getElementById('header'), toneCache={}, TONE_PARTS={ ham:'.ham', logo:'.logo .nm', nav:'#gnb, .hd-sns' };
   function toneSet(white){
     if(!hdEl) return;
-    var any=false;
-    Object.keys(TONE_PARTS).forEach(function(k){ var w=white ? white[k]===true : true; hdEl.classList.toggle('tw-'+k,w); if(w) any=true; });   /* 숨은 자리(휴대폰 메뉴)는 재지 않아 흰색으로 치지 않음 */
+    /* ☰ · 이름 · 메뉴는 늘 같은 색 (2026-11-09 사용자 — 「상단 메뉴 색이 서로 다르게 보임」). 한 자리라도 진한 글자가 묻히면 모두 흰색 + 그늘 —
+       흰 글자는 그늘 · 그림자로 밝은 자리에서도 읽히지만, 진한 글자는 어두운 자리에서 사라지기 때문. 숨은 자리(휴대폰 메뉴)는 재지 않음 */
+    var any=!white || Object.keys(TONE_PARTS).some(function(k){ return white[k]===true; });
+    Object.keys(TONE_PARTS).forEach(function(k){ hdEl.classList.toggle('tw-'+k,any); });
     hdEl.classList.toggle('has-white',any);
   }
   function toneImage(id,cb){
@@ -230,31 +232,42 @@
   setTimeout(function(){ start(null); },3000);   /* 목록이 너무 늦으면 기본 사진으로 (이미 시작했으면 무시) */
 })();
 
-/* 표지 ↔ 본문만 한 번 스크롤로 이동 — 마우스 · 터치패드를 쓰는 창이면 크기와 상관없이 (휴대폰 · 태블릿 터치는 일반 스크롤).
-   표지에서 아래로 = 본문 첫 칸 위로, 본문 첫 칸 위쪽(화면 높이 15% 안)에서 위로 = 표지 맨 위로. 그 밖의 본문은 일반 스크롤
-   (2026-10-21 사용자 요청 — 예전에는 모든 칸을 한 번에 넘김).
-   시안 1(WBS 11.4)은 표지가 흰 머리 아래에서 시작하고 바로 밑에 흐르는 글자 띠가 있다 — 아래로 넘기면 그 띠가 머리 바로 밑에 오게 멈춘다 */
+/* 한 번 굴리면 한 구역씩 (2026-11-09 사용자 · WBS 20.2) — 마우스 · 터치패드를 쓰는 PC(1101px 이상)에서
+   표지 → 소개 → 여정 → 모집 → 소식 → 맨 아래(바닥글) 순서로 구역 맨 위(머리 바로 밑)에 멈춘다. 구역은 한 화면 높이(main.css).
+   화면이 낮아 구역이 화면보다 길면 그 안은 일반 스크롤로 내려간 뒤 다음 구역으로 넘어간다.
+   휴대폰 · 태블릿(터치) · 움직임 줄이기 · 전체메뉴 · 편집 화면은 일반 스크롤.
+   내력: 처음엔 모든 칸을 한 번에 → 2026-10-21 표지 ↔ 본문만 → 2026-11-09 다시 모든 구역(한 화면에 한 구역) */
 (function(){
-  var hero=document.getElementById('hero'), next=hero && hero.nextElementSibling, hd=document.getElementById('header');
-  if(!hero || !next) return;
-  function target(){ return Math.max(0,next.offsetTop-(hd ? hd.offsetHeight : 0)); }
-
-  var mouse=window.matchMedia('(pointer:fine)'),
+  var hero=document.getElementById('hero'), hd=document.getElementById('header');
+  if(!hero) return;
+  var mouse=window.matchMedia('(pointer:fine) and (min-width:1101px)'),
       still=window.matchMedia('(prefers-reduced-motion:reduce)'),
       root=document.documentElement,
       busy=false, waitQuiet=false, lastWheel=0;
 
-  function on(){ return mouse.matches && !still.matches && !document.body.classList.contains('menu-open'); }
+  /* 멈출 자리 — 표지 0, 표지 밑 구역(편집 화면에서 더한 구역 .x-sec 포함)마다 「구역 위 − 머리 높이」, 마지막은 페이지 맨 아래 */
+  function points(){
+    var h=hd ? hd.offsetHeight : 0, max=Math.max(0,root.scrollHeight-window.innerHeight), list=[0];
+    document.querySelectorAll('body > section:not(#hero), body > .x-sec').forEach(function(s){
+      var t=Math.min(max,Math.max(0,s.getBoundingClientRect().top+window.scrollY-h));
+      if(t>list[list.length-1]+2) list.push(t);
+    });
+    if(max>list[list.length-1]+2) list.push(max);
+    return list;
+  }
+  function on(){ return mouse.matches && !still.matches && !document.body.classList.contains('menu-open') && !root.classList.contains('ed-on'); }
 
   /* 이동할 위치를 정해 움직이면 true, 일반 스크롤에 맡기면 false */
   function step(dir){
-    var y=window.scrollY, top=target(), to;
+    var y=window.scrollY, pts=points(), view=window.innerHeight-(hd ? hd.offsetHeight : 0), to=null, i;
     if(dir>0){
-      if(y>=top-2) return false;                        /* 이미 본문 — 일반 스크롤 */
-      to=top;
+      for(i=0;i<pts.length;i++) if(pts[i]>y+2){ to=pts[i]; break; }
+      if(to===null) return false;                       /* 맨 아래 */
+      if(to-y>view+2) return false;                     /* 지금 구역이 화면보다 길다 — 그 안은 일반 스크롤 */
     }else{
-      if(y<=2 || y>top+window.innerHeight*.15) return false;   /* 맨 위이거나 본문 깊은 곳 — 일반 스크롤 */
-      to=0;
+      for(i=pts.length-1;i>=0;i--) if(pts[i]<y-2){ to=pts[i]; break; }
+      if(to===null) return false;                       /* 맨 위 */
+      if(y-to>view+2) return false;                     /* 화면보다 긴 구역 안 깊은 곳 — 그 구역 위가 가까워질 때까지 일반 스크롤 */
     }
     animate(to);
     return true;

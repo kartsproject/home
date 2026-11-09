@@ -79,8 +79,8 @@ body.menu-open .ham-i span:nth-child(3){transform:translateY(-6px) rotate(-45deg
 #gnb > li.on > a::after{content:"";position:absolute;left:-2px;right:-2px;bottom:4px;height:7px;background:var(--yel);border-radius:4px;z-index:-1}
 /* ---------- 메인 표지 위 머리 (2026-11-09 사용자 · WBS 20.1) ----------
    메인은 표지가 머리 뒤 맨 위까지 올라오고(main.css), 표지가 보이는 동안 main.js가 #header.on-hero를 붙여 띠를 투명하게 한다.
-   main.js가 지금 칸 사진에서 ☰ · 이름 · 메뉴가 놓인 자리의 밝기를 재서, 진한 글자가 잘 안 보이는 자리만 흰색으로 바꾼다
-   (.tw-ham · .tw-logo · .tw-nav — 사진이 없거나 못 재면 모두 흰색). 흰 글자가 있으면 머리 뒤에 옅은 그늘(.has-white).
+   main.js가 지금 칸 사진에서 ☰ · 이름 · 메뉴가 놓인 자리의 밝기를 재서, 한 자리라도 진한 글자가 잘 안 보이면 셋 모두 흰색으로 바꾼다
+   (.tw-ham · .tw-logo · .tw-nav는 늘 함께 — 2026-11-09 「메뉴 색이 서로 다름」 피드백. 사진이 없거나 못 재면 모두 흰색). 흰 글자가 있으면 머리 뒤에 옅은 그늘(.has-white).
    메뉴 판(.nav-open) · 전체메뉴(body.menu-open)를 열면 그 동안은 흰 띠 · 진한 글자로 돌아간다 */
 .logo .nm{transition:filter .4s}
 .ham,#gnb > li > a,.hd-sns{transition:color .4s,opacity .25s}
@@ -88,7 +88,9 @@ body.menu-open .ham-i span:nth-child(3){transform:translateY(-6px) rotate(-45deg
   background:linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,.12) 60%,rgba(0,0,0,0));opacity:0;transition:opacity .4s}
 body:not(.menu-open) #header.on-hero:not(.nav-open){background:transparent;border-bottom-color:transparent}
 body:not(.menu-open) #header.on-hero.has-white:not(.nav-open)::before{opacity:1}
-body:not(.menu-open) #header.on-hero.tw-ham:not(.nav-open) .ham{color:#fff}
+body:not(.menu-open) #header.on-hero.tw-ham:not(.nav-open) .ham{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.28)}
+body:not(.menu-open) #header.on-hero.tw-ham:not(.nav-open) .ham-i span{box-shadow:0 1px 3px rgba(0,0,0,.28)}
+body:not(.menu-open) #header.on-hero.tw-logo:not(.nav-open) .logo{filter:drop-shadow(0 1px 3px rgba(0,0,0,.3))}
 body:not(.menu-open) #header.on-hero.tw-logo:not(.nav-open) .logo .nm{filter:brightness(0) invert(1)}
 body:not(.menu-open) #header.on-hero.tw-nav:not(.nav-open) #gnb > li > a,
 body:not(.menu-open) #header.on-hero.tw-nav:not(.nav-open) .hd-sns{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.28)}

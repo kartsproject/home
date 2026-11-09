@@ -212,3 +212,44 @@
   .mn-nw-list .t{order:4;flex:1 1 0;min-width:60%;white-space:normal;font-size:16px}
   .mn-nw-list .ext{order:5;margin-left:0}
 }
+
+/* ============ 여정 — 세 단계를 가로 세 칸으로 (2026-11-09 사용자 · WBS 20.2) ============
+   769px 이상은 사진(위) + 글(아래) 카드 3장을 한 줄에. 지그재그 · 손그림 점선은 쓰지 않는다. 768px 이하는 위의 위아래 배치 그대로 */
+.mn-jy-hd{display:none}
+@media(min-width:769px){
+  #journey{padding:130px 0 140px}
+  .mn-jy-hd{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:44px}
+  .mn-jy-hd h2{margin-top:12px;font-size:32px;font-weight:700;letter-spacing:-.045em}
+  .mn-jy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+  .mn-step,.mn-r{display:flex;flex-direction:column;grid-template-columns:none}
+  .mn-step + .mn-step{margin-top:0}
+  .mn-r .mn-ph{order:0}
+  .mn-r .mn-tx{width:auto;margin-right:0;justify-self:auto}
+  .mn-ph{width:100%;aspect-ratio:4/3;height:auto}
+  .mn-tx{padding-top:24px}
+  .mn-tx h3{margin-top:10px;font-size:26px}
+  .mn-tx p{margin-top:14px;font-size:16px}
+  .mn-tx .lnk{margin-top:16px;font-size:18px}
+  .mn-path{display:none}
+}
+@media(min-width:769px) and (max-width:1100px){
+  .mn-jy{gap:24px}
+  .mn-tx h3{font-size:22px}
+  .mn-tx p{font-size:15px}
+  .mn-tx p br{display:inline}   /* 세 칸이면 줄바꿈을 살린다(빼면 「멘토가개인의」처럼 낱말이 붙는 글이 있음) */
+}
+
+/* ============ 한 화면에 한 구역 (2026-11-09 사용자 · WBS 20.2) ============
+   마우스 · 터치패드를 쓰는 PC(1101px 이상)에서 표지 밑 구역(더한 구역 .x-sec 포함)은 머리 아래 한 화면 높이로, 내용은 가운데.
+   한 번 굴리면 다음 구역으로 넘어간다(main.js). 휴대폰 · 태블릿 · 편집 화면(html.ed-on)은 지금처럼 일반 스크롤 */
+@media (pointer:fine) and (min-width:1101px){
+  html:not(.ed-on) body[data-page="index"] > section:not(#hero),
+  html:not(.ed-on) body[data-page="index"] > .x-sec{min-height:calc(100vh - var(--hd));display:flex;flex-direction:column;justify-content:center}
+  html:not(.ed-on) #about,html:not(.ed-on) #news{padding:60px 0}
+  html:not(.ed-on) #journey{padding:40px 0}
+  html:not(.ed-on) .mn-jy-hd{margin-bottom:clamp(20px,3.5vh,44px)}
+  /* 사진은 화면 높이에 맞춰 낮춘다 — 글 · 제목 · 여백 자리(약 440px)를 빼고 남는 만큼, 4:3을 넘지 않게 */
+  html:not(.ed-on) .mn-ph{max-height:calc(100vh - var(--hd) - 440px);min-height:150px}
+  html:not(.ed-on) #recruit{height:calc(100vh - var(--hd))}
+  html:not(.ed-on) .mn-rc-pn{top:calc(50% - 165px);bottom:auto;height:330px}
+}
