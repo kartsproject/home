@@ -232,42 +232,31 @@
   setTimeout(function(){ start(null); },3000);   /* 목록이 너무 늦으면 기본 사진으로 (이미 시작했으면 무시) */
 })();
 
-/* 한 번 굴리면 한 구역씩 (2026-11-09 사용자 · WBS 20.2) — 마우스 · 터치패드를 쓰는 PC(1101px 이상)에서
-   표지 → 소개 → 여정 → 모집 → 소식 → 맨 아래(바닥글) 순서로 구역 맨 위(머리 바로 밑)에 멈춘다. 구역은 한 화면 높이(main.css).
-   화면이 낮아 구역이 화면보다 길면 그 안은 일반 스크롤로 내려간 뒤 다음 구역으로 넘어간다.
-   휴대폰 · 태블릿(터치) · 움직임 줄이기 · 전체메뉴 · 편집 화면은 일반 스크롤.
-   내력: 처음엔 모든 칸을 한 번에 → 2026-10-21 표지 ↔ 본문만 → 2026-11-09 다시 모든 구역(한 화면에 한 구역) */
+/* 표지 ↔ 본문만 한 번 스크롤로 이동 — 마우스 · 터치패드를 쓰는 창이면 크기와 상관없이 (휴대폰 · 태블릿 터치는 일반 스크롤).
+   표지에서 아래로 = 본문 첫 칸 위로, 본문 첫 칸 위쪽(화면 높이 15% 안)에서 위로 = 표지 맨 위로. 그 밖의 본문은 일반 스크롤
+   (2026-10-21 사용자 요청 — 예전에는 모든 칸을 한 번에 넘김).
+   시안 1(WBS 11.4)은 표지가 흰 머리 아래에서 시작하고 바로 밑에 흐르는 글자 띠가 있다 — 아래로 넘기면 그 띠가 머리 바로 밑에 오게 멈춘다 */
 (function(){
-  var hero=document.getElementById('hero'), hd=document.getElementById('header');
-  if(!hero) return;
-  var mouse=window.matchMedia('(pointer:fine) and (min-width:1101px)'),
+  var hero=document.getElementById('hero'), next=hero && hero.nextElementSibling, hd=document.getElementById('header');
+  if(!hero || !next) return;
+  function target(){ return Math.max(0,next.offsetTop-(hd ? hd.offsetHeight : 0)); }
+
+  var mouse=window.matchMedia('(pointer:fine)'),
       still=window.matchMedia('(prefers-reduced-motion:reduce)'),
       root=document.documentElement,
       busy=false, waitQuiet=false, lastWheel=0;
 
-  /* 멈출 자리 — 표지 0, 표지 밑 구역(편집 화면에서 더한 구역 .x-sec 포함)마다 「구역 위 − 머리 높이」, 마지막은 페이지 맨 아래 */
-  function points(){
-    var h=hd ? hd.offsetHeight : 0, max=Math.max(0,root.scrollHeight-window.innerHeight), list=[0];
-    document.querySelectorAll('body > section:not(#hero), body > .x-sec').forEach(function(s){
-      var t=Math.min(max,Math.max(0,s.getBoundingClientRect().top+window.scrollY-h));
-      if(t>list[list.length-1]+2) list.push(t);
-    });
-    if(max>list[list.length-1]+2) list.push(max);
-    return list;
-  }
-  function on(){ return mouse.matches && !still.matches && !document.body.classList.contains('menu-open') && !root.classList.contains('ed-on'); }
+  function on(){ return mouse.matches && !still.matches && !document.body.classList.contains('menu-open'); }
 
   /* 이동할 위치를 정해 움직이면 true, 일반 스크롤에 맡기면 false */
   function step(dir){
-    var y=window.scrollY, pts=points(), view=window.innerHeight-(hd ? hd.offsetHeight : 0), to=null, i;
+    var y=window.scrollY, top=target(), to;
     if(dir>0){
-      for(i=0;i<pts.length;i++) if(pts[i]>y+2){ to=pts[i]; break; }
-      if(to===null) return false;                       /* 맨 아래 */
-      if(to-y>view+2) return false;                     /* 지금 구역이 화면보다 길다 — 그 안은 일반 스크롤 */
+      if(y>=top-2) return false;                        /* 이미 본문 — 일반 스크롤 */
+      to=top;
     }else{
-      for(i=pts.length-1;i>=0;i--) if(pts[i]<y-2){ to=pts[i]; break; }
-      if(to===null) return false;                       /* 맨 위 */
-      if(y-to>view+2) return false;                     /* 화면보다 긴 구역 안 깊은 곳 — 그 구역 위가 가까워질 때까지 일반 스크롤 */
+      if(y<=2 || y>top+window.innerHeight*.15) return false;   /* 맨 위이거나 본문 깊은 곳 — 일반 스크롤 */
+      to=0;
     }
     animate(to);
     return true;
