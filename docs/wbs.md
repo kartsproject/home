@@ -335,6 +335,13 @@
 | 18.12 | 관리자 페이지 「선택 삭제」 — 공지사항 · 언론홍보 · 갤러리 목록에 고르는 칸 · [전체 선택] · [선택 삭제 (n)], 관문 `remove`가 `ids`를 받아 한 번 발행(시간이 모자라면 남은 것을 이어서), 시트 줄 지우기를 이어진 줄끼리 한 번에 (2026-11-05 사용자) | admin.js · admin.css · `apps-script/Posts.js` · Sheets.js | 완료 (관문 흉내 · 가짜 관문 1440 · 390) |
 | 18.13 | 글쓰기 도구 — 공지 본문 · 사이트 직접 편집에 굵게 · 기울임 · 밑줄 · 형광 · 크기 · 색 · 글꼴(사이트 글꼴 2가지) · 정렬 · 링크 · 서식 지우기, 여러 문단 칸은 목록 · 소제목. 조각 · 글 묶음 JSON 저장, DOM으로만 그림, 관문이 다시 검사. 예전 글 형식 그대로 읽음 (2026-11-05 사용자) | `assets/js/richtext.js` · `assets/css/richtext.css` · admin.js · editor.js · content.js · board.js · common.css · `apps-script/Rich.js` · Posts.js · Pages.js | 완료 (관문 흉내 · 브라우저 시험 1440 · 390) |
 
+### 19. 검색 등록 (2026-11-09 사용자 — 네이버 서치어드바이저 진단)
+
+| ID | 작업 | 산출물 | 상태 |
+|---|---|---|---|
+| 19.1 | 네이버 진단의 「robots.txt 없음」 · 「Open Graph 제목 · 설명 없음」 해결 — `robots.txt`(모두 허용 + 사이트맵 위치), `sitemap.xml`(공개 7페이지), 공개 7페이지 머리에 대표 주소(canonical) · Open Graph(제목 · 설명은 각 페이지 `title` · `description`과 같게) · 공유 그림 `assets/img/og-image.png`(1200×630, 학생 사진 없이 로고 · 사업명 · 분야 · 기관 로고) | robots.txt · sitemap.xml · 7페이지 HTML · og-image.png | 완료 |
+| 19.2 | 네이버 서치어드바이저에 사이트맵 제출 · 다시 진단 (사용자) | — | 사용자 확인 대기 |
+
 ---
 
 ## 4. 진행 순서
