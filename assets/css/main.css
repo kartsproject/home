@@ -26,13 +26,20 @@
 .slide{position:absolute;inset:0;opacity:0;transition:opacity 1.4s ease}
 .slide.on{opacity:1}
 #hero.wait .slide{opacity:0}   /* 사진 목록을 받기 전 (main.js) — 기본 사진이 올린 사진으로 바뀌며 깜박이지 않게 */
-/* 사진 움직임 (#hero 첫 요소가 숨김 제목 h2라 nth-child 대신 nth-of-type) — 홀수 장은 크게 → 원래(축소), 짝수 장은 원래 → 크게(확대). 크기는 1.08, 시간은 8s를 바꾸면 된다.
-   #hero.ready는 main.js가 첫 화면을 그린 뒤 붙여서 첫 장도 움직이며 시작한다. */
-.slide::before{content:"";position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.08);transition:transform 8s linear}
-.slide:nth-of-type(even)::before{transform:scale(1)}
-#hero.ready .slide.on::before{transform:scale(1)}
-#hero.ready .slide.on:nth-of-type(even)::before{transform:scale(1.08)}
-@media(prefers-reduced-motion:reduce){ .slide::before{transition:none} }
+/* 사진 움직임 (2026-11-09 사용자 「더 역동적으로」 · WBS 20.3) — 칸마다 카메라가 다른 쪽으로 흐르며 다가가거나 물러난다.
+   #hero 첫 요소가 숨김 제목 h2라 nth-child 대신 nth-of-type, 네 칸마다 되풀이(칸이 빠지면 차례대로 당겨짐).
+   1: 오른쪽으로 흐르며 다가감 · 2: 위로 오르며 물러남 · 3: 왼쪽으로 흐르며 다가감 · 4: 가운데로 다가감.
+   시작(--kb-a) → 끝(--kb-b)을 7.5초 동안(사진 6초 + 바뀜 1.4초). 이동은 「배율 − 1」의 절반보다 작게 해서 사진 가장자리가 드러나지 않게.
+   지나간 칸은 다 사라진 뒤(1.4초 뒤) 한 번에 시작 모습으로 돌아간다(거꾸로 움직이는 모습이 보이지 않게).
+   #hero.ready는 main.js가 첫 화면을 그린 뒤 붙여서 첫 장도 움직이며 시작한다. 예전 값: 홀수 1.08 → 1, 짝수 1 → 1.08, 8s linear */
+.slide::before{content:"";position:absolute;inset:0;background-size:cover;background-position:center;
+  transform:var(--kb-a);transition:transform 0s 1.4s}
+#hero.ready .slide.on::before{transform:var(--kb-b);transition:transform 7.5s cubic-bezier(.3,.05,.45,1)}
+.slide:nth-of-type(4n+1){--kb-a:translate3d(4%,0,0) scale(1.1);--kb-b:translate3d(-4%,0,0) scale(1.15)}
+.slide:nth-of-type(4n+2){--kb-a:translate3d(0,-4%,0) scale(1.15);--kb-b:translate3d(0,3%,0) scale(1.07)}
+.slide:nth-of-type(4n+3){--kb-a:translate3d(-4%,0,0) scale(1.1);--kb-b:translate3d(4%,0,0) scale(1.15)}
+.slide:nth-of-type(4n+4){--kb-a:scale(1.02);--kb-b:scale(1.15)}
+@media(prefers-reduced-motion:reduce){ .slide::before,#hero.ready .slide.on::before{transform:scale(1.04);transition:none} }
 /* 2.5D 입체 효과 (관리자 페이지에서 켠 칸, main.js addDepth) — 누끼(.fg)를 사진 위에 겹쳐 배경은 1 → 1.06, 인물은 1 → 1.14로 키운다.
    커진 인물이 원래 윤곽을 덮으므로 배경을 고칠 필요가 없다. 켠 칸은 번갈아 하지 않고 늘 다가오며, 중심(--org)은 main.js가 인물 영역 가운데로 정한다.
    크기를 바꾸면 admin.css의 미리보기도 맞출 것 (2026-10-15 사용자 결정: 세기 하나로 고정) */
