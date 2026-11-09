@@ -25,7 +25,7 @@
     var f = h('form', { class: 'login-card narrow', onsubmit: async function (e) {
       e.preventDefault(); err.textContent = ''; KR.busy(btn, true);
       S.code = inp.value.trim();
-      try { await loadList(); sessionStorage.setItem('kr4_vcode', S.code); start(); }
+      try { await Promise.all([loadList(), R.loadMaster({ code: S.code })]); sessionStorage.setItem('kr4_vcode', S.code); start(); }
       catch (x) { err.textContent = x.message; }
       KR.busy(btn, false);
     } }, [h('div', { class: 'eyebrow', text: 'K ARTS GIFTED PROJECT' }), h('h2', { text: '업무보고 열람' }), h('p', { text: '케이브레인컴퍼니에서 받은 열람 코드를 입력하세요.' }), inp, err, btn, h('a', { class: 'view-link', href: '#/login?next=view' }, '계정이 있으면 로그인 ›'), KR.DEMO ? h('div', { class: 'muted small', style: 'margin-top:10px;text-align:center', text: '체험 모드 열람 코드 · karts-demo' }) : null]);
@@ -121,7 +121,7 @@
     }
   }
 
-  if (S.isOp) { try { await loadList(); start(); } catch (e) { codeForm(e.message); } }
-  else if (S.code) { try { await loadList(); start(); } catch (e) { sessionStorage.removeItem('kr4_vcode'); codeForm(e.code === 'code' ? '' : e.message); } }
+  if (S.isOp) { try { await Promise.all([loadList(), R.loadMaster()]); start(); } catch (e) { codeForm(e.message); } }
+  else if (S.code) { try { await Promise.all([loadList(), R.loadMaster({ code: S.code })]); start(); } catch (e) { sessionStorage.removeItem('kr4_vcode'); codeForm(e.code === 'code' ? '' : e.message); } }
   else codeForm();
 })();

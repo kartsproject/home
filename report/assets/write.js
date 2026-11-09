@@ -4,6 +4,7 @@
   var KR = window.KR, R = window.KRReport, h = KR.h;
   var b = await KR.requireLogin('write');
   KR.topbar(b, 'write');
+  var masterP = R.loadMaster();   // 일정 관리 목록 (확인 화면의 다가오는 일정)
   var app = document.getElementById('app');
   app.className = 'wrap deckwrap';
   var qk = KR.param('key');
@@ -20,6 +21,7 @@
   function catAt(step) { return S.cats[step]; }
   function lsKey() { return 'kr4_local_' + S.uid + '_' + S.w.key; }
   async function load() {
+    await masterP;
     app.innerHTML = '<div class="loading">불러오는 중…</div>';
     try {
       var r = await KR.call('my.get', { key: S.w.key, uid: S.uid === b.user.id ? '' : S.uid });

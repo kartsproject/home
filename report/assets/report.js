@@ -1,4 +1,4 @@
-/* K예술영재 주간업무보고 v3 — 보고서 (취합 합치기 · 일정 인식 · 월간 합치기 · 문서 화면 · 회의 화면 · 달력 · 인쇄 · 한글 파일) */
+/* K예술영재 주간업무보고 v4.1 — 보고서 (취합 합치기 · 일정 인식 · 일정 관리 연결 · 월간 합치기 · 문서 화면 · 회의 화면 · 달력 · 인쇄 · 한글 파일) */
 (function (root) {
   'use strict';
   var KR = root.KR, h = KR.h;
@@ -185,6 +185,41 @@
     // 기타 (cat 4)
     { id: 'fixed|site-open', date: '2026-11-09', time: '', text: '홈페이지 최종 보고·오픈', cat: 4, match: ['홈페이지'] }
   ];
+  /* ----- 일정 관리(#/sched)에서 고친 일정 — 받으면 위 FIXED_EVENTS 대신 이것을 씀 (못 받으면 FIXED_EVENTS 그대로) ----- */
+  var MASTER = null, MASTER_KEY = 'kr4_sched', MASTER_TTL = 5 * 60 * 1000;
+  var SCHED_FIELD_WORD = { '음악': '음악', '무용': '무용', '전통예술': '전통', '미술': '미술' };
+  var MATCH_STOP = /^(확정|마감|시작|접수|예정|진행|확인|현장|기본안|명단|구성|공지|신청|최종|보고|운영)$/;
+  /** 일정 한 건 → 달력 한 칸 글 (예: 무용 2회차 · 1:1 개별 멘토링 · 비대면) */
+  function schedLabel(x) {
+    var head = [x.field && x.field !== '공통' ? x.field : '', x.round || ''].filter(String).join(' ');
+    return (head ? head + ' · ' : '') + x.title + (x.mode && x.kind === '회차' ? ' · ' + x.mode : '');
+  }
+  function schedMatch(x) {
+    if (Number(x.cat) === 0 && SCHED_FIELD_WORD[x.field]) return [SCHED_FIELD_WORD[x.field]];
+    return String(x.title || '').split(/[^0-9A-Za-z가-힣]+/).filter(function (w) { return w.length >= 2 && !MATCH_STOP.test(w); }).slice(0, 4);
+  }
+  function setMaster(items) {
+    MASTER = (items || []).filter(function (x) { return x.status !== '취소'; }).map(function (x) {
+      return { id: 'sched|' + x.id, date: x.date, end: x.end || '', time: x.time || '', text: schedLabel(x), short: x.end ? x.title : '', cat: Number(x.cat) || 0, match: schedMatch(x), field: x.field };
+    });
+    return MASTER;
+  }
+  /** 일정 목록 받기 (이 탭 안에 5분 기억). opts.code = 열람 코드, opts.fresh = 기억 무시 */
+  async function loadMaster(opts) {
+    opts = opts || {};
+    try {
+      var c = JSON.parse(sessionStorage.getItem(MASTER_KEY) || 'null');
+      if (c && !opts.fresh && Date.now() - c.at < MASTER_TTL) { setMaster(c.r.items); return c.r; }
+    } catch (e) { }
+    try {
+      var r = await KR.call('sched.list', opts.code ? { code: opts.code } : {});
+      setMaster(r.items);
+      try { sessionStorage.setItem(MASTER_KEY, JSON.stringify({ at: Date.now(), r: r })); } catch (e) { }
+      return r;
+    } catch (e) { return null; }   // 백엔드가 아직 v4면(일정 기능 없음) 예전 고정 일정으로
+  }
+  function masterSaved(r) { setMaster(r.items); try { sessionStorage.setItem(MASTER_KEY, JSON.stringify({ at: Date.now(), r: r })); } catch (e) { } }
+
   /** 다가오는 일정은 보고 시점부터 1월 말(겨울캠프 끝)까지 — 2월 이후 보고면 다음 해 1월 말 */
   function calEnd(from) { return new Date(from.getFullYear() + (from.getMonth() > 0 ? 1 : 0), 0, 31); }
   /** 다가오는 일정: from 이후 날짜만, 같은 날·같은 내용은 하나로 */
@@ -216,7 +251,7 @@
   /** 고정 일정을 더하고, 보고 내용에서 읽힌 같은 날 같은 일정은 고정 일정 하나로 */
   function withFixed(list, doc, from, until) {
     var fixed = [];
-    FIXED_EVENTS.forEach(function (x) {
+    (MASTER || FIXED_EVENTS).forEach(function (x) {
       var a = KR.parse(x.date), z = KR.parse(x.end || x.date); if (z < from || a > until) return;
       fixed.push(Object.assign({ org: '', auto: true, fixed: true, off: !!(doc.schedOff || {})[x.id] }, x));
     });
@@ -778,6 +813,7 @@
   root.KRReport = {
     CAT_C: CAT_C, newDoc: newDoc, compile: compile, sig: sig, diff: diff, remerge: remerge, sortEntries: sortEntries,
     findDates: findDates, blockDates: blockDates, schedule: schedule, freeze: freeze, docSchedule: docSchedule,
+    loadMaster: loadMaster, masterSaved: masterSaved, schedLabel: schedLabel, hasMaster: function () { return !!MASTER; },
     monthCompile: monthCompile, mergeBlocks: mergeBlocks,
     blockEl: blockEl, boxEl: boxEl, byDate: byDate, docEl: docEl, timeOf: timeOf, calendarEl: calendarEl, monthCalEl: monthCalEl, calEnd: calEnd, agendaEl: agendaEl, meeting: meeting, visible: visible, counts: counts,
     print: print, hwpx: hwpx

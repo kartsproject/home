@@ -17,9 +17,9 @@
 <script src="assets/report.js"></script>
 <script src="assets/open.js"></script>
 <script>
-/* 화면 고르기: #/login · #/write · #/hub · #/view · #/admin */
+/* 화면 고르기: #/login · #/write · #/hub · #/view · #/sched · #/admin */
 (function () {
-  var pages = { login: 'login', write: 'write', hub: 'hub', view: 'view', admin: 'admin' };
+  var pages = { login: 'login', write: 'write', hub: 'hub', view: 'view', sched: 'sched', admin: 'admin' };
   var name = pages[KR.route.name] ? KR.route.name : 'login';
   document.body.className = 'pg-' + name + (name === 'login' || name === 'view' ? ' dark' : '');
   window.addEventListener('hashchange', function () { location.reload(); });

@@ -4,6 +4,7 @@
   var KR = window.KR, R = window.KRReport, h = KR.h;
   var b = await KR.requireLogin('compile');
   KR.topbar(b, 'hub');
+  var masterP = R.loadMaster();   // 일정 관리 목록 (달력 고정 일정)
   var P = b.user.perm;
   var app = document.getElementById('app');
   app.innerHTML = ''; app.className = 'wrap wide';
@@ -127,7 +128,7 @@
     function draw() {
       box.innerHTML = '';
       var all = R.schedule(doc, { all: true });
-      box.appendChild(h('div', { class: 'sch-h' }, [h('h3', { text: '다가오는 일정' }), h('span', { class: 'muted small', text: '향후 계획 속 날짜를 자동으로 읽었습니다. 잘못 읽힌 건 빼 주세요.' })]));
+      box.appendChild(h('div', { class: 'sch-h' }, [h('h3', { text: '다가오는 일정' }), h('span', { class: 'muted small' }, ['향후 계획 속 날짜를 자동으로 읽었습니다. 잘못 읽힌 건 빼 주세요. 늘 보이는 사업 일정은 ', h('a', { href: '#/sched', text: '일정 관리' }), '에서 고칩니다.'])]));
       if (!all.length) box.appendChild(h('div', { class: 'ag-empty', text: '날짜가 적힌 계획이 없습니다' }));
       box.appendChild(h('div', { class: 'sch-list' }, R.byDate(all).map(function (g) {
         var dt = KR.parse(g.date);
@@ -283,6 +284,7 @@
 
   async function weekTab() {
     var w = S.w, data;
+    await masterP;
     try { data = await KR.call('hub.week', { key: w.key }); } catch (e) { main.innerHTML = ''; main.appendChild(h('div', { class: 'notice warn', text: e.message })); return; }
     S.companies = b.companies.slice();
     var entries = data.entries, doc = data.draft && data.draft.doc, fresh = false;
@@ -397,6 +399,7 @@
    * ========================================================= */
   async function monthTab() {
     var m = S.m, data, weeks;
+    await masterP;
     try {
       var both = await Promise.all([KR.call('hub.week', { key: m.key }), KR.call('hub.weeks', { keys: m.weekKeys })]);   // 동시에 받음
       data = both[0]; weeks = both[1].weeks;

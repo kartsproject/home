@@ -1,4 +1,4 @@
-/* K예술영재 업무보고 v4 — 공통 (설정 · 주차 · API · 붙여넣기 해석 · 화면 도우미) */
+/* K예술영재 업무보고 v4.1 — 공통 (설정 · 주차 · API · 붙여넣기 해석 · 화면 도우미) */
 (function (root) {
   'use strict';
 
@@ -338,6 +338,7 @@
     if (p.write) nav.push(['write', '작성']);
     if (p.compile) nav.push(['hub', '취합']);
     if (p.view || p.compile || p.open || p.admin) nav.push(['view', '최종본']);
+    nav.push(['sched', '일정']);
     if (p.admin) nav.push(['admin', '관리']);
     var bar = h('header', { class: 'topbar' }, h('div', { class: 'in' }, [
       h('a', { class: 'brand', href: homeOf(p) }, [h('span', { class: 'mark', 'aria-hidden': 'true' }), h('span', { text: 'K예술영재 업무보고' })]),
