@@ -138,7 +138,7 @@
   }
   function blockLines(b) {
     var lines = [];
-    String(b.c || '').split('\n').forEach(function (l, i) { if (l.trim()) lines.push({ text: l, main: i === 0 }); });
+    String(b.c || '').split('\n').forEach(function (l, i) { if (i === 0) l = KR.dropLead(b.t, l); if (l.trim()) lines.push({ text: l, main: i === 0 }); });
     String(b.d || '').split('\n').forEach(function (l) { if (l.trim()) lines.push({ text: l, main: false }); });
     return lines;
   }
@@ -373,6 +373,7 @@
   function blockEl(b, opts) {
     opts = opts || {};
     var lines = String(b.c || '').split('\n');
+    lines[0] = KR.dropLead(b.t, lines[0]);                           // 「(미술) 미술분야 …」처럼 소제목과 겹치는 첫머리 거름
     var head = h('div', { class: 'rb-o' }, [h('span', { class: 'o', 'aria-hidden': 'true', text: 'ㅇ' }), b.t ? h('b', { class: 'rb-t', text: b.t }) : null, ' ', span('', lines[0] || '')]);
     if (opts.showOrg && b.org) head.appendChild(h('span', { class: 'rb-org', text: b.org }));
     var kids = [head];
@@ -495,6 +496,7 @@
   function counts(doc) { return doc.cats.map(function (c) { return { p: visible(c.prev).length, n: visible(c.next).length }; }); }
   function meetCard(b, i, showOrg, big) {
     var lines = String(b.c || '').split('\n'), det = [];
+    lines[0] = KR.dropLead(b.t, lines[0]);
     lines.slice(1).forEach(function (l) { if (l.trim()) det.push(h('li', { class: 'cont' }, [span('', l.trim())])); });
     String(b.d || '').split('\n').forEach(function (l) {
       if (!l.trim()) return;
@@ -750,6 +752,7 @@
     th.appendChild(add(el('tr', 'pr'), [el('th', 'gd', doc.periodPrev || ''), el('th', 'gd', doc.periodNext || '')]));
     function block(b) {
       var out = [], cl = String(b.c || '').split('\n');
+      cl[0] = KR.dropLead(b.t, cl[0]);
       var it = el('p', 'it'); it.appendChild(d.createTextNode('ㅇ '));
       if (b.t) it.appendChild(el('b', '', '(' + b.t + ') '));
       it.appendChild(d.createTextNode((cl[0] || '').trim()));

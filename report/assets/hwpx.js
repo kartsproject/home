@@ -26,7 +26,7 @@
   var TBL_W = 47800, COL_W = 23900, CELL_M = 425, TEXT_W = COL_W - CELL_M * 2;     // 칸 글자 폭 23050
   var BOX_IN = 1600, BOX_M = 400, BOX_W = TEXT_W - BOX_IN - 450, BOX_TEXT = BOX_W - BOX_M * 2;
   var STEPS = [0, -3, -5, -8];
-  var SAFE = 0.965;                       // 폭 어림이 조금 빗나가도 한글이 저절로 줄을 넘기지 않게 남겨 두는 몫
+  var SAFE = 0.95;                        // 폭 어림이 조금 빗나가도 한글이 저절로 줄을 넘기지 않게 남겨 두는 몫
   // 글자 모양 묶음: 크기(HWPUNIT) · 자간별 id · 글꼴 계열(M 휴먼명조/HCI Poppy · G 한양중고딕 · B 맑은 고딕)
   var FAM = {
     item: { size: 1100, fam: 'M', id: function (sp) { return S['C_ITEM' + (-sp)]; }, bold: function (sp) { return S['C_ITEMB' + (-sp)]; },
@@ -117,10 +117,12 @@
     return F.id(sp);
   }
   /** 나눌 자리와 값(낮을수록 좋음). 빈칸이면 그 빈칸을 줄 나눔으로 바꾸고, 「→」 뒤 · 붙은 「(」 앞이면 글자 사이에서 나눔
-   *  0 쉼표 뒤 · 1 쌍점 뒤, 화살표·빗금 앞뒤 · 2 조사·어미로 끝난 어절 뒤 · 3 괄호 앞 · 4 그 밖의 어절 사이
-   *  · 6 짧은 꾸밈말 뒤(「와인 마개」「대형 타월」처럼 붙어 읽는 말) · 9 소제목 바로 뒤 · 25 괄호 안 */
-  // 조사·어미로 끝난 어절(「VIP는」「디자인을」「확인하여」). 「보도」「회의」처럼 같은 글자로 끝나는 두 글자 낱말은 빼려고 세 글자 이상만
-  function josa(w) { return /[가-힣][은는을를]$/.test(w) || (/^[가-힣·]{3,}$/.test(w) && /[이가에의로도만과와서며고면데게께야요다]$/.test(w)); }
+   *  내용 단위(쉼표·화살표·조사로 끝난 마디)를 먼저, 한 덩어리로 읽는 말(「와인 마개」「실물 확인」「500명 이상」)은 되도록 떼지 않음
+   *  0 쉼표 뒤 · 1 쌍점 뒤, 화살표·빗금 앞뒤 · 2 조사·어미 또는 괄호로 끝난 어절 뒤 · 2.5 「및·또는」 앞 · 3 괄호 앞
+   *  · 5 이름씨끼리 이어진 말 사이 · 6 짧은 꾸밈말 뒤 · 8 「등·이상·후·확인」처럼 앞말에 붙어 읽는 말 앞 · 9 소제목 바로 뒤 · 25 괄호 안 */
+  var TAILWORD = /^(등|등의|등을|등은|이상|이하|이내|미만|내외|후|전|시|중|간|정도|여부|예정|완료|진행|확정|확인|검토|관리|운영|제출|준비|협의|지급|처리|결정|공유|보고|수립|마련|점검|구매|선정|접수|발송|안내|게시|반영|수정|요청|참석|담당|예정임|중임|함|됨)[,.]?$/;
+  // 「밝은」「새로운」처럼 꾸미는 말은 다음 말과 함께 읽으므로 두 글자 「-은/-는」은 빼고, 「VIP는」「학생은」처럼 세 글자 이상만
+  function josa(w) { return (w.length >= 3 && /[가-힣A-Za-z0-9)][은는을를]$/.test(w)) || (/^[가-힣·]{3,}$/.test(w) && /[이가에의로도만과와서며고면데게께야요다]$/.test(w)); }
   function wordBefore(chars, i) { var w = ''; for (var k = i - 1; k >= 0 && chars[k].ch !== ' '; k--) w = chars[k].ch + w; return w; }
   function wordAfter(chars, i) { var w = ''; for (var k = i + 1; k < chars.length && chars[k].ch !== ' '; k++) w += chars[k].ch; return w; }
   function breaksOf(chars) {
@@ -131,11 +133,13 @@
       var prev = chars[i - 1].ch, next = chars[i + 1].ch;
       if (c.ch === ' ') {
         if (chars[i - 1].s === 'pre' || chars[i + 1].ch === ' ') return;
-        var before = wordBefore(chars, i), after = wordAfter(chars, i), cost = 4;   // 어절 사이
+        var before = wordBefore(chars, i), after = wordAfter(chars, i), cost = 5;   // 이름씨끼리 이어진 말 사이
         if (/[,;]/.test(prev)) cost = 0;                                           // 쉼표 뒤
         else if (prev === ':') cost = 1;                                           // 「국내 VIP:」처럼 쌍점 뒤
         else if (/[→⇒/~∼]/.test(prev) || /[→⇒/]/.test(next)) cost = 1;            // 화살표 · 빗금 앞뒤
-        else if (josa(before) || /[)\]]$/.test(before)) cost = 2;            // 조사·어미 또는 괄호로 끝난 어절 뒤
+        else if (TAILWORD.test(after)) cost = 8;                                   // 「등·이상·확인」은 앞말과 함께
+        else if (josa(before) || /[)\]]$/.test(before) || /^(등|및|등의|등을|등은)$/.test(before)) cost = 2;   // 조사·어미·괄호·「등」으로 끝난 마디 뒤
+        else if (/^(및|또는|혹은|그리고)$/.test(after)) cost = 2.5;                 // 「및」 앞
         else if (next === '(' || next === '[') cost = 3;
         else if (/^[가-힣]{1,2}$/.test(before) && /^[가-힣A-Za-z]/.test(after)) cost = 6;  // 짧은 꾸밈말 뒤
         if (c.inPar && chars[i + 1].inPar) cost = 25;                              // 괄호 안
@@ -238,6 +242,7 @@
   /** 항목 하나(ㅇ 요지 + 이어지는 줄 + 세부 + 박스) → { xml, h(HWPUNIT) } */
   function blockXml(b, opt) {
     var out = [], h = 0, cl = String(b.c || '').split('\n');
+    if (root.KR && root.KR.dropLead) cl[0] = root.KR.dropLead(b.t, cl[0]);   // 소제목과 겹치는 첫머리 거름(common.js)
     function put(r) { out.push(r.xml); h += r.h; }
     var segs = [{ s: 'pre', t: ' ㅇ ' }];
     var first = bodySegs(cl[0] || '');

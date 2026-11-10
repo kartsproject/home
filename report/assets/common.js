@@ -89,6 +89,23 @@
   }
   function blockEmpty(b) { return !String(b.t || '').trim() && !String(b.c || '').trim() && !String(b.d || '').trim() && !String(b.box || '').trim(); }
 
+  /**
+   * 소제목과 겹치는 첫머리 걸러 내기: 「(미술) 미술분야 비대면 운영」 → 「(미술) 비대면 운영」
+   * 내용 첫 줄이 소제목(뒤의 분야·부문·관련 등은 빼고 비교, 띄어쓰기 무시)으로 시작하고 그 뒤가 빈칸·쌍점이면 그 부분을 뺀다.
+   * 「미술관」「미술·음악」처럼 다른 낱말로 이어지면 그대로 둔다. 저장된 글은 바꾸지 않고 보여 줄 때만 거른다.
+   */
+  var LEAD_SUF = '(?:분야|부문|파트|분과|관련|사항)';
+  function dropLead(t, line) {
+    var core = String(t || '').replace(/[\s()[\]]+/g, '').replace(new RegExp(LEAD_SUF + '$'), '');
+    var s = String(line || '');
+    if (!core || !s.trim()) return s;
+    var pat = core.split('').map(function (ch) { return ch.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&'); }).join('\\s*');
+    var re = new RegExp('^\\s*[\\[(]?\\s*' + pat + '\\s*' + LEAD_SUF + '?\\s*[\\])]?(?:(?:은|는|이|가|의|도)(?=\\s)|\\s*[:：]|(?=\\s|$))');
+    var m = s.match(re);
+    if (!m) return s;
+    return s.slice(m[0].length).replace(/^\s*[-–·,]?\s*/, '');
+  }
+
   /** 세부 한 줄의 종류: cont(앞 줄 이어짐) · raw(기호·링크 그대로) · item(- 항목) */
   function lineKind(s) {
     if (/^\s+\S/.test(s)) return 'cont';
@@ -363,7 +380,7 @@
     call: call, me: me, meSave: meSave, meClear: meClear, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
     PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
     week: week, month: month, fromKey: fromKey, current: current, currentMonth: currentMonth, dday: dday, kd: kd, md: md, ymd: ymd, parse: parse, add: add, today: today, fmtTime: fmtTime, fileBase: fileBase,
-    uid: uid, emptyData: emptyData, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, parseText: parseText, catIndex: catIndex,
+    uid: uid, emptyData: emptyData, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, parseText: parseText, catIndex: catIndex,
     h: h, toast: toast, modal: modal, confirm: confirmBox, autosize: autosize, busy: busy, copy: copy, passwordModal: passwordModal, topbar: topbar, demoBar: demoBar, resetDemo: resetDemo
   };
 })(window);
