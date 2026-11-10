@@ -804,10 +804,11 @@
   }
 
   var tplCache = null;
+  var HWPX_REV = '20261110b';   // 한글 파일 생성기·양식이 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
   async function hwpx(doc, ver) {
     if (!root.JSZip) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/vendor/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-    if (!root.HWPX) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/hwpx.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-    tplCache = tplCache || await (await fetch('template/report_template.hwpx')).arrayBuffer();
+    if (!root.HWPX) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/hwpx.js?v=' + HWPX_REV; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+    tplCache = tplCache || await (await fetch('template/report_template.hwpx?v=' + HWPX_REV, { cache: 'no-cache' })).arrayBuffer();
     var blob = await root.HWPX.generate(tplCache, doc, 'blob');
     var a = h('a', { href: URL.createObjectURL(blob), download: KR.fileBase(KR.fromKey(doc.key), ver) + '.hwpx' });
     document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
