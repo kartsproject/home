@@ -262,7 +262,8 @@
    * 주간 취합
    * ========================================================= */
   /** 주체별 제출 현황(주간·월간 공용) */
-  function submCards(users, entries, label) {
+  function submCards(users, entries, label, files, key) {
+    files = files || [];
     var writers = users.filter(function (u) { return u.status !== '중지'; });
     var byUid = {}; entries.forEach(function (e) { byUid[e.uid] = e; });
     var box = h('div', { class: 'subm' }, S.companies.filter(function (co) { return writers.some(function (u) { return u.company === co; }); }).map(function (co) {
@@ -274,7 +275,8 @@
         h('div', { class: 'sb-people' }, people.map(function (u) {
           var e = byUid[u.id], cls = !e ? 'none' : e.status === '제출' ? 'ok' : 'run';
           var lb = !e ? '미작성' : e.status === '제출' ? '제출 ' + KR.fmtTime(e.submitted).split(' ').pop() + (e.updated > e.submitted ? ' · 이후 수정' : '') : '작성 중';
-          return h('button', { class: 'sb-p ' + cls, disabled: !e, title: e ? '작성 내용 보기' : '', onclick: function () { personModal(e); } }, [h('i'), h('b', { text: u.name }), h('span', { text: lb })]);
+          var fs = files.filter(function (f) { return f.uid === u.id; });
+          return h('button', { class: 'sb-p ' + cls, disabled: !e && !fs.length && !P.admin, title: '작성 내용' + (fs.length ? '·참고 자료' : '') + ' 보기' + (P.admin ? ' · 대신 수정' : ''), onclick: function () { personModal(e, u, fs, key); } }, [h('i'), h('b', { text: u.name }), h('span', { text: lb }), fs.length ? h('span', { class: 'sb-f', title: '참고 자료 ' + fs.length + '개', text: '📎' + fs.length }) : null]);
         }))
       ]);
     }));
@@ -319,7 +321,7 @@
     setSave(st.savedAt ? '편집본 저장됨 ' + KR.fmtTime(st.savedAt) : (fresh ? '작성분을 모아 새로 취합했습니다' : ''));
 
     // 제출 현황
-    main.appendChild(submCards(data.users, entries));
+    main.appendChild(submCards(data.users, entries, null, data.files, w.key));
 
     // 변경 알림
     var diffBox = h('div');
@@ -360,7 +362,7 @@
     function weekRedraw() { st.dirty = true; saveNow().then(function () { weekTab(); }).catch(function () { weekTab(); }); }
     var ed = editor({ doc: doc, w: w, onChange: onChange });
     var sp = schedulePanel(doc, onChange);
-    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [window.KROpen.can(P) ? window.KROpen.panel(w.key) : null, sp.el, sharedList(st.shared, w.key)])]));
+    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [window.KROpen.can(P) ? window.KROpen.panel(w.key) : null, filesPanel(data.files), sp.el, sharedList(st.shared, w.key)])]));
     drawDiff();
     // 처음 취합할 때: 작성분을 실적·계획 문장으로 정리해서 넣음
     if (fresh && entries.length) refine(doc, 'week', null, weekRedraw);
@@ -372,10 +374,24 @@
       return h('a', { class: 'sh-it', href: '#/view?key=' + key + '&ver=' + s.ver }, [h('b', { text: 'v' + s.ver }), h('span', { text: KR.fmtTime(s.at) + ' · ' + s.by + (s.memo ? ' · ' + s.memo : '') })]);
     })));
   }
-  function personModal(e) {
-    var w = KR.fromKey(e.key), doc = R.newDoc(w);
-    doc.title = e.company + ' · ' + e.name + ' 작성분'; doc.cats = KR.normData(e.data).cats;
-    KR.modal(e.name + ' (' + e.company + ')', [h('p', { class: 'muted small', style: 'margin:0 0 10px', text: (e.status === '제출' ? '제출 ' + KR.fmtTime(e.submitted) : '작성 중') + ' · 마지막 수정 ' + KR.fmtTime(e.updated) }), h('div', { class: 'paper' }, [R.docEl(doc)])], [], { wide: true });
+  /** 사람별 작성 내용 + 참고 자료. 관리자는 「대신 수정」으로 그 사람 작성 화면을 바로 엶 */
+  function personModal(e, u, files, key) {
+    u = u || { id: e.uid, name: e.name, company: e.company }; files = files || []; key = key || e.key;
+    var kids = [];
+    if (e) {
+      var w = KR.fromKey(e.key), doc = R.newDoc(w);
+      doc.title = e.company + ' · ' + e.name + ' 작성분'; doc.cats = KR.normData(e.data).cats;
+      kids.push(h('p', { class: 'muted small', style: 'margin:0 0 10px', text: (e.status === '제출' ? '제출 ' + KR.fmtTime(e.submitted) : '작성 중') + ' · 마지막 수정 ' + KR.fmtTime(e.updated) + (e.by && e.by !== e.name ? ' (' + e.by + ')' : '') }));
+    } else kids.push(h('p', { class: 'muted small', style: 'margin:0 0 10px', text: '아직 작성하지 않았습니다' }));
+    if (files.length) kids.push(h('div', { class: 'files-box' }, [h('b', { text: '참고 자료 ' + files.length + '개' })].concat(files.map(function (f) { return KR.fileItem(f); }))));
+    if (e) kids.push(h('div', { class: 'paper' }, [R.docEl(doc)]));
+    var foot = P.admin ? [h('a', { class: 'btn primary', href: '#/write?key=' + encodeURIComponent(key) + '&uid=' + encodeURIComponent(u.id) }, '✎ 대신 수정')] : [];
+    KR.modal(u.name + ' (' + u.company + ')', kids, foot, { wide: true });
+  }
+  /** 이 회차 참고 자료 전체 (주체·사람별) */
+  function filesPanel(files) {
+    if (!files || !files.length) return null;
+    return h('div', { class: 'shared files-side' }, [h('h3', { text: '참고 자료 ' + files.length + '개' })].concat(files.map(function (f) { return KR.fileItem(f, { who: true }); })));
   }
   function docPreview(doc) {
     KR.modal('문서로 보기', [h('div', { class: 'paper' }, [R.docEl(doc)])], [
@@ -426,7 +442,7 @@
     ]));
     // 재료 1: 주체별 월간 입력
     var mEntries = entries.filter(function (e) { return KR.normData(e.data).cats.some(function (c) { return c.prev.concat(c.next).some(function (x) { return !KR.blockEmpty(x); }); }); });
-    main.appendChild(submCards(data.users, entries, '주체별 월간 입력'));
+    main.appendChild(submCards(data.users, entries, '주체별 월간 입력', data.files, m.key));
     // 재료 2: 포함 주차
     var have = weeks.filter(function (x) { return x.doc; });
     main.appendChild(h('div', { class: 'mweeks' }, [h('b', { text: '이 달에 포함되는 주간보고' })].concat(weeks.map(function (x) {
@@ -498,7 +514,7 @@
     main.appendChild(h('div', { class: 'tip' }, [h('b', { text: '월간 초안 ' }), '주간보고 실적과 주체별 월간 입력을 같은 소제목끼리 합쳤습니다. 주간보고 뒤에 고친 내용은 「처음부터 다시 만들기」, 월간 입력이 바뀌면 위 알림의 「편집본에 반영」으로 가져옵니다.']));
     var ed = editor({ doc: doc, w: m, onChange: onChange });
     var sp = schedulePanel(doc, onChange);
-    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [window.KROpen.can(P) ? window.KROpen.panel(m.key) : null, sp.el, sharedList(st.shared, m.key)])]));
+    main.appendChild(h('div', { class: 'hub-grid' }, [ed.el, h('aside', { class: 'hub-side' }, [window.KROpen.can(P) ? window.KROpen.panel(m.key) : null, filesPanel(data.files), sp.el, sharedList(st.shared, m.key)])]));
   }
 
   drawTabs(); show();

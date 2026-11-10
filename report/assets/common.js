@@ -261,7 +261,7 @@
     var b = await me();
     if (b.user.mustChange) { go('#/login'); return new Promise(function () { }); }
     var p = b.user.perm || {};
-    if (permKey && !p[permKey] && !(permKey === 'view' && p.compile)) { toast('이 화면을 볼 권한이 없습니다', true); go(homeOf(p)); return new Promise(function () { }); }
+    if (permKey && !p[permKey] && !(permKey === 'view' && p.compile) && !(permKey === 'write' && p.admin)) { toast('이 화면을 볼 권한이 없습니다', true); go(homeOf(p)); return new Promise(function () { }); }
     root.KR.boot = b;
     return b;
   }
@@ -349,10 +349,49 @@
     });
   }
 
+  /* ===== 참고 자료(첨부) ===== */
+  var FILE_MAX = 10 * 1024 * 1024;
+  function fileSize(n) { n = Number(n) || 0; return n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; }
+  function readB64(file) {
+    return new Promise(function (ok, no) {
+      var r = new FileReader();
+      r.onload = function () { var s = String(r.result || ''); ok(s.slice(s.indexOf(',') + 1)); };
+      r.onerror = function () { no(new Error('파일을 읽지 못했습니다')); };
+      r.readAsDataURL(file);
+    });
+  }
+  /** 파일 하나 올리기 (서버가 구글 드라이브에 저장) */
+  async function fileUpload(key, uid, file) {
+    if (file.size > FILE_MAX) throw new Error(file.name + ' — 파일은 하나에 10MB까지 올릴 수 있습니다');
+    var b64 = await readB64(file);
+    return call('file.upload', { key: key, uid: uid || '', name: file.name, mime: file.type || '', b64: b64 });
+  }
+  /** 내려받기 (권한은 서버가 확인) */
+  async function fileDownload(f) {
+    var r = await call('file.get', { id: f.id });
+    var bin = atob(r.b64), arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    var a = h('a', { href: URL.createObjectURL(new Blob([arr], { type: r.mime || 'application/octet-stream' })), download: r.name });
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  /** 첨부 목록 한 줄씩: 이름(누르면 내려받기) · 크기 · 올린 사람 · 지우기 */
+  function fileItem(f, opts) {
+    opts = opts || {};
+    var busy = false;
+    return h('div', { class: 'fl-it' }, [
+      h('button', { class: 'fl-name', title: '내려받기', onclick: async function () { if (busy) return; busy = true; try { await fileDownload(f); } catch (e) { toast(e.message, true); } busy = false; } }, [h('i', { class: 'fl-ic', 'aria-hidden': 'true', text: '📎' }), h('span', { text: f.file })]),
+      h('small', { text: fileSize(f.size) + (opts.who ? ' · ' + f.company + ' ' + f.name : '') + ' · ' + fmtTime(f.at) + (f.by && f.by !== f.name ? ' · ' + f.by + ' 올림' : '') }),
+      opts.onDel ? h('button', { class: 'icon-btn fl-del', title: '지우기', 'aria-label': f.file + ' 지우기', onclick: async function () {
+        if (!(await confirmBox('「' + f.file + '」을(를) 지울까요? 구글 드라이브 휴지통으로 옮겨집니다.', '지우기'))) return;
+        try { await call('file.del', { id: f.id }); opts.onDel(f); toast('지웠습니다'); } catch (e) { toast(e.message, true); }
+      } }, '✕') : null
+    ]);
+  }
+
   /** 상단 바 */
   function topbar(b, active) {
     var u = b.user, p = u.perm || {}, nav = [];
-    if (p.write) nav.push(['write', '작성']);
+    if (p.write || p.admin) nav.push(['write', p.write ? '작성' : '작성분 수정']);
     if (p.compile) nav.push(['hub', '취합']);
     if (p.view || p.compile || p.open || p.admin) nav.push(['view', '최종본']);
     nav.push(['sched', '일정']);
@@ -380,7 +419,7 @@
     call: call, me: me, meSave: meSave, meClear: meClear, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
     PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
     week: week, month: month, fromKey: fromKey, current: current, currentMonth: currentMonth, dday: dday, kd: kd, md: md, ymd: ymd, parse: parse, add: add, today: today, fmtTime: fmtTime, fileBase: fileBase,
-    uid: uid, emptyData: emptyData, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, parseText: parseText, catIndex: catIndex,
+    uid: uid, emptyData: emptyData, fileUpload: fileUpload, fileDownload: fileDownload, fileItem: fileItem, fileSize: fileSize, FILE_MAX: FILE_MAX, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, parseText: parseText, catIndex: catIndex,
     h: h, toast: toast, modal: modal, confirm: confirmBox, autosize: autosize, busy: busy, copy: copy, passwordModal: passwordModal, topbar: topbar, demoBar: demoBar, resetDemo: resetDemo
   };
 })(window);
