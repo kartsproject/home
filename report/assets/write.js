@@ -1,4 +1,5 @@
-/* 작성 화면 — 허용된 분야만 단계로 + 확인·제출. 업체 작성분 관리 권한이 있으면 같은 주체 사람 것을 대신 작성 */
+/* 작성 화면 — 허용된 분야만 단계로 + 확인·제출. 업체 작성분 관리 권한이 있으면 같은 주체 사람 것을, 관리자는 모든 주체의 사람 것을 대신 수정
+ * 참고 자료: 회차마다 파일을 첨부(서버가 구글 드라이브에 저장) */
 (async function () {
   'use strict';
   var KR = window.KR, R = window.KRReport, h = KR.h;
@@ -8,7 +9,7 @@
   var app = document.getElementById('app');
   app.className = 'wrap deckwrap';
   var qk = KR.param('key');
-  var S = { w: /^W-\d{4}-\d{2}-\d{2}$/.test(qk) || /^M-\d{4}-\d{2}$/.test(qk) ? KR.fromKey(qk) : KR.current(), uid: KR.param('uid') || b.user.id, who: null, team: null, cats: [0, 1, 2, 3, 4],
+  var S = { w: /^W-\d{4}-\d{2}-\d{2}$/.test(qk) || /^M-\d{4}-\d{2}$/.test(qk) ? KR.fromKey(qk) : KR.current(), uid: KR.param('uid') || ((b.user.perm || {}).write ? b.user.id : ''), who: null, team: null, admin: false, files: [], coSel: '', cats: [0, 1, 2, 3, 4],
     data: KR.emptyData(), entry: null, prevEntry: null, sharedVer: '', step: 0, timer: null, saving: false, dirty: false, savedAt: '' };
 
   function nstep() { return S.cats.length; }
@@ -25,7 +26,9 @@
     app.innerHTML = '<div class="loading">불러오는 중…</div>';
     try {
       var r = await KR.call('my.get', { key: S.w.key, uid: S.uid === b.user.id ? '' : S.uid });
-      S.who = r.who; S.team = r.team || null; S.cats = r.who.cats.slice().sort();
+      S.who = r.who; S.team = r.team || null; S.admin = !!r.admin; S.files = r.files || [];
+      if (!r.who) { drawPick(); return; }   // 작성 권한 없는 관리자: 고칠 사람부터 고름
+      S.cats = r.who.cats.slice().sort();
       S.entry = r.entry; S.prevEntry = r.prevEntry; S.sharedVer = r.sharedVer;
       S.data = KR.normData(r.entry && r.entry.data);
       S.savedAt = r.entry ? r.entry.updated : ''; S.dirty = false;
@@ -81,7 +84,7 @@
     headBox.innerHTML = '';
     headBox.appendChild(h('div', { class: 'wh-in' }, [
       h('div', { class: 'wh-l' }, [
-        h('div', { class: 'eyebrow', text: (S.who ? S.who.company + ' · ' + S.who.name : '') + (forOther ? ' (대신 작성)' : '') }),
+        h('div', { class: 'eyebrow', text: (S.who ? S.who.company + ' · ' + S.who.name : '') + (forOther ? (S.admin && S.who.company !== b.user.company ? ' (관리자 대신 수정)' : ' (대신 작성)') : '') }),
         h('h1', {}, [L().title]),
         h('div', { class: 'wh-meta' }, [
           h('span', {}, [h('b', { text: (S.w.type === 'M' ? '이달 실적 ' : '지난 실적 ') }), S.w.periodPrev]),
@@ -103,14 +106,64 @@
         b.writeDue ? h('span', { class: 'due', text: '작성 마감 · ' + b.writeDue }) : null
       ])
     ]));
-    if (S.team && S.team.length > 1) {
-      headBox.appendChild(h('div', { class: 'team' }, [h('span', { class: 'team-l', text: '업체 작성분' })].concat(S.team.map(function (m) {
-        var cls = m.status === '제출' ? 'ok' : m.status ? 'run' : 'none';
-        return h('button', { class: 'team-p ' + cls + (m.id === S.uid ? ' on' : ''), onclick: async function () { if (m.id === S.uid) return; if (S.dirty) await save(); S.uid = m.id; S.step = 0; sync(); load(); } }, [h('i'), m.name + (m.id === b.user.id ? ' (나)' : ''), h('small', { text: m.status === '제출' ? '제출' : m.status ? '작성 중' : '미작성' })]);
-      }))));
-    }
+    var tb = teamBar(); if (tb) headBox.appendChild(tb);
+    headBox.appendChild(filesBar());
     if (S.w.type === 'M') headBox.appendChild(h('div', { class: 'wh-note', text: '월간 입력은 주간보고에 없던 내용(이달 전체 성과·수치, 다음 달 계획 등)을 적는 곳입니다. 주간보고 내용은 취합할 때 자동으로 합쳐지니 다시 쓰지 않아도 됩니다.' }));
     if (S.sharedVer) headBox.appendChild(h('div', { class: 'wh-note', text: '이 ' + (S.w.type === 'M' ? '월간' : '주차') + ' 보고서는 한예종에 공유되었습니다(v' + S.sharedVer + '). 지금 고치면 취합 화면에 변경 알림이 표시됩니다.' }));
+  }
+  /** 대신 수정할 사람 고르기: 관리자는 주체를 고른 뒤 사람, 「업체 작성분 관리」는 같은 주체 사람 */
+  function teamBar() {
+    if (!S.team || !S.team.length || (!S.admin && S.team.length < 2)) return null;
+    var cos = []; S.team.forEach(function (m) { if (cos.indexOf(m.company) < 0) cos.push(m.company); });
+    var cur = S.team.filter(function (m) { return m.id === S.uid; })[0];
+    if (!S.coSel || cos.indexOf(S.coSel) < 0) S.coSel = cur ? cur.company : cos[0];
+    var people = S.admin ? S.team.filter(function (m) { return m.company === S.coSel; }) : S.team;
+    var kids = [h('span', { class: 'team-l', text: S.admin ? '관리자 · 대신 수정' : '업체 작성분' })];
+    if (S.admin && cos.length > 1) {
+      var sel = h('select', { class: 'team-co', 'aria-label': '주체 고르기', onchange: function () { S.coSel = sel.value; drawHead(); } }, cos.map(function (c) { return h('option', { value: c, selected: c === S.coSel ? true : null, text: c }); }));
+      kids.push(sel);
+    }
+    people.forEach(function (m) {
+      var cls = m.status === '제출' ? 'ok' : m.status ? 'run' : 'none';
+      kids.push(h('button', { class: 'team-p ' + cls + (m.id === S.uid ? ' on' : ''), onclick: function () { pick(m.id); } }, [h('i'), m.name + (m.id === b.user.id ? ' (나)' : ''), h('small', { text: m.status === '제출' ? '제출' : m.status ? '작성 중' : '미작성' })]));
+    });
+    return h('div', { class: 'team' }, kids);
+  }
+  async function pick(uid) { if (uid === S.uid) return; if (S.dirty) await save(); S.uid = uid; S.step = 0; sync(); load(); }
+  /** 작성 권한이 없는 관리자가 처음 들어왔을 때: 사람 고르기만 */
+  function drawPick() {
+    app.innerHTML = '';
+    headBox = h('div', { class: 'w-head' });
+    headBox.appendChild(h('div', { class: 'wh-in' }, [h('div', { class: 'wh-l' }, [h('div', { class: 'eyebrow', text: '관리자 · 작성분 대신 수정' }), h('h1', { text: L().title }), h('div', { class: 'wh-meta' }, [h('span', { text: '아래에서 주체와 사람을 고르면 그 사람이 쓴 내용을 바로 고칠 수 있습니다.' })])])]));
+    var tb = teamBar(); if (tb) headBox.appendChild(tb);
+    app.appendChild(headBox);
+    if (!S.team || !S.team.length) app.appendChild(h('div', { class: 'empty-state' }, [h('h3', { text: '작성하는 사람이 아직 없습니다' })]));
+  }
+  /** 참고 자료: 이 회차에 첨부한 파일 (구글 드라이브에 저장) */
+  function filesBar() {
+    var inp = h('input', { type: 'file', multiple: true, style: 'display:none', onchange: function () { upload(Array.prototype.slice.call(inp.files || [])); inp.value = ''; } });
+    var list = h('div', { class: 'fl-list' }, S.files.map(function (f) { return KR.fileItem(f, { onDel: function () { S.files = S.files.filter(function (x) { return x.id !== f.id; }); drawHead(); } }); }));
+    return h('div', { class: 'files-bar' }, [
+      h('div', { class: 'fb-h' }, [h('b', { text: '참고 자료' }), h('small', { text: S.files.length ? S.files.length + '개 · 구글 드라이브에 저장됨' : '회의 자료·사진 등을 이 ' + (S.w.type === 'M' ? '달' : '주차') + ' 보고에 첨부할 수 있습니다 (파일 하나 10MB까지)' }),
+        h('button', { class: 'btn sm fb-add', onclick: function () { inp.click(); } }, '＋ 파일 첨부'), inp]),
+      S.files.length ? list : null
+    ]);
+  }
+  async function upload(files) {
+    if (!files.length) return;
+    var big = files.filter(function (f) { return f.size > KR.FILE_MAX; });
+    if (big.length) KR.toast(big.map(function (f) { return f.name; }).join(', ') + ' — 10MB가 넘어 올리지 않았습니다', true);
+    files = files.filter(function (f) { return f.size <= KR.FILE_MAX; });
+    for (var i = 0; i < files.length; i++) {
+      var note = headBox && headBox.querySelector('.fb-h small'), add = headBox && headBox.querySelector('.fb-add');
+      if (note) note.textContent = '올리는 중 ' + (i + 1) + '/' + files.length + ' · ' + files[i].name + ' …';
+      KR.busy(add, true);
+      try { var f = await KR.fileUpload(S.w.key, S.uid === b.user.id ? '' : S.uid, files[i]); S.files.push(f); }
+      catch (e) { KR.toast(e.message, true); }
+      finally { KR.busy(add, false); }
+    }
+    drawHead();
+    if (files.length) KR.toast('첨부했습니다');
   }
   function sync() { KR.setParams({ key: S.w.key, uid: S.uid === b.user.id ? '' : S.uid }); }
   async function switchKind(k) {

@@ -1140,3 +1140,33 @@ body.dark .modal .btn.primary:hover { background: #333336; }
   .sc-form { grid-template-columns: 1fr 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .sc-row.flash { animation: none; } }
+
+/* ===== 참고 자료(첨부) · 관리자 대신 수정 ===== */
+.team-co { background: rgba(255,255,255,.1); color: var(--k-text); border: 0; border-radius: 980px; padding: 6px 30px 6px 14px; font-size: 13px; font-family: inherit; -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23F5F5F7' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.team-co option { color: #1D1D1F; }
+.files-bar { position: relative; z-index: 1; margin-top: 18px; background: rgba(255,255,255,.06); border-radius: 14px; padding: 12px 14px; }
+.fb-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fb-h b { font-size: 13px; color: var(--k-text); }
+.fb-h small { font-size: 12px; color: var(--k-text-3); flex: 1; min-width: 180px; }
+.w-head .fb-add { background: rgba(255,255,255,.14); color: #fff; }
+.w-head .fb-add:hover { background: rgba(255,255,255,.24); }
+.fl-list { margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.fl-it { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fl-name { display: inline-flex; align-items: center; gap: 6px; min-width: 0; border: 0; background: none; padding: 4px 0; font-size: 13px; color: var(--blue, #0071E3); text-align: left; cursor: pointer; font-family: inherit; }
+.fl-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fl-name:hover span { text-decoration: underline; }
+.fl-ic { font-style: normal; font-size: 12px; }
+.fl-it small { font-size: 11.5px; color: var(--text-4); white-space: nowrap; }
+.fl-del { width: 24px; height: 24px; font-size: 12px; margin-left: auto; flex: none; }
+.w-head .fl-name { color: #8EC5FF; }
+.w-head .fl-it small { color: var(--k-text-3); }
+.w-head .fl-del { color: var(--k-text-3); }
+.w-head .fl-del:hover { background: rgba(255,255,255,.12); color: #fff; }
+.sb-p .sb-f { color: var(--text-3); font-size: 11.5px; }
+.files-box { background: var(--fill-2); border-radius: 12px; padding: 10px 14px; margin: 0 0 12px; }
+.files-box > b { display: block; font-size: 13px; margin-bottom: 4px; }
+.files-side .fl-it { flex-wrap: wrap; gap: 0 8px; padding: 4px 0; border-bottom: 1px solid var(--line, #E8E8ED); }
+.files-side .fl-it:last-child { border-bottom: 0; }
+.files-side .fl-it small { white-space: normal; flex: 1 1 100%; }
+@media (max-width: 640px) { .fl-it { flex-wrap: wrap; } .fl-it small { flex: 1 1 100%; white-space: normal; } }
