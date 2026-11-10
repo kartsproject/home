@@ -162,7 +162,7 @@
       '목록: 카드 · 단계 · 표 줄 위에 마우스를 올리면 [앞으로] [뒤로] [복제] [삭제] 단추가 나옵니다.',
       '문단: 문단을 누르면 위에 뜨는 [아래에 문단 추가]로 문단을 더하고, 더한 문단은 [문단 빼기]로 뺍니다.',
       '구역: 구역 사이의 [+ 여기에 구역 추가]를 누르고 모양(글 · 사진 + 글 · 표 · 카드 · 단계)을 고르면 새 구역이 생깁니다. 더한 구역 위에 마우스를 올리면 [위로] [아래로] [구역 삭제]가 나옵니다.',
-      '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(1~2분 뒤 보임).',
+      '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(보통 1~2분, 늦으면 10분쯤 뒤 보임).',
       '사진: 사진 위에 마우스를 올리면 [사진 바꾸기] [자르기] [빼기]가 나옵니다. 사진은 누르는 즉시 저장됩니다.',
       '머리 · 바닥 메뉴와 공지 · 갤러리 · 모집요강 파일은 관리자 페이지에서 고칩니다.'
     ].join('\n\n'));
@@ -199,7 +199,7 @@
     busy('저장하고 사이트에 반영하는 중…\n10초 정도 걸립니다.');
     api('savePage', { page:C.page, content:content }, 120000).then(function(d){
       E.base = json;
-      toast(d.published ? '저장했습니다. 1~2분 뒤 방문자 화면에 보입니다.' : '저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !d.published);
+      toast(d.published ? '저장했습니다. 보통 1~2분, 늦으면 10분쯤 뒤 방문자 화면에 보입니다.' : '저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !d.published);
     }, function(e){ toast(errMsg(e), true); }).then(function(){ E.saving = false; busy(null); changed(); });
   }
 
@@ -424,7 +424,7 @@
         var ph = { fileId:d.fileId, w:r.w, h:r.h };
         if(t.kind === 'hero'){ var hs = heroItem(t.slot); if(hs){ hs.photos = [ph]; hs.cutouts = []; } drawHero(); }
         else{ E.photos[t.slot] = ph; showPhoto(t.slot, ph, r.preview); }
-        toast(res.published ? '사진을 바꿨습니다. 1~2분 뒤 방문자 화면에 보입니다.' : '사진은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
+        toast(res.published ? '사진을 바꿨습니다. 보통 1~2분, 늦으면 10분쯤 뒤 방문자 화면에 보입니다.' : '사진은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
       });
     }).catch(function(e){ toast(e && e.code ? errMsg(e) : '이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.', true); })
       .then(function(){ busy(null); });

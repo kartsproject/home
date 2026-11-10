@@ -188,7 +188,7 @@
     box.className = 'mg-pub' + (p.ok ? '' : ' fail');
     var inner = h('div', { class:'mg-in' });
     if(p.ok){
-      inner.appendChild(h('span', { text:'마지막 사이트 반영 ' + p.at.slice(0,16).replace('T',' ') + ' · 저장한 내용은 1~2분 뒤 사이트에 보입니다.' }));
+      inner.appendChild(h('span', { text:'마지막 사이트 반영 ' + p.at.slice(0,16).replace('T',' ') + ' · 저장한 내용은 보통 1~2분, 늦으면 10분쯤 뒤 사이트에 보입니다.' }));
     }else{
       inner.appendChild(h('span', { text:'⚠ 글은 저장됐지만 사이트 반영에 실패했습니다.' }));
       inner.appendChild(h('button', { type:'button', text:'다시 반영', onclick:republish }));
@@ -201,7 +201,7 @@
     api('publish', {}).then(function(d){
       S.data.lastPublish = { ok:d.published, at:new Date(Date.now() + 9*3600e3).toISOString().slice(0,19) };
       renderPub();
-      toast(d.published ? '사이트에 반영했습니다. 1~2분 뒤 보입니다.' : '반영에 또 실패했습니다. 잠시 뒤 다시 눌러 주세요.', !d.published);
+      toast(d.published ? '사이트에 반영했습니다. 보통 1~2분, 늦으면 10분쯤 뒤 보입니다.' : '반영에 또 실패했습니다. 잠시 뒤 다시 눌러 주세요.', !d.published);
     }, function(e){ toast(errMsg(e), true); }).then(function(){ busy(null); });
   }
 
@@ -318,7 +318,7 @@
     }
     step(ids).then(function(){
       S.sel.ids = {};
-      toast(published ? total + '개를 삭제했습니다. 1~2분 뒤 사이트에서 사라집니다.' : '삭제했지만 사이트 반영에 실패했습니다. 위의 [다시 반영]을 눌러 주세요.', !published);
+      toast(published ? total + '개를 삭제했습니다. 보통 1~2분, 늦으면 10분쯤 뒤 사이트에서 사라집니다.' : '삭제했지만 사이트 반영에 실패했습니다. 위의 [다시 반영]을 눌러 주세요.', !published);
       return load();
     }, function(err){
       busy(null);
@@ -819,7 +819,7 @@
     api('save', req, 120000).then(function(d){
       e.dirty = false;
       S.edit = null; dropEditState();
-      toast(d.published ? '저장했습니다. 1~2분 뒤 사이트에 보입니다.' : '저장했지만 사이트 반영에 실패했습니다. 위의 [다시 반영]을 눌러 주세요.', !d.published);
+      toast(d.published ? '저장했습니다. 보통 1~2분, 늦으면 10분쯤 뒤 사이트에 보입니다.' : '저장했지만 사이트 반영에 실패했습니다. 위의 [다시 반영]을 눌러 주세요.', !d.published);
       return load();
     }, function(err){ busy(null); toast(errMsg(err), true); });
   }
@@ -830,7 +830,7 @@
     busy('삭제하고 사이트에 반영하는 중…');
     api('remove', { board:e.board, id:e.id }, 120000).then(function(d){
       e.dirty = false; S.edit = null; dropEditState();
-      toast(d.published ? '삭제했습니다. 1~2분 뒤 사이트에서 사라집니다.' : '삭제했지만 사이트 반영에 실패했습니다. [다시 반영]을 눌러 주세요.', !d.published);
+      toast(d.published ? '삭제했습니다. 보통 1~2분, 늦으면 10분쯤 뒤 사이트에서 사라집니다.' : '삭제했지만 사이트 반영에 실패했습니다. [다시 반영]을 눌러 주세요.', !d.published);
       return load();
     }, function(err){ busy(null); toast(errMsg(err), true); });
   }
