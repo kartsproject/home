@@ -807,62 +807,93 @@ img.ph-none,img[data-photo]{background:#F4F2EC}
   .p1-sec + .rc-cards{margin-top:44px}
 }
 
-/* ---------- 모집 및 선발 — 분야 카드 띠 (2026-11-10 사용자 · WBS 21.1) ----------
-   「텍스트 위주라 심심하다 → 직관적으로, 모자라면 좌우로 넘기게」. 카드 = 분야 대표 사진(사업소개와 같은 자리 ab-*) 위에
-   번호 · 분야 이름, 아래는 요강을 「항목 | 내용」 두 칸 표로. 카드들은 가로 띠(.rc-cards)에 놓여 손가락 · 끌기 · ← → 단추로 넘긴다.
-   PC는 세 장 + 다음 장 끝이 살짝, 태블릿 두 장 + α, 휴대폰 한 장 + α. 띠는 오른쪽으로 화면 끝까지 뻗는다.
-   편집 화면(html.ed-on)은 넘김 없이 예전처럼 격자(카드를 고치고 더하기 쉽게). 넘김 단추 · 쪽수 · 진행 막대는 recruit.js가 만든다 */
-.rc-cards{counter-reset:rc;--rc-gap:24px;--rc-w:calc((100% - 2 * var(--rc-gap)) / 3.18)}
+/* ---------- 모집 및 선발 — 분야별 모집 요강 카드 (2026-11-10 사용자 · WBS 21.1) ----------
+   지원 안내와 같은 틀(.p1-sec — 왼쪽 제목, 오른쪽 내용)로, 카드는 오른쪽 칸 폭 안에서 좌우로 넘긴다(.rc-cards 가로 띠 · 카드마다 멈춤).
+   사진 대신 아이콘 · 도식(같은 날 사용자 — 「사진 말고 도식화나 아이콘으로」): 머리는 분야 아이콘(노란 원) + 분야 이름,
+   요강 줄마다 항목 아이콘, 내용은 recruit.js가 글을 읽어 그린다 — 세부전공은 낱말 칩(갈래 이름은 앞에), 모집대상은 출생 연도 막대(네 분야 같은 눈금 ·
+   학년 표시), 선발방식은 ①→②→③ 흐름. 원래 글은 화면 읽기 프로그램용으로 남기고(.rc-sr), 읽지 못한 글은 그대로 보인다.
+   PC 두 장 + 다음 장 끝, 휴대폰 한 장 + α. 넘김 단추 · 쪽수 · 진행 막대는 recruit.js. 편집 화면(html.ed-on)은 예전 격자 · 글 그대로 */
+.rc-sec .rc-box{min-width:0}
+.rc-cards{counter-reset:rc;--rc-gap:20px;--rc-w:calc((100% - var(--rc-gap)) / 2.16)}
 html:not(.ed-on) .rc-cards{display:flex;gap:var(--rc-gap);overflow-x:auto;overscroll-behavior-x:contain;
-  scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
-  margin-right:calc(-1 * var(--bleed,0px));padding:6px var(--bleed,0px) 18px 0}   /* --bleed: 띠 오른쪽 끝 ~ 화면 끝 거리(recruit.js) */
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;padding:4px 2px 16px;margin:-4px -2px 0}
 html:not(.ed-on) .rc-cards::-webkit-scrollbar{display:none}
 html:not(.ed-on) .rc-cards.drag{scroll-snap-type:none;scroll-behavior:auto;cursor:grabbing}
 html:not(.ed-on) .rc-cards.drag *{user-select:none;pointer-events:none}
 html:not(.ed-on) .rc-card{flex:0 0 var(--rc-w)}
-.rc-card{counter-increment:rc;position:relative;display:grid;grid-template-rows:auto 1fr;padding:0;overflow:hidden;
-  border:1px solid var(--line);border-radius:22px;background:#fff;scroll-snap-align:start;
-  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,opacity .9s cubic-bezier(.22,1,.36,1)}
-.rc-card[data-rv].on:hover{transform:translateY(-6px);box-shadow:0 18px 40px -18px rgba(0,0,0,.28)}
-/* 사진 칸 — 사진 · 어둠 덧칠 · 번호 · 분야 이름이 한 자리에 겹친다 */
-.rc-ph{grid-area:1 / 1;width:100%;aspect-ratio:16 / 11;object-fit:cover;display:block;background:#2a2a2a;
-  transition:transform .8s cubic-bezier(.22,1,.36,1)}
-.rc-ph.ph-none{background:linear-gradient(150deg,#3a3a3a,#161616)}
-.rc-card:hover .rc-ph{transform:scale(1.05)}
-.rc-card::before{content:"";grid-area:1 / 1;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,0) 34%,rgba(0,0,0,0) 46%,rgba(0,0,0,.62))}
-.rc-card::after{content:counter(rc,decimal-leading-zero);position:absolute;top:20px;left:24px;z-index:2;
-  color:#fff;font-size:15px;font-weight:800;letter-spacing:.02em;font-feature-settings:"tnum"}
-.rc-card h3{grid-area:1 / 1;align-self:end;z-index:2;margin:0;padding:0 24px 20px;color:#fff;font-size:30px;font-weight:800;letter-spacing:-.05em;line-height:1.2}
-.rc-card h3::after{content:"";display:block;width:34px;height:4px;margin-top:12px;border-radius:2px;background:var(--yel)}
-/* 요강 — 「항목 | 내용」 두 칸 표 */
-.rc-card dl{display:grid;grid-template-columns:5.6em minmax(0,1fr);align-content:start;margin:0;padding:10px 24px 26px}
-.rc-card dt,.rc-card dd{margin:0;padding:15px 0;border-bottom:1px solid var(--line-lt)}
-.rc-card dt:last-of-type,.rc-card dd:last-of-type{border-bottom:0}
+.rc-card{counter-increment:rc;position:relative;padding:30px 28px 30px;border:1px solid var(--line);border-radius:22px;background:#fff;scroll-snap-align:start;
+  transition:border-color .3s,box-shadow .35s,opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1)}
+.rc-card[data-rv].on:hover{border-color:var(--ink);box-shadow:0 16px 36px -20px rgba(0,0,0,.3)}
+/* 머리 — 노란 원 안 분야 아이콘 · 분야 이름 · 오른쪽 위 번호 */
+.rc-card::after{content:counter(rc,decimal-leading-zero);position:absolute;top:30px;right:28px;font-size:14px;font-weight:800;letter-spacing:.04em;color:var(--gray-lt);font-feature-settings:"tnum"}
+.rc-card h3{display:flex;align-items:center;gap:14px;margin:0;font-size:26px;font-weight:800;letter-spacing:-.05em;color:var(--ink)}
+.rc-card[data-f] h3::before{content:"";flex:0 0 58px;height:58px;border-radius:50%;background:var(--yel) var(--ic) center / 32px no-repeat}
+.rc-card[data-f="music"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 35V13l17-4v22'/%3E%3Cpath d='M19 19l17-4'/%3E%3Ccircle cx='14.5' cy='35' r='4.5'/%3E%3Ccircle cx='31.5' cy='31' r='4.5'/%3E%3C/svg%3E")}
+.rc-card[data-f="dance"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='25' cy='9' r='3.5'/%3E%3Cpath d='M25 14v12'/%3E%3Cpath d='M12 12c5 5 9 6 13 6s8-1 13-6'/%3E%3Cpath d='M25 26l-6 14'/%3E%3Cpath d='M25 26l12 5'/%3E%3Cpath d='M14 40h10'/%3E%3C/svg%3E")}
+.rc-card[data-f="trad"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='10' cy='24' rx='4' ry='11'/%3E%3Cellipse cx='38' cy='24' rx='4' ry='11'/%3E%3Cpath d='M10 13l12 9h4l12-9M10 35l12-9h4l12 9'/%3E%3Cpath d='M22 22v4M26 22v4'/%3E%3C/svg%3E")}
+.rc-card[data-f="art"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 8C14 8 7 15 7 24s7 16 16 16c3 0 4-2 3-4s0-5 3-5h5c5 0 9-4 9-9C43 14 35 8 24 8z'/%3E%3Ccircle cx='15.5' cy='22' r='2.2'/%3E%3Ccircle cx='21' cy='15.5' r='2.2'/%3E%3Ccircle cx='29' cy='15.5' r='2.2'/%3E%3C/svg%3E")}
+.rc-card[data-f="etc"]{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 8l4.7 9.6 10.6 1.5-7.7 7.5 1.8 10.5L24 32.1l-9.4 5 1.8-10.5-7.7-7.5 10.6-1.5z'/%3E%3C/svg%3E")}
+/* 요강 줄 — 왼쪽 항목(아이콘 + 이름), 오른쪽 내용 */
+.rc-card dl{display:grid;grid-template-columns:6.4em minmax(0,1fr);margin:26px 0 0;border-top:2px solid var(--ink)}
+.rc-card dt,.rc-card dd{margin:0;padding:16px 0;border-bottom:1px solid var(--line-lt)}
+.rc-card dt:last-of-type,.rc-card dd:last-of-type{border-bottom:0;padding-bottom:4px}
 .rc-card dd+dt{margin-top:0}
-.rc-card dt{display:flex;align-items:flex-start;gap:7px;padding-right:10px;font-size:13px;font-weight:700;color:var(--gray);line-height:1.6}
-.rc-card dt::before{content:"";flex:0 0 6px;height:6px;margin-top:.62em;border-radius:50%;background:var(--yel)}
+.rc-card dt{display:flex;align-items:flex-start;gap:7px;padding-right:8px;font-size:13px;font-weight:700;color:var(--gray);line-height:1.55;letter-spacing:-.03em}
+.rc-card dt[class*="ic-"]::before{content:"";flex:0 0 18px;height:18px;margin-top:.5px;background:var(--gray);-webkit-mask:var(--ic) center / contain no-repeat;mask:var(--ic) center / contain no-repeat}
+.rc-card dt.ic-major{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 10v10l18 18 14-14L20 6H10a4 4 0 0 0-4 4z'/%3E%3Ccircle cx='14' cy='14' r='2.5'/%3E%3C/svg%3E")}
+.rc-card dt.ic-age{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='10' width='36' height='32' rx='4'/%3E%3Cpath d='M6 19h36M16 6v8M32 6v8'/%3E%3C/svg%3E")}
+.rc-card dt.ic-flow{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='7' width='30' height='36' rx='4'/%3E%3Cpath d='M17 18l3 3 6-6M17 30l3 3 6-6M30 19h3M30 31h3'/%3E%3C/svg%3E")}
+.rc-card dt.ic-video{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='12' width='28' height='24' rx='4'/%3E%3Cpath d='M33 21l10-6v18l-10-6'/%3E%3C/svg%3E")}
+.rc-card dt.ic-port{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 14a4 4 0 0 1 4-4h9l4 5h17a4 4 0 0 1 4 4v17a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z'/%3E%3C/svg%3E")}
+.rc-card dt.ic-dot{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23212326' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='24' cy='24' r='6'/%3E%3C/svg%3E")}
 .rc-card dd{font-size:15.5px;font-weight:600;line-height:1.6;letter-spacing:-.025em;color:var(--ink)}
-/* 넘김 막대 — 쪽수 · 진행 막대 · ← → (recruit.js) */
-.rc-nav{display:flex;align-items:center;gap:22px;margin-top:22px;padding-right:90px}   /* 오른쪽 90px — 페이지 위 · 아래 단추(고정)와 겹치지 않게 */
+.rc-sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* 세부전공 — 갈래 이름 + 낱말 칩 */
+.rc-chips{display:flex;flex-direction:column;gap:8px}
+.rc-chips .grp{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rc-chips .grp > b{margin-right:2px;font-size:12.5px;font-weight:800;color:var(--gray-lt);letter-spacing:-.02em}
+.rc-chips span{display:inline-block;padding:4px 11px;border-radius:999px;background:#F4F2EC;font-size:14px;font-weight:700;line-height:1.5;letter-spacing:-.03em}
+/* 모집대상 — 출생 연도 막대(네 분야 같은 눈금), 아래 학년 */
+.rc-age{display:flex;flex-direction:column;gap:7px}
+.rc-age .yrs{display:flex;justify-content:space-between;font-size:14.5px;font-weight:800;letter-spacing:-.02em;font-feature-settings:"tnum"}
+.rc-age .yrs small{margin-left:3px;font-size:12px;font-weight:600;color:var(--gray-lt)}
+.rc-age .axis{position:relative;height:10px;border-radius:5px;background:#EFEDE7}
+.rc-age .axis i{position:absolute;top:0;bottom:0;left:var(--a);right:var(--b);border-radius:5px;background:var(--ink)}
+.rc-age .axis i::before,.rc-age .axis i::after{content:"";position:absolute;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--yel);border:2.5px solid var(--ink)}
+.rc-age .axis i::before{left:-7px}
+.rc-age .axis i::after{right:-7px}
+.rc-age .grd{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;font-weight:800;color:var(--gray)}
+.rc-age .grd small{font-size:11px;font-weight:600;color:var(--gray-lt)}
+/* 선발방식 — ① → ② → ③ */
+.rc-flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;counter-reset:fl}
+.rc-flow .st{display:inline-flex;align-items:center;gap:4px;font-style:normal}
+.rc-flow span{counter-increment:fl;display:inline-flex;align-items:center;gap:6px;padding:5px 11px 5px 6px;border:1px solid var(--line);border-radius:999px;font-size:14px;font-weight:700;letter-spacing:-.03em;line-height:1.4}
+.rc-flow span::before{content:counter(fl);display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800}
+.rc-flow span + span::after{content:none}
+.rc-flow .ar{color:var(--gray-lt);font-size:13px;font-weight:700}
+/* 넘김 막대 — ← → · 쪽수 · 진행 막대 (recruit.js) */
+.rc-nav{display:flex;align-items:center;gap:20px;margin-top:18px}
 .rc-nav[hidden]{display:none}
 .rc-nav .cnt{font-size:14px;font-weight:700;letter-spacing:.04em;font-feature-settings:"tnum";color:var(--gray)}
 .rc-nav .cnt b{color:var(--ink)}
 .rc-nav .bar{position:relative;flex:1;height:3px;border-radius:2px;background:var(--line-lt);overflow:hidden}
 .rc-nav .bar i{position:absolute;top:0;bottom:0;left:0;width:var(--w,25%);transform:translateX(var(--x,0));border-radius:2px;background:var(--ink);transition:transform .3s,width .3s}
-.rc-nav button{display:grid;place-items:center;width:52px;height:52px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);
-  font-size:20px;cursor:pointer;transition:background .2s,color .2s,border-color .2s,opacity .2s}
+.rc-nav .btns{display:flex;gap:10px}
+.rc-nav button{display:grid;place-items:center;width:48px;height:48px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);
+  font-size:19px;cursor:pointer;transition:background .2s,color .2s,border-color .2s,opacity .2s}
 .rc-nav button:hover:not(:disabled){background:var(--ink);border-color:var(--ink);color:#fff}
 .rc-nav button:disabled{opacity:.3;cursor:default}
-.rc-nav .btns{display:flex;gap:10px}
-/* 편집 화면은 예전처럼 격자 */
-html.ed-on .rc-cards{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:20px}
+/* 편집 화면은 예전처럼 격자 · 글 그대로 */
+html.ed-on .rc-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 html.ed-on .rc-nav{display:none}
-@media(max-width:1100px){ .rc-cards{--rc-w:calc((100% - var(--rc-gap)) / 2.2)} html.ed-on .rc-cards{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media(max-width:768px){
-  .rc-cards{--rc-gap:14px;--rc-w:84%}
-  .rc-card h3{font-size:26px}
-  .rc-nav{gap:16px;padding-right:70px}
+  .rc-cards{--rc-gap:14px;--rc-w:86%}
+  .rc-card{padding:24px 20px 24px}
+  .rc-card::after{top:24px;right:20px}
+  .rc-card h3{font-size:23px}
+  .rc-card[data-f] h3::before{flex-basis:50px;height:50px;background-size:28px}
+  .rc-card dl{grid-template-columns:5.8em minmax(0,1fr)}
+  .rc-nav{gap:14px;padding-right:70px}
   .rc-nav .btns{display:none}
 }
 @media(max-width:640px){ html.ed-on .rc-cards{grid-template-columns:1fr} }

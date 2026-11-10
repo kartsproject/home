@@ -33,42 +33,128 @@
   });
 })();
 
-/* ---------- 분야 카드 넘김 띠 (2026-11-10 사용자 · WBS 21.1) ----------
-   .rc-cards(카드 띠, 가로 스크롤 · 카드마다 멈춤 — common.css) 밑에 쪽수 · 진행 막대 · ← → 단추를 만든다.
-   카드가 다 들어가 넘길 것이 없으면 막대를 숨긴다. PC 마우스는 끌어서도 넘긴다(손가락 · 터치패드는 브라우저 기본 스크롤).
-   띠는 오른쪽으로 화면 끝까지 뻗는다(--bleed). 편집 화면(html.ed-on)은 격자라 아무것도 하지 않는다.
-   카드 수는 편집에서 늘거나 줄 수 있어 그때그때 센다 */
+/* ---------- 분야별 모집 요강 카드 (2026-11-10 사용자 · WBS 21.1) ----------
+   ① 도식: 카드 글을 읽어 아이콘 · 칩 · 연도 막대 · 흐름으로 그린다(보이는 것만 — 원래 글은 .rc-sr로 화면 읽기 프로그램에 남김).
+      분야 아이콘은 이름(음악 · 무용 · 전통 · 미술)으로, 항목 아이콘은 항목 이름(세부전공 · 모집대상 · 선발방식 · 동영상 · 포트폴리오)으로 고른다.
+      읽지 못한 글(모양이 다른 글)은 손대지 않고 그대로 둔다. 운영진 글은 textContent로만 넣는다(CLAUDE.md 보안 5).
+      편집 화면(?edit=1 · 이 탭에서 편집을 켬)에서는 그리지 않는다 — 글을 그대로 고치게.
+      발행된 고친 글(data/posts.json pages)이 덮인 뒤(Content.ready) 그린다.
+   ② 넘김 띠: .rc-cards(가로 띠 · 카드마다 멈춤, common.css) 밑에 ← → · 쪽수 · 진행 막대. 넘길 것이 없으면 숨김.
+      PC 마우스는 끌어서도 넘긴다. 띠에 초점이 있으면 키보드 ← → */
 (function(){
-  var root = document.documentElement;
-  [].forEach.call(document.querySelectorAll('.rc-cards'), function(track){
-    if(root.classList.contains('ed-on')) return;
-    var nav = document.createElement('div'); nav.className = 'rc-nav'; nav.hidden = true;
-    var cnt = document.createElement('p'); cnt.className = 'cnt'; cnt.setAttribute('aria-live', 'polite');
-    var cur = document.createElement('b'), tot = document.createElement('span');
-    cnt.appendChild(cur); cnt.appendChild(document.createTextNode(' / ')); cnt.appendChild(tot);
-    var bar = document.createElement('div'); bar.className = 'bar'; bar.setAttribute('aria-hidden', 'true');
-    var fill = document.createElement('i'); bar.appendChild(fill);
-    var btns = document.createElement('div'); btns.className = 'btns';
-    function btn(cls, label, txt){ var b = document.createElement('button'); b.type = 'button'; b.className = cls; b.setAttribute('aria-label', label); b.textContent = txt; btns.appendChild(b); return b; }
+  var root = document.documentElement, tracks = [].slice.call(document.querySelectorAll('.rc-cards'));
+  if(!tracks.length) return;
+  var editing = /[?&]edit=1(&|$)/.test(location.search);
+  try{ editing = editing || sessionStorage.getItem('hp_edit') === '1'; }catch(e){}
+  if(editing) return;
+
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function lines(dd){   // <br>로 나뉜 줄 — 글자만
+    var out = [''], n;
+    [].forEach.call(dd.childNodes, function(c){ if(c.nodeName === 'BR') out.push(''); else out[out.length - 1] += c.textContent; });
+    return out.map(function(t){ return t.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+  }
+  function hide(dd, vis){   // 원래 글은 읽기 프로그램용으로 남기고 그림을 붙인다
+    var sr = el('span', 'rc-sr');
+    while(dd.firstChild) sr.appendChild(dd.firstChild);
+    vis.setAttribute('aria-hidden', 'true');
+    dd.appendChild(sr); dd.appendChild(vis);
+  }
+  var FIELD = [[/음악/, 'music'], [/무용|발레/, 'dance'], [/전통|국악/, 'trad'], [/미술|시각/, 'art']];
+  var ROW = [[/전공|분야/, 'major'], [/대상|출생|연령|나이/, 'age'], [/선발|전형|방식/, 'flow'], [/포트폴리오|작품/, 'port'], [/동영상|영상|실기/, 'video']];
+  function pick(list, t, dflt){ for(var i = 0; i < list.length; i++) if(list[i][0].test(t)) return list[i][1]; return dflt; }
+
+  // 세부전공 — 「갈래 — 낱말, 낱말」 줄마다 갈래 이름 + 칩
+  function chips(dd){
+    var ls = lines(dd); if(!ls.length) return;
+    var box = el('div', 'rc-chips');
+    ls.forEach(function(l){
+      var g = el('div', 'grp'), m = l.match(/^(.+?)\s*[—–-]\s*(.+)$/), items = m ? m[2] : l;
+      if(m) g.appendChild(el('b', null, m[1]));
+      items.split(/\s*[,，·]\s*/).filter(Boolean).forEach(function(w){ g.appendChild(el('span', null, w)); });
+      box.appendChild(g);
+    });
+    hide(dd, box);
+  }
+  // 선발방식 — 쉼표로 나뉜 서류 · 단계를 ① → ② → ③
+  function flow(dd){
+    var parts = dd.textContent.replace(/\s+/g, ' ').trim().split(/\s*[,，·]\s*/).filter(Boolean);
+    if(parts.length < 2 || parts.length > 6) return;
+    var box = el('div', 'rc-flow');
+    parts.forEach(function(w, i){   // 화살표는 다음 단계와 붙여 둔다(줄이 바뀔 때 화살표만 줄 끝에 남지 않게)
+      var st = el('em', 'st');
+      if(i) st.appendChild(el('i', 'ar', '→'));
+      st.appendChild(el('span', null, w));
+      box.appendChild(st);
+    });
+    hide(dd, box);
+  }
+  // 모집대상 — 「2009. 1. 1. ~ 2016. 12. 31. 출생」에서 연도 둘. 막대 눈금은 같은 띠의 모든 카드 공통
+  function years(dd){
+    var m = dd.textContent.match(/((?:19|20)\d{2})[^~〜～–]*[~〜～–]\s*((?:19|20)\d{2})/);
+    return m ? [Number(m[1]), Number(m[2])].sort() : null;
+  }
+  function grade(ref, y){   // 학교는 1~12월생이 한 학년(입학 = 만 6세가 되는 해 다음 3월) → 그해 학년 = 기준연도 − 출생연도 − 6
+    var n = ref - y - 6;
+    if(n >= 1 && n <= 6) return '초' + n;
+    if(n >= 7 && n <= 9) return '중' + (n - 6);
+    if(n >= 10 && n <= 12) return '고' + (n - 9);
+    return '';
+  }
+  function age(dd, y, lo, hi, ref){
+    var box = el('div', 'rc-age'), ys = el('p', 'yrs'), a = el('b', null, String(y[0])), b = el('b', null, String(y[1]));
+    a.appendChild(el('small', null, '년생')); b.appendChild(el('small', null, '년생'));
+    ys.appendChild(a); ys.appendChild(b);
+    var ax = el('div', 'axis'), bar = el('i'), span = Math.max(1, hi - lo + 1);
+    bar.style.setProperty('--a', ((y[0] - lo) / span * 100) + '%');
+    bar.style.setProperty('--b', ((hi - y[1]) / span * 100) + '%');
+    ax.appendChild(bar);
+    box.appendChild(ys); box.appendChild(ax);
+    var g0 = ref ? grade(ref, y[0]) : '', g1 = ref ? grade(ref, y[1]) : '';
+    if(g0 && g1){ var gd = el('p', 'grd'); gd.appendChild(el('span', null, g0)); gd.appendChild(el('small', null, ref + '년 학년 기준')); gd.appendChild(el('span', null, g1)); box.appendChild(gd); }
+    hide(dd, box);
+  }
+
+  function draw(track){
+    var cards = [].slice.call(track.querySelectorAll('.rc-card')), ages = [], lo = 9999, hi = 0;
+    var pnl = track.closest('.panel'), ref = pnl && /^y(\d{4})$/.test(pnl.id) ? Number(pnl.id.slice(1)) : 0;
+    cards.forEach(function(card){
+      var h = card.querySelector('h3');
+      if(h) card.setAttribute('data-f', pick(FIELD, h.textContent, 'etc'));
+      [].forEach.call(card.querySelectorAll('dl > dt'), function(dt){
+        var dd = dt.nextElementSibling, kind = pick(ROW, dt.textContent, 'dot');
+        dt.classList.add('ic-' + kind);
+        if(!dd || dd.tagName !== 'DD' || dd.querySelector('a, img')) return;
+        if(kind === 'major') chips(dd);
+        else if(kind === 'flow') flow(dd);
+        else if(kind === 'age'){ var y = years(dd); if(y){ ages.push([dd, y]); lo = Math.min(lo, y[0]); hi = Math.max(hi, y[1]); } }
+      });
+    });
+    ages.forEach(function(p){ age(p[0], p[1], lo, hi, ref); });
+  }
+
+  function slider(track){
+    var nav = el('div', 'rc-nav'); nav.hidden = true;
+    var btns = el('div', 'btns');
+    function btn(cls, label, txt){ var b = el('button', cls, txt); b.type = 'button'; b.setAttribute('aria-label', label); btns.appendChild(b); return b; }
     var prev = btn('prev', '이전 분야 카드', '←'), next = btn('next', '다음 분야 카드', '→');
-    nav.appendChild(btns); nav.appendChild(cnt); nav.appendChild(bar);   /* 단추는 왼쪽 — 오른쪽 아래는 페이지 위 · 아래 단추 자리 */
+    var cnt = el('p', 'cnt'), cur = el('b'), tot = el('span');
+    cnt.setAttribute('aria-live', 'polite');
+    cnt.appendChild(cur); cnt.appendChild(document.createTextNode(' / ')); cnt.appendChild(tot);
+    var bar = el('div', 'bar'), fill = el('i'); bar.setAttribute('aria-hidden', 'true'); bar.appendChild(fill);
+    nav.appendChild(btns); nav.appendChild(cnt); nav.appendChild(bar);
     track.parentNode.insertBefore(nav, track.nextSibling);
 
     function cards(){ return [].slice.call(track.children).filter(function(c){ return c.classList.contains('rc-card') && c.offsetParent !== null; }); }
     function pad(n){ return (n < 10 ? '0' : '') + n; }
     function step(){ var c = cards(); return c.length > 1 ? c[1].offsetLeft - c[0].offsetLeft : (c[0] ? c[0].offsetWidth : 300); }
-    function bleed(){
-      // 띠 부모(본문 폭)의 오른쪽 끝에서 화면 오른쪽 끝까지 — 스크롤 막대 폭을 빼려고 100vw 대신 clientWidth
-      var r = track.parentNode.getBoundingClientRect();
-      track.style.setProperty('--bleed', Math.max(0, Math.round(root.clientWidth - r.right)) + 'px');
-    }
     function update(){
       var c = cards(), max = track.scrollWidth - track.clientWidth, s = step();
-      var shown = Math.max(1, Math.round((track.clientWidth - parseFloat(getComputedStyle(track).paddingRight || 0)) / s));
+      var shown = Math.max(1, Math.floor((track.clientWidth + 8) / s));
       var first = Math.min(c.length - 1, Math.round(track.scrollLeft / s));
       nav.hidden = max < 4 || c.length <= shown;
       cur.textContent = pad(Math.min(c.length, first + 1)); tot.textContent = pad(c.length);
-      var w = Math.min(1, shown / Math.max(1, c.length));
+      var w = Math.min(1, track.clientWidth / Math.max(1, track.scrollWidth));
       fill.style.setProperty('--w', (w * 100) + '%');
       fill.style.setProperty('--x', (max > 0 ? (track.scrollLeft / max) * ((1 - w) / w) * 100 : 0) + '%');
       prev.disabled = track.scrollLeft <= 2;
@@ -77,14 +163,10 @@
     prev.addEventListener('click', function(){ track.scrollBy({ left: -step(), behavior: 'smooth' }); });
     next.addEventListener('click', function(){ track.scrollBy({ left: step(), behavior: 'smooth' }); });
     track.addEventListener('scroll', function(){ window.requestAnimationFrame(update); }, { passive: true });
-    window.addEventListener('resize', function(){ bleed(); update(); });
+    window.addEventListener('resize', update);
 
-    // 마우스로 끌어 넘기기 — 놓으면 가까운 카드에 멈춘다. 조금만 움직였으면 누르기(링크)로 둔다
-    var down = null;
-    track.addEventListener('pointerdown', function(e){
-      if(e.pointerType !== 'mouse' || e.button !== 0) return;
-      down = { x: e.clientX, left: track.scrollLeft, moved: false };
-    });
+    var down = null;   // 마우스로 끌기 — 놓으면 가까운 카드에 멈춤. 조금만 움직였으면 누르기로 둔다
+    track.addEventListener('pointerdown', function(e){ if(e.pointerType === 'mouse' && e.button === 0) down = { x: e.clientX, left: track.scrollLeft, moved: false }; });
     window.addEventListener('pointermove', function(e){
       if(!down) return;
       var dx = e.clientX - down.x;
@@ -96,12 +178,11 @@
       if(!down) return;
       var moved = down.moved; down = null;
       if(!moved) return;
-      var s = step(), to = Math.round(track.scrollLeft / s) * s;
+      var s = step();
       track.classList.remove('drag');
-      track.scrollTo({ left: to, behavior: 'smooth' });
+      track.scrollTo({ left: Math.round(track.scrollLeft / s) * s, behavior: 'smooth' });
     });
-    track.addEventListener('dragstart', function(e){ e.preventDefault(); });   /* 사진을 끌면 브라우저가 그림 끌기로 가로채지 않게 */
-    // 키보드: 띠에 초점이 있으면 ← → 로 한 장씩
+    track.addEventListener('dragstart', function(e){ e.preventDefault(); });
     track.tabIndex = 0;
     track.setAttribute('role', 'region');
     track.setAttribute('aria-label', '분야별 모집 요강 — 좌우로 넘겨 보기');
@@ -109,10 +190,13 @@
       if(e.key === 'ArrowRight'){ e.preventDefault(); next.click(); }
       if(e.key === 'ArrowLeft'){ e.preventDefault(); prev.click(); }
     });
-    // 숨은 연도 탭 안에 있으면 크기가 0 — 탭을 바꾸거나 사진이 들어오면 다시 잰다
-    document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('.yr-tabs')) setTimeout(function(){ bleed(); update(); }, 60); });
-    track.addEventListener('load', function(){ update(); }, true);
-    bleed(); update();
-    setTimeout(function(){ bleed(); update(); }, 400);
-  });
+    // 숨은 연도 탭 안이면 크기가 0 — 탭을 바꾸면 다시 잰다
+    document.addEventListener('click', function(e){ if(e.target.closest && e.target.closest('.yr-tabs')) setTimeout(update, 60); });
+    update(); setTimeout(update, 400);
+    return update;
+  }
+
+  var ups = tracks.map(slider);
+  var ready = window.Content && Content.ready ? Content.ready : Promise.resolve();
+  ready.then(function(){ tracks.forEach(draw); ups.forEach(function(u){ u(); }); }, function(){ tracks.forEach(draw); });
 })();
