@@ -807,6 +807,66 @@ img.ph-none,img[data-photo]{background:#F4F2EC}
   .p1-sec + .rc-cards{margin-top:44px}
 }
 
+/* ---------- 모집 및 선발 — 분야 카드 띠 (2026-11-10 사용자 · WBS 21.1) ----------
+   「텍스트 위주라 심심하다 → 직관적으로, 모자라면 좌우로 넘기게」. 카드 = 분야 대표 사진(사업소개와 같은 자리 ab-*) 위에
+   번호 · 분야 이름, 아래는 요강을 「항목 | 내용」 두 칸 표로. 카드들은 가로 띠(.rc-cards)에 놓여 손가락 · 끌기 · ← → 단추로 넘긴다.
+   PC는 세 장 + 다음 장 끝이 살짝, 태블릿 두 장 + α, 휴대폰 한 장 + α. 띠는 오른쪽으로 화면 끝까지 뻗는다.
+   편집 화면(html.ed-on)은 넘김 없이 예전처럼 격자(카드를 고치고 더하기 쉽게). 넘김 단추 · 쪽수 · 진행 막대는 recruit.js가 만든다 */
+.rc-cards{counter-reset:rc;--rc-gap:24px;--rc-w:calc((100% - 2 * var(--rc-gap)) / 3.18)}
+html:not(.ed-on) .rc-cards{display:flex;gap:var(--rc-gap);overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;
+  margin-right:calc(-1 * var(--bleed,0px));padding:6px var(--bleed,0px) 18px 0}   /* --bleed: 띠 오른쪽 끝 ~ 화면 끝 거리(recruit.js) */
+html:not(.ed-on) .rc-cards::-webkit-scrollbar{display:none}
+html:not(.ed-on) .rc-cards.drag{scroll-snap-type:none;scroll-behavior:auto;cursor:grabbing}
+html:not(.ed-on) .rc-cards.drag *{user-select:none;pointer-events:none}
+html:not(.ed-on) .rc-card{flex:0 0 var(--rc-w)}
+.rc-card{counter-increment:rc;position:relative;display:grid;grid-template-rows:auto 1fr;padding:0;overflow:hidden;
+  border:1px solid var(--line);border-radius:22px;background:#fff;scroll-snap-align:start;
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,opacity .9s cubic-bezier(.22,1,.36,1)}
+.rc-card[data-rv].on:hover{transform:translateY(-6px);box-shadow:0 18px 40px -18px rgba(0,0,0,.28)}
+/* 사진 칸 — 사진 · 어둠 덧칠 · 번호 · 분야 이름이 한 자리에 겹친다 */
+.rc-ph{grid-area:1 / 1;width:100%;aspect-ratio:16 / 11;object-fit:cover;display:block;background:#2a2a2a;
+  transition:transform .8s cubic-bezier(.22,1,.36,1)}
+.rc-ph.ph-none{background:linear-gradient(150deg,#3a3a3a,#161616)}
+.rc-card:hover .rc-ph{transform:scale(1.05)}
+.rc-card::before{content:"";grid-area:1 / 1;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.28),rgba(0,0,0,0) 34%,rgba(0,0,0,0) 46%,rgba(0,0,0,.62))}
+.rc-card::after{content:counter(rc,decimal-leading-zero);position:absolute;top:20px;left:24px;z-index:2;
+  color:#fff;font-size:15px;font-weight:800;letter-spacing:.02em;font-feature-settings:"tnum"}
+.rc-card h3{grid-area:1 / 1;align-self:end;z-index:2;margin:0;padding:0 24px 20px;color:#fff;font-size:30px;font-weight:800;letter-spacing:-.05em;line-height:1.2}
+.rc-card h3::after{content:"";display:block;width:34px;height:4px;margin-top:12px;border-radius:2px;background:var(--yel)}
+/* 요강 — 「항목 | 내용」 두 칸 표 */
+.rc-card dl{display:grid;grid-template-columns:5.6em minmax(0,1fr);align-content:start;margin:0;padding:10px 24px 26px}
+.rc-card dt,.rc-card dd{margin:0;padding:15px 0;border-bottom:1px solid var(--line-lt)}
+.rc-card dt:last-of-type,.rc-card dd:last-of-type{border-bottom:0}
+.rc-card dd+dt{margin-top:0}
+.rc-card dt{display:flex;align-items:flex-start;gap:7px;padding-right:10px;font-size:13px;font-weight:700;color:var(--gray);line-height:1.6}
+.rc-card dt::before{content:"";flex:0 0 6px;height:6px;margin-top:.62em;border-radius:50%;background:var(--yel)}
+.rc-card dd{font-size:15.5px;font-weight:600;line-height:1.6;letter-spacing:-.025em;color:var(--ink)}
+/* 넘김 막대 — 쪽수 · 진행 막대 · ← → (recruit.js) */
+.rc-nav{display:flex;align-items:center;gap:22px;margin-top:22px;padding-right:90px}   /* 오른쪽 90px — 페이지 위 · 아래 단추(고정)와 겹치지 않게 */
+.rc-nav[hidden]{display:none}
+.rc-nav .cnt{font-size:14px;font-weight:700;letter-spacing:.04em;font-feature-settings:"tnum";color:var(--gray)}
+.rc-nav .cnt b{color:var(--ink)}
+.rc-nav .bar{position:relative;flex:1;height:3px;border-radius:2px;background:var(--line-lt);overflow:hidden}
+.rc-nav .bar i{position:absolute;top:0;bottom:0;left:0;width:var(--w,25%);transform:translateX(var(--x,0));border-radius:2px;background:var(--ink);transition:transform .3s,width .3s}
+.rc-nav button{display:grid;place-items:center;width:52px;height:52px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);
+  font-size:20px;cursor:pointer;transition:background .2s,color .2s,border-color .2s,opacity .2s}
+.rc-nav button:hover:not(:disabled){background:var(--ink);border-color:var(--ink);color:#fff}
+.rc-nav button:disabled{opacity:.3;cursor:default}
+.rc-nav .btns{display:flex;gap:10px}
+/* 편집 화면은 예전처럼 격자 */
+html.ed-on .rc-cards{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));gap:20px}
+html.ed-on .rc-nav{display:none}
+@media(max-width:1100px){ .rc-cards{--rc-w:calc((100% - var(--rc-gap)) / 2.2)} html.ed-on .rc-cards{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media(max-width:768px){
+  .rc-cards{--rc-gap:14px;--rc-w:84%}
+  .rc-card h3{font-size:26px}
+  .rc-nav{gap:16px;padding-right:70px}
+  .rc-nav .btns{display:none}
+}
+@media(max-width:640px){ html.ed-on .rc-cards{grid-template-columns:1fr} }
+
 /* ---------- 페이지 직접 편집으로 더한 구역 · 문단 (WBS 18.7, content.js) ----------
    모양은 사이트에 있는 것(.p1-sec 제목 칸 + 내용, .ab-dl 표, .cp-cards 카드, .p1-st 단계)을 그대로 쓰고 모자란 것만 더한다 */
 .x-tx p{font-size:17px;line-height:1.85;color:var(--gray);letter-spacing:-.02em}
