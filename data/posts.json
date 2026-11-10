@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T17:49:37+09:00",
+  "updatedAt": "2026-11-10T17:55:17+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -616,13 +616,9 @@
       "h": 412
     },
     "sv-about": {
-      "fileId": "1RfiJkfRztYNOMid7lO9K7bxfmQMBv1Me",
-      "w": 2000,
-      "h": 1126,
-      "pos": {
-        "x": 50,
-        "y": 45
-      }
+      "fileId": "1fFkAN_MTsOxfykcGjVLQ3ZCXT9hls6ch",
+      "w": 2400,
+      "h": 647
     },
     "ab-music": {
       "fileId": "1cyIoK9YGWhOs5tGTGCQoerFNfh5X6Q_u",
