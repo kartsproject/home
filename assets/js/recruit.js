@@ -67,10 +67,12 @@
   // 세부전공 — 「갈래 — 낱말, 낱말」 줄마다 갈래 이름 + 칩
   function chips(dd){
     var ls = lines(dd); if(!ls.length) return;
-    var box = el('div', 'rc-chips');
+    var box = el('div', 'rc-chips'), RE = /^(.+?)\s*[—–-]\s*(.+)$/;
+    // 갈래가 있는 줄이 하나라도 있으면 갈래 칸을 두고, 갈래 없는 줄(예: 전통예술 「연희」)은 갈래 칸을 비워 칩 줄을 맞춘다(2026-11-11 수정안)
+    if(ls.some(function(l){ return RE.test(l); })) box.classList.add('has-grp');
     ls.forEach(function(l){
-      var g = el('div', 'grp'), m = l.match(/^(.+?)\s*[—–-]\s*(.+)$/), items = m ? m[2] : l;
-      if(m) g.appendChild(el('b', null, m[1]));
+      var g = el('div', 'grp'), m = l.match(RE), items = m ? m[2] : l;
+      if(box.classList.contains('has-grp')) g.appendChild(el('b', null, m ? m[1] : ''));
       items.split(/\s*[,，·]\s*/).filter(Boolean).forEach(function(w){ g.appendChild(el('span', null, w)); });
       box.appendChild(g);
     });
@@ -94,13 +96,6 @@
     var m = dd.textContent.match(/((?:19|20)\d{2})[^~〜～–]*[~〜～–]\s*((?:19|20)\d{2})/);
     return m ? [Number(m[1]), Number(m[2])].sort() : null;
   }
-  function grade(ref, y){   // 학교는 1~12월생이 한 학년(입학 = 만 6세가 되는 해 다음 3월) → 그해 학년 = 기준연도 − 출생연도 − 6
-    var n = ref - y - 6;
-    if(n >= 1 && n <= 6) return '초' + n;
-    if(n >= 7 && n <= 9) return '중' + (n - 6);
-    if(n >= 10 && n <= 12) return '고' + (n - 9);
-    return '';
-  }
   function age(dd, y, lo, hi, ref){
     var box = el('div', 'rc-age'), ys = el('p', 'yrs'), a = el('b', null, String(y[0])), b = el('b', null, String(y[1]));
     a.appendChild(el('small', null, '년생')); b.appendChild(el('small', null, '년생'));
@@ -110,8 +105,8 @@
     bar.style.setProperty('--b', ((hi - y[1]) / span * 100) + '%');
     ax.appendChild(bar);
     box.appendChild(ys); box.appendChild(ax);
-    var g0 = ref ? grade(ref, y[0]) : '', g1 = ref ? grade(ref, y[1]) : '';
-    if(g0 && g1){ var gd = el('p', 'grd'); gd.appendChild(el('span', null, g0)); gd.appendChild(el('small', null, ref + '년 학년 기준')); gd.appendChild(el('span', null, g1)); box.appendChild(gd); }
+    // 학년은 빼고 「출생연도 기준」만 (2026-11-11 수정안 — 지원 자격에서도 학년 표기를 뺌)
+    if(ref){ var gd = el('p', 'grd'); gd.appendChild(el('small', null, ref + '년 출생연도 기준')); box.appendChild(gd); }
     hide(dd, box);
   }
 

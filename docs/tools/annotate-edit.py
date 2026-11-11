@@ -30,8 +30,8 @@ LISTS = {
     'about': ['dl.ab-dl', 'ul.ab-fs', 'ol.ab-cy'],
     'recruit': ['dl.ab-dl', 'div.rc-cards', 'ol.rc-steps'],
     'programs': ['ol.wk-fw'],
-    'mentoring': ['dl.ab-dl', 'ol.p1-st'],
-    'camp': ['div.cp-cards', 'ul.cp-st'],
+    'mentoring': ['dl.ab-dl', 'div.cp-cards'],   # 2026-11-11 「진행 방식」(ol.p1-st) → 「교육내용」 아이콘 카드
+    'camp': ['div.cp-cards'],   # 2026-11-11 「함께 지내는 캠프」(ul.cp-st) 뺌
 }
 
 # 구역 자리: 하위 페이지는 탭 칸의 큰 묶음, 메인은 body 바로 아래 구역(표지 빼고)
