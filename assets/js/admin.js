@@ -725,7 +725,7 @@
     box = box || $('fileFld'); lim = lim || S.data.limits;
     if(!box) return;
     box.textContent = '';
-    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? 'PDF 한 개. 모집 및 선발 페이지의 이 연도 탭에 「' + (e.post.year || '') + ' 모집요강 내려받기」 단추로 나옵니다(파일 이름은 보이지 않음).' : '방문자가 내려받을 수 있습니다' })]));
+    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 · 서류 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? '1번 파일은 모집 및 선발 페이지의 이 연도 탭에 「' + (e.post.year || '') + ' 모집요강 내려받기」 단추로 나옵니다(파일 이름은 보이지 않음). 2번부터는 그 아래 「함께 내는 서류」 목록에 파일 이름 그대로 나오니, 「지원서 양식(음악).hwp」처럼 알아보기 쉬운 이름으로 올려 주세요. ▲▼로 순서를 바꿉니다.' : '방문자가 내려받을 수 있습니다' })]));
     if(e.files.length){
       box.appendChild(h('div', { class:'files' }, e.files.map(function(f, i){
         var move = function(to){ e.files.splice(to, 0, e.files.splice(i, 1)[0]); markDirty(); drawFiles(null, e); };

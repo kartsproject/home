@@ -2,7 +2,9 @@
    2026 K예술영재 프로젝트 — recruit.js
    모집 및 선발 페이지의 「모집요강 내려받기」(WBS 17.4)와 분야 카드 넘김 띠(WBS 21.1, 맨 아래). 관리자 페이지 「모집요강」 탭에서 연도별로 올린 파일이
    data/posts.json의 guides에 { "2026": { title, files:[{ fileId, name, size }] } }로 나온다.
-   연도 탭 안의 <p class="rc-guide" data-guide-year="2026">에 내려받기 단추 하나를 넣고, 파일이 없으면 숨긴 채로 둔다.
+   연도 탭 안의 <div class="rc-guide" data-guide-year="2026">에 첫 파일은 「{연도} 모집요강 내려받기」 단추로,
+   둘째 파일부터는 그 아래 「함께 내는 서류」 목록(파일 이름 · 형식 · 크기)으로 넣는다(2026-11-11 사용자 — 양식 등도 첨부, WBS 22.8).
+   파일이 없으면 숨긴 채로 둔다.
    ▣ 운영진이 입력한 값(제목 · 파일명)은 textContent로만 넣는다 (CLAUDE.md 보안 5).
    ============================================================ */
 (function(){
@@ -16,11 +18,11 @@
     return e;
   }
 
-  // 파일 이름은 보이지 않고 연도마다 「{연도} 모집요강 내려받기」 단추 하나 (2026-11-04 사용자 요청)
+  // 첫 파일 = 모집요강 단추(파일 이름은 안 보임, 2026-11-04 사용자). 둘째부터 = 함께 내는 서류(이름 · 형식 · 크기, 2026-11-11 사용자)
   Board.load().then(function(d){
     var guides = (d && d.guides) || {};
     boxes.forEach(function(box){
-      var year = box.getAttribute('data-guide-year'), g = guides[year], f = g && g.files && g.files[0];
+      var year = box.getAttribute('data-guide-year'), g = guides[year], files = (g && g.files) || [], f = files[0];
       if(!f) return;
       var a = el('a', 'rc-dl');
       a.href = Board.fileUrl(f.fileId);
@@ -28,6 +30,24 @@
       a.appendChild(el('span', 'ic', '↓'));
       a.setAttribute('aria-label', year + ' 모집요강 내려받기 (' + Board.formatSize(f.size || 0) + ')');
       box.appendChild(a);
+      if(files.length > 1){
+        var wrap = el('div', 'rc-forms');
+        wrap.appendChild(el('p', 'lb', '함께 내는 서류'));
+        var ul = el('ul');
+        files.slice(1).forEach(function(x){
+          var name = String(x.name || '첨부파일'), m = name.match(/^(.*)\.([A-Za-z0-9]{2,5})$/);
+          var li = el('li'), link = el('a');
+          link.href = Board.fileUrl(x.fileId);
+          link.appendChild(el('span', 'nm', m ? m[1] : name));
+          if(m) link.appendChild(el('span', 'ext', m[2].toUpperCase()));
+          link.appendChild(el('span', 'sz', Board.formatSize(x.size || 0)));
+          link.appendChild(el('span', 'ic', '↓'));
+          link.setAttribute('aria-label', name + ' 내려받기 (' + Board.formatSize(x.size || 0) + ')');
+          li.appendChild(link); ul.appendChild(li);
+        });
+        wrap.appendChild(ul);
+        box.appendChild(wrap);
+      }
       box.hidden = false;
     });
   });

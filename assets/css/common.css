@@ -785,6 +785,20 @@ html.zv-open{overflow:hidden}
 .rc-dl:hover,.rc-dl:focus-visible{background:#000}
 .rc-dl .ic{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--yel);color:var(--ink);font-size:15px}
 #y2027 .rc-guide{margin:0 0 28px;text-align:center}
+/* 함께 내는 서류(양식 등) — 모집요강 단추 아래, 파일마다 한 줄(이름 · 형식 · 크기 · ↓). 2026-11-11 사용자 · WBS 22.8 */
+.rc-guide{display:flex;flex-direction:column;align-items:flex-end;gap:16px}
+#y2027 .rc-guide{align-items:center}
+.rc-forms{width:min(100%,460px)}
+.rc-forms .lb{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--gray);letter-spacing:-.02em;text-align:left}
+.rc-forms ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--ink)}
+.rc-forms li{border-bottom:1px solid var(--line-lt)}
+.rc-forms a{display:flex;align-items:center;gap:10px;padding:11px 4px;font-size:15px;font-weight:600;letter-spacing:-.025em;color:var(--ink);text-align:left;transition:background .2s}
+.rc-forms a:hover,.rc-forms a:focus-visible{background:#F7F5EF}
+.rc-forms .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rc-forms .ext{flex:none;padding:2px 7px;border-radius:5px;background:#F4F2EC;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--gray)}
+.rc-forms .sz{flex:none;font-size:12.5px;font-weight:500;color:var(--gray-lt);font-feature-settings:"tnum"}
+.rc-forms .ic{flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--yel);font-size:13px;font-weight:700}
+@media(max-width:768px){ .rc-guide{align-items:stretch;width:100%} .rc-dl{justify-content:space-between} .rc-forms{width:100%} }
 /* 단계 아래 날짜 (2026 모집 공고 기준) */
 .rc-steps p{margin-top:8px;font-size:15px;line-height:1.6;color:var(--gray);letter-spacing:-.02em}
 
@@ -809,6 +823,8 @@ img.ph-none,img[data-photo]{background:#F4F2EC}
 .p1-sec + .rc-cards{margin-top:70px}
 @media(max-width:768px){
   .rc-lead-r{justify-content:flex-end}
+  .rc-lead-r:has(.rc-forms){justify-content:stretch}   /* 함께 내는 서류가 있으면 칸 폭 가득(WBS 22.8) */
+  .rc-lead-r .rc-guide{flex:1 1 auto;min-width:0}
   .p1-sec + .rc-cards{margin-top:44px}
 }
 
