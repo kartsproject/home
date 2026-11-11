@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T13:25:15+09:00",
+  "updatedAt": "2026-11-11T13:33:19+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -744,6 +744,26 @@
           "fileId": "1rMSLtbJQuZViOVJsdRnmRfeGu7Tq5XuX",
           "name": "2026 K예술영재 프로젝트 참가자 모집 공고.pdf",
           "size": 324499
+        },
+        {
+          "fileId": "1pTgb_OvIW4aEw_-jVk19bBWMF0W0ORqi",
+          "name": "[공고] 2026 K예술영재 프로젝트 참가자 모집 공고.hwp",
+          "size": 110592
+        },
+        {
+          "fileId": "1Gq2KKWYb2gXNjLHYAVw-0Mo3pKephirC",
+          "name": "[붙임 1] K예술영재_참가 지원서 및 연구 참여 동의서.hwp",
+          "size": 136704
+        },
+        {
+          "fileId": "17F9Q1TkgS3Z-CFOEMugEx3fH9y60Ep1F",
+          "name": "[붙임 2] K예술영재_자기소개서_음악무용전통예술_서식.hwp",
+          "size": 59904
+        },
+        {
+          "fileId": "1_mPUL_u8_55WeU222u-mszyjajNJXRZl",
+          "name": "[붙임 3] K예술영재_지원에세이_미술_포트폴리오 서식.hwp",
+          "size": 114176
         }
       ]
     }
