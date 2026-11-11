@@ -785,20 +785,26 @@ html.zv-open{overflow:hidden}
 .rc-dl:hover,.rc-dl:focus-visible{background:#000}
 .rc-dl .ic{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--yel);color:var(--ink);font-size:15px}
 #y2027 .rc-guide{margin:0 0 28px;text-align:center}
-/* 함께 내는 서류(양식 등) — 모집요강 단추 아래, 파일마다 한 줄(이름 · 형식 · 크기 · ↓). 2026-11-11 사용자 · WBS 22.8 */
-.rc-guide{display:flex;flex-direction:column;align-items:flex-end;gap:16px}
-#y2027 .rc-guide{align-items:center}
-.rc-forms{width:min(100%,460px)}
-.rc-forms .lb{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--gray);letter-spacing:-.02em;text-align:left}
-.rc-forms ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--ink)}
-.rc-forms li{border-bottom:1px solid var(--line-lt)}
-.rc-forms a{display:flex;align-items:center;gap:10px;padding:11px 4px;font-size:15px;font-weight:600;letter-spacing:-.025em;color:var(--ink);text-align:left;transition:background .2s}
-.rc-forms a:hover,.rc-forms a:focus-visible{background:#F7F5EF}
-.rc-forms .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rc-forms .ext{flex:none;padding:2px 7px;border-radius:5px;background:#F4F2EC;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--gray)}
-.rc-forms .sz{flex:none;font-size:12.5px;font-weight:500;color:var(--gray-lt);font-feature-settings:"tnum"}
-.rc-forms .ic{flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--yel);font-size:13px;font-weight:700}
-@media(max-width:768px){ .rc-guide{align-items:stretch;width:100%} .rc-dl{justify-content:space-between} .rc-forms{width:100%} }
+/* 모집요강 · 서류 펼침 목록 — 파일이 여럿이면 단추를 누를 때 아래로 펼쳐진다(2026-11-11 사용자 · WBS 22.9, recruit.js) */
+.rc-guide{position:relative}
+button.rc-dl{border:0;cursor:pointer;font-family:inherit}
+button.rc-dl .ic{transition:transform .25s}
+.rc-guide.open button.rc-dl .ic{transform:rotate(180deg)}
+.rc-menu{position:absolute;top:calc(100% + 10px);right:0;z-index:30;width:min(440px,calc(100vw - 40px));padding:8px;border:1px solid var(--line);border-radius:18px;background:#fff;
+  box-shadow:0 20px 40px -18px rgba(0,0,0,.28);opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .2s,transform .2s,visibility 0s .2s}
+.rc-guide.open .rc-menu{opacity:1;visibility:visible;transform:none;transition:opacity .2s,transform .2s}
+#y2027 .rc-menu{right:auto;left:50%;transform:translate(-50%,-6px)}
+#y2027 .rc-guide.open .rc-menu{transform:translate(-50%,0)}
+.rc-menu ul{margin:0;padding:0;list-style:none;text-align:left}
+.rc-menu .sep{padding:12px 12px 6px;font-size:12px;font-weight:700;color:var(--gray-lt);letter-spacing:-.02em;border-top:1px solid var(--line-lt);margin-top:4px}
+.rc-menu a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;font-size:15px;font-weight:600;letter-spacing:-.025em;color:var(--ink);transition:background .15s}
+.rc-menu a:hover,.rc-menu a:focus-visible{background:#F7F5EF;outline:none}
+.rc-menu li:first-child a{font-weight:800}
+.rc-menu .nm{flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.45;word-break:keep-all}   /* 긴 파일 이름은 두 줄까지 */
+.rc-menu .ext{flex:none;padding:2px 7px;border-radius:5px;background:#F4F2EC;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--gray)}
+.rc-menu .sz{flex:none;font-size:12.5px;font-weight:500;color:var(--gray-lt);font-feature-settings:"tnum"}
+.rc-menu .ic{flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--yel);font-size:13px;font-weight:700}
+@media(max-width:768px){ .rc-menu{left:0;right:0;width:auto} .rc-guide{width:100%} .rc-dl{width:100%;justify-content:space-between} }
 /* 단계 아래 날짜 (2026 모집 공고 기준) */
 .rc-steps p{margin-top:8px;font-size:15px;line-height:1.6;color:var(--gray);letter-spacing:-.02em}
 
@@ -823,8 +829,7 @@ img.ph-none,img[data-photo]{background:#F4F2EC}
 .p1-sec + .rc-cards{margin-top:70px}
 @media(max-width:768px){
   .rc-lead-r{justify-content:flex-end}
-  .rc-lead-r:has(.rc-forms){justify-content:stretch}   /* 함께 내는 서류가 있으면 칸 폭 가득(WBS 22.8) */
-  .rc-lead-r .rc-guide{flex:1 1 auto;min-width:0}
+  .rc-lead-r .rc-guide{flex:1 1 auto;min-width:0}   /* 휴대폰은 단추 · 펼침 목록이 칸 폭 가득 */
   .p1-sec + .rc-cards{margin-top:44px}
 }
 

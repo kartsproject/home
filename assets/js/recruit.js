@@ -2,8 +2,8 @@
    2026 K예술영재 프로젝트 — recruit.js
    모집 및 선발 페이지의 「모집요강 내려받기」(WBS 17.4)와 분야 카드 넘김 띠(WBS 21.1, 맨 아래). 관리자 페이지 「모집요강」 탭에서 연도별로 올린 파일이
    data/posts.json의 guides에 { "2026": { title, files:[{ fileId, name, size }] } }로 나온다.
-   연도 탭 안의 <div class="rc-guide" data-guide-year="2026">에 첫 파일은 「{연도} 모집요강 내려받기」 단추로,
-   둘째 파일부터는 그 아래 「함께 내는 서류」 목록(파일 이름 · 형식 · 크기)으로 넣는다(2026-11-11 사용자 — 양식 등도 첨부, WBS 22.8).
+   연도 탭 안의 <div class="rc-guide" data-guide-year="2026">에 내려받기 단추를 넣는다. 파일이 하나면 누르면 바로 받고,
+   여럿이면 누를 때 목록이 펼쳐진다(1번 = 「{연도} 모집요강」, 2번부터 = 「함께 내는 서류」 파일 이름 · 형식 · 크기) — 2026-11-11 사용자, WBS 22.8 · 22.9.
    파일이 없으면 숨긴 채로 둔다.
    ▣ 운영진이 입력한 값(제목 · 파일명)은 textContent로만 넣는다 (CLAUDE.md 보안 5).
    ============================================================ */
@@ -18,36 +18,78 @@
     return e;
   }
 
-  // 첫 파일 = 모집요강 단추(파일 이름은 안 보임, 2026-11-04 사용자). 둘째부터 = 함께 내는 서류(이름 · 형식 · 크기, 2026-11-11 사용자)
+  // 파일이 하나면 단추를 누르면 바로 받고, 여럿이면 단추 아래로 목록이 펼쳐진다(2026-11-11 사용자).
+  // 목록 1번 = 모집요강(「{연도} 모집요강」 + 형식 · 크기), 2번부터 = 함께 내는 서류(파일 이름 그대로)
+  function row(x, label){
+    var name = String(x.name || '첨부파일'), m = name.match(/^(.*)\.([A-Za-z0-9]{2,5})$/);
+    var li = el('li'), link = el('a');
+    link.href = Board.fileUrl(x.fileId);
+    link.setAttribute('role', 'menuitem');
+    link.appendChild(el('span', 'nm', label || (m ? m[1] : name)));
+    if(m) link.appendChild(el('span', 'ext', m[2].toUpperCase()));
+    link.appendChild(el('span', 'sz', Board.formatSize(x.size || 0)));
+    link.appendChild(el('span', 'ic', '↓'));
+    link.setAttribute('aria-label', (label || name) + ' 내려받기 (' + Board.formatSize(x.size || 0) + ')');
+    li.setAttribute('role', 'none');
+    li.appendChild(link);
+    return li;
+  }
+  var openBox = null;
+  function close(box){
+    if(!box) return;
+    box.classList.remove('open');
+    box.querySelector('.rc-dl').setAttribute('aria-expanded', 'false');
+    if(openBox === box) openBox = null;
+  }
+  document.addEventListener('click', function(e){ if(openBox && !openBox.contains(e.target)) close(openBox); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && openBox){ var b = openBox; close(b); b.querySelector('.rc-dl').focus(); }
+  });
+
   Board.load().then(function(d){
     var guides = (d && d.guides) || {};
-    boxes.forEach(function(box){
+    boxes.forEach(function(box, bi){
       var year = box.getAttribute('data-guide-year'), g = guides[year], files = (g && g.files) || [], f = files[0];
       if(!f) return;
-      var a = el('a', 'rc-dl');
-      a.href = Board.fileUrl(f.fileId);
-      a.appendChild(el('span', null, year + ' 모집요강 내려받기'));
-      a.appendChild(el('span', 'ic', '↓'));
-      a.setAttribute('aria-label', year + ' 모집요강 내려받기 (' + Board.formatSize(f.size || 0) + ')');
-      box.appendChild(a);
-      if(files.length > 1){
-        var wrap = el('div', 'rc-forms');
-        wrap.appendChild(el('p', 'lb', '함께 내는 서류'));
-        var ul = el('ul');
-        files.slice(1).forEach(function(x){
-          var name = String(x.name || '첨부파일'), m = name.match(/^(.*)\.([A-Za-z0-9]{2,5})$/);
-          var li = el('li'), link = el('a');
-          link.href = Board.fileUrl(x.fileId);
-          link.appendChild(el('span', 'nm', m ? m[1] : name));
-          if(m) link.appendChild(el('span', 'ext', m[2].toUpperCase()));
-          link.appendChild(el('span', 'sz', Board.formatSize(x.size || 0)));
-          link.appendChild(el('span', 'ic', '↓'));
-          link.setAttribute('aria-label', name + ' 내려받기 (' + Board.formatSize(x.size || 0) + ')');
-          li.appendChild(link); ul.appendChild(li);
-        });
-        wrap.appendChild(ul);
-        box.appendChild(wrap);
+      if(files.length === 1){   // 하나면 예전처럼 바로 받기
+        var a = el('a', 'rc-dl');
+        a.href = Board.fileUrl(f.fileId);
+        a.appendChild(el('span', null, year + ' 모집요강 내려받기'));
+        a.appendChild(el('span', 'ic', '↓'));
+        a.setAttribute('aria-label', year + ' 모집요강 내려받기 (' + Board.formatSize(f.size || 0) + ')');
+        box.appendChild(a);
+        box.hidden = false;
+        return;
       }
+      var id = 'rc-files-' + year + '-' + bi;
+      var btn = el('button', 'rc-dl');
+      btn.type = 'button';
+      btn.setAttribute('aria-haspopup', 'true');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', id);
+      btn.appendChild(el('span', null, year + ' 모집요강 · 서류 내려받기'));
+      btn.appendChild(el('span', 'ic', '↓'));
+      var menu = el('div', 'rc-menu'); menu.id = id;
+      var ul = el('ul'); ul.setAttribute('role', 'menu'); ul.setAttribute('aria-label', year + ' 모집요강 · 서류');
+      ul.appendChild(row(f, year + ' 모집요강'));
+      if(files.length > 1){
+        var sep = el('li', 'sep', '함께 내는 서류'); sep.setAttribute('role', 'presentation'); ul.appendChild(sep);
+        files.slice(1).forEach(function(x){ ul.appendChild(row(x)); });
+      }
+      menu.appendChild(ul);
+      btn.addEventListener('click', function(){
+        if(box.classList.contains('open')){ close(box); return; }
+        if(openBox) close(openBox);
+        box.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); openBox = box;
+      });
+      // 목록 안에서 ↑ ↓로 옮겨 다닌다
+      menu.addEventListener('keydown', function(e){
+        if(e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        var items = [].slice.call(menu.querySelectorAll('a')), i = items.indexOf(document.activeElement);
+        e.preventDefault();
+        items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+      });
+      box.appendChild(btn); box.appendChild(menu);
       box.hidden = false;
     });
   });
