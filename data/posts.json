@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T18:05:17+09:00",
+  "updatedAt": "2026-11-11T09:37:39+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -492,16 +492,6 @@
         },
         {
           "fileId": "1tGgKE66kW5fzUh3_E1inovuYVhJZPH0w",
-          "w": 1600,
-          "h": 1200
-        },
-        {
-          "fileId": "1E1pnqijhhq_E6JhBfJwJNjTPijcMPLJ8",
-          "w": 1200,
-          "h": 1600
-        },
-        {
-          "fileId": "1YhkRHNzFcmXikZKJ5jX52HlnEj5b64Nk",
           "w": 1600,
           "h": 1200
         },
