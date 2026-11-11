@@ -725,18 +725,23 @@
     box = box || $('fileFld'); lim = lim || S.data.limits;
     if(!box) return;
     box.textContent = '';
-    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 · 서류 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? '모집 및 선발 페이지의 이 연도 탭에 「' + (e.post.year || '') + ' 모집요강 내려받기」 단추로 나옵니다. 파일이 여럿이면 단추를 누를 때 목록이 펼쳐지고, 1번은 「' + (e.post.year || '') + ' 모집요강」, 2번부터는 「함께 내는 서류」로 파일 이름 그대로 나오니 「지원서 양식(음악).hwp」처럼 알아보기 쉬운 이름으로 올려 주세요. ▲▼로 순서를 바꿉니다.' : '방문자가 내려받을 수 있습니다' })]));
+    box.appendChild(h('span', { class:'lb' }, [(e.board === 'guide' ? '모집요강 · 서류 파일' : '첨부파일') + ' (' + e.files.length + ' / ' + e.maxFiles + ')', h('span', { class:'hint', text:e.board === 'guide' ? '모집 및 선발 페이지의 이 연도 탭에 「' + (e.post.year || '') + ' 모집요강 내려받기」 단추로 나옵니다. 파일이 여럿이면 단추를 누를 때 목록이 펼쳐집니다. 파일마다 「목록에 보일 이름」을 적을 수 있고, 비우면 1번은 「' + (e.post.year || '') + ' 모집요강」, 2번부터는 파일 이름이 나옵니다. ▲▼로 순서를 바꿉니다.' : '방문자가 내려받을 수 있습니다' })]));
     if(e.files.length){
       box.appendChild(h('div', { class:'files' }, e.files.map(function(f, i){
         var move = function(to){ e.files.splice(to, 0, e.files.splice(i, 1)[0]); markDirty(); drawFiles(null, e); };
-        return h('div', { class:'fl' }, [
+        // 모집요강: 파일마다 「목록에 보일 이름」 (비우면 1번은 「{연도} 모집요강」, 2번부터는 파일 이름) — 2026-11-11 사용자
+        var lbl = e.board === 'guide' ? h('input', { type:'text', class:'fl-lb', maxlength:'60', value:f.label || '',
+          placeholder:'목록에 보일 이름 — 비우면 ' + (i === 0 ? '「' + (e.post.year || '') + ' 모집요강」' : '파일 이름'),
+          'aria-label':(i + 1) + '번 파일 목록에 보일 이름', oninput:function(){ f.label = this.value; markDirty(); } }) : null;
+        return h('div', { class:'fl' + (lbl ? ' has-lb' : '') }, [
           h('span', { class:'nm', text:(i + 1) + '. ' + f.name }),
           f.uploading ? h('span', { class:'st', text:'올리는 중…' }) : f.error ? h('span', { class:'st err', text:f.error }) : h('span', { class:'sz', text:Board.formatSize(f.size || 0) }),
           h('span', { class:'ctl' }, [
             h('button', { type:'button', text:'▲', title:'위로', disabled:i === 0, onclick:function(){ move(i - 1); } }),
             h('button', { type:'button', text:'▼', title:'아래로', disabled:i === e.files.length - 1, onclick:function(){ move(i + 1); } }),
             h('button', { type:'button', text:'✕', title:'빼기', onclick:function(){ e.files.splice(i, 1); markDirty(); drawFiles(null, e); } })
-          ])
+          ]),
+          lbl
         ]);
       })));
     }
@@ -785,7 +790,8 @@
       if(!/^20[2-9]\d$/.test(year)) return fail('연도를 네 자리로 입력해 주세요. 예: 2026');
       if((S.data.guides || []).some(function(g){ return g.year === year && g.id !== e.id; })) return fail(year + '년 모집요강이 이미 있습니다. 목록에서 그 연도를 눌러 고쳐 주세요.');
       if(!e.files.length && p.visibility === '공개' && !confirm('파일이 없어 사이트에는 보이지 않습니다. 그래도 저장할까요?')) return;
-      return send({ board:'guide', id:e.id, post:{ year:year, title:p.title || '', visibility:p.visibility }, photos:[], files:e.files.map(function(a){ return a.attachmentId; }) });
+      return send({ board:'guide', id:e.id, post:{ year:year, title:p.title || '', visibility:p.visibility }, photos:[], files:e.files.map(function(a){ return a.attachmentId; }),
+        fileLabels:e.files.map(function(a){ return String(a.label || '').trim().slice(0, 60); }) });
     }
     if(e.board === 'press' && !(p.source || '').trim()) return fail('언론사를 입력해 주세요.');
     if(!p.title.trim()) return fail('제목을 입력해 주세요.');

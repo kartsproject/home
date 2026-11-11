@@ -133,11 +133,12 @@
 | 요청 필드 | 설명 |
 |---|---|
 | `action` · `token` | |
-| `board` | `notice` · `press` · `gallery` · `hero` · `photo`(사이트 사진 자리, 2026-11-04) · `guide`(모집요강, 2026-11-04 — `post`: `year`(네 자리) · `title`(선택) · `visibility`, `files` 최대 5개, 같은 연도가 이미 있으면 `DUPLICATE_YEAR`) |
+| `board` | `notice` · `press` · `gallery` · `hero` · `photo`(사이트 사진 자리, 2026-11-04) · `guide`(모집요강, 2026-11-04 — `post`: `year`(네 자리) · `title`(선택) · `visibility`, `files` 최대 10개(2026-11-11), 같은 연도가 이미 있으면 `DUPLICATE_YEAR`) |
 | `id` | 고칠 글ID. 새 글이면 빈 값 → 관문이 만든다. **표지는 늘 칸 ID(`H-dance` 등)**, **사이트 사진은 늘 자리 ID(`S-step1` 등)** — 새로 만들 수 없음. 다만 페이지 직접 편집에서 복제한 항목의 사진 자리 `S-{원래 자리}-x{영소문자 · 숫자 4자}`(예 `S-mu1-x4k2`, 50자 이내)는 처음 저장할 때 관문이 「사진」 행을 만든다(`createPhotoSlot_`, 기본 30자리 + 200자리까지, 2026-11-04 WBS 18) |
 | `post` | 공지: `category` · `title` · `body` · `rich`(글쓰기 도구 본문 — 글 묶음 `{v:1, b:[…]}`, `apps-script/Rich.js`가 검사, 있으면 시트에 이것을 두고 `body`는 무시하고 글자만 다시 셈. 2026-11-05) · `date` · `pinned` · `photoPosition` · `photoLink` · `visibility` / 언론홍보: `source` · `title` · `date` · `url` · `visibility` / 갤러리: `title` · `desc` · `date` · `visibility` · `course`(과정 코드 `workshop` · `mentoring` · `camp` · `""`) · `field`(분야 코드 `dance` · `music` · `art` · `trad` · `""`=공통). 시트에는 `워크숍 · 무용`처럼 쓰고, `course` · `field`가 모두 `""`이면 지정 안 함(빈칸). **둘 다 보내지 않으면 기존 값 유지** — 분야 칸이 없는 1안 관리자 화면이 저장해도 지워지지 않게. 하나만 보내거나, 목록에 없는 값 · 문자열이 아닌 값이거나, `course`가 `""`인데 `field`가 있으면 `INVALID_INPUT` (2026-10-16 WBS 8.10, 그 전 8.5의 `field` 하나만 보내는 요청도 이제 `INVALID_INPUT`) / 표지: `depth`(2.5D 입체 효과 켬, true/false) · `center`(`{ x, y }` 0~100 %, 누끼 인물 영역의 가운데 — 누끼가 없으면 `null`) / 사이트 사진: `pos`(`{ x, y }` 0~100 % 보이는 위치, `null`이면 기본 위치) |
 | `photos` | 첨부ID 배열 — **이 순서가 화면 순서**. 언론홍보는 빈 배열, 표지 · 사이트 사진은 0~1개(빈 배열이면 기본 사진으로) |
-| `files` | 첨부ID 배열 (공지만) |
+| `files` | 첨부ID 배열 (공지 · 모집요강) |
+| `fileLabels` | 모집요강만(2026-11-11): `files`와 같은 순서의 「목록에 보일 이름」 배열(각 60자 이내, 빈 글자 = 기본 이름). `files`보다 길거나 배열이 아니면 `INVALID_INPUT`. 「첨부」 탭 「표시이름」에 쓰고, 발행 · 목록의 파일에 `label`로 나간다 |
 | `cutouts` | 누끼 첨부ID 배열 (표지만, 0~1개). `depth`가 true면 1개여야 하고 원본(`photos`)과 가로 · 세로가 같아야 한다. 아니면 `INVALID_INPUT` |
 | `videos` | 동영상 첨부ID 배열 (표지만, 0~1개, 2026-10-16 2안). 있으면 `photos`(대기 사진)가 있어야 하고 `depth`는 false여야 한다(아니면 `INVALID_INPUT`). 새로 붙는 동영상은 시트를 고치기 **전에** 영상 저장소(`MEDIA_REPO`)의 `hero/{첨부ID}.mp4`로 커밋하고, 실패하면 아무것도 바꾸지 않고 `MEDIA_FAILED`. 빠진 동영상은 저장소에서 지우고(이력에는 남음) 드라이브 조각은 휴지통으로. **보내지 않으면**(1안 관리자 화면) 기존 동영상을 두되, 사진을 빼거나 `depth`를 켜면 뺀다 |
 

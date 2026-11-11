@@ -2,6 +2,7 @@
  * 모집요강 (2026-11-04 WBS 17.4). 연도마다 한 줄 — 관리자 페이지 「모집요강」 탭에서 파일(PDF · 한글 등)을 올리고,
  * 모집 및 선발 페이지의 그 연도 탭에 「모집요강 내려받기」로 나온다. 공개여부가 「공개」인 연도만 data/posts.json에 나간다.
  * 탭은 관문을 새로 배포한 뒤 처음 목록을 열 때 만든다(setup을 다시 돌리지 않아도 되게, 사진 탭과 같은 방식).
+ * 2026-11-11: 한 연도에 파일 여러 개(양식 등), 파일마다 「표시이름」(첨부 탭 열) — 사이트 내려받기 목록에 그 이름으로 나온다.
  */
 var GUIDE_TAB_ = '모집요강';
 
@@ -14,6 +15,7 @@ function ensureGuideTab_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(GUIDE_TAB_);
   var headers = TAB_HEADERS_[GUIDE_TAB_];
+  ensureAttachLabelColumn_();
   if (sheet) { addMissingHeaders_(sheet, GUIDE_TAB_); return; }
   sheet = ss.insertSheet(GUIDE_TAB_, ss.getSheets().length);
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
@@ -21,6 +23,26 @@ function ensureGuideTab_() {
   (TEXT_COLUMNS_[GUIDE_TAB_] || []).forEach(function (h) {
     sheet.getRange(2, headers.indexOf(h) + 1, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
   });
+}
+
+// 「첨부」 탭에 「표시이름」 열이 없으면 붙인다(2026-11-11 — 모집요강 파일마다 목록에 보일 이름). 저장 잠금 안에서만 부른다
+function ensureAttachLabelColumn_() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('첨부');
+  if (sheet && headersOf_('첨부').indexOf('표시이름') === -1) addMissingHeaders_(sheet, '첨부');
+}
+
+// 저장 요청의 fileLabels(파일 순서대로 「목록에 보일 이름」, 비우면 기본 이름)를 확인한다. 없으면 빈 목록
+var GUIDE_LABEL_MAX_ = 60;
+function cleanFileLabels_(list, count) {
+  if (list == null) return [];
+  if (!Array.isArray(list) || list.length > count) return null;
+  var out = [];
+  for (var i = 0; i < list.length; i++) {
+    var t = cleanText_(list[i]);
+    if (t.length > GUIDE_LABEL_MAX_) return null;
+    out.push(t);
+  }
+  return out;
 }
 
 function readGuideTab_() {

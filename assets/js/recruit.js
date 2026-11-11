@@ -3,7 +3,8 @@
    모집 및 선발 페이지의 「모집요강 내려받기」(WBS 17.4)와 분야 카드 넘김 띠(WBS 21.1, 맨 아래). 관리자 페이지 「모집요강」 탭에서 연도별로 올린 파일이
    data/posts.json의 guides에 { "2026": { title, files:[{ fileId, name, size }] } }로 나온다.
    연도 탭 안의 <div class="rc-guide" data-guide-year="2026">에 내려받기 단추를 넣는다. 파일이 하나면 누르면 바로 받고,
-   여럿이면 누를 때 목록이 펼쳐진다(1번 = 「{연도} 모집요강」, 2번부터 = 「함께 내는 서류」 파일 이름 · 형식 · 크기) — 2026-11-11 사용자, WBS 22.8 · 22.9.
+   여럿이면 누를 때 목록이 펼쳐진다(이름 · 형식 · 크기). 이름은 관리자가 파일마다 적은 「목록에 보일 이름」(label),
+   비우면 1번은 「{연도} 모집요강」 · 2번부터 파일 이름 — 2026-11-11 사용자, WBS 22.8 · 22.9 · 22.10.
    파일이 없으면 숨긴 채로 둔다.
    ▣ 운영진이 입력한 값(제목 · 파일명)은 textContent로만 넣는다 (CLAUDE.md 보안 5).
    ============================================================ */
@@ -19,9 +20,9 @@
   }
 
   // 파일이 하나면 단추를 누르면 바로 받고, 여럿이면 단추 아래로 목록이 펼쳐진다(2026-11-11 사용자).
-  // 목록 1번 = 모집요강(「{연도} 모집요강」 + 형식 · 크기), 2번부터 = 함께 내는 서류(파일 이름 그대로)
-  function row(x, label){
+  function row(x, label){   // 관리자가 적은 「목록에 보일 이름」(x.label)이 먼저, 없으면 넘겨받은 기본 이름 · 파일 이름
     var name = String(x.name || '첨부파일'), m = name.match(/^(.*)\.([A-Za-z0-9]{2,5})$/);
+    label = String(x.label || '').trim() || label;
     var li = el('li'), link = el('a');
     link.href = Board.fileUrl(x.fileId);
     link.setAttribute('role', 'menuitem');
@@ -72,10 +73,7 @@
       var menu = el('div', 'rc-menu'); menu.id = id;
       var ul = el('ul'); ul.setAttribute('role', 'menu'); ul.setAttribute('aria-label', year + ' 모집요강 · 서류');
       ul.appendChild(row(f, year + ' 모집요강'));
-      if(files.length > 1){
-        var sep = el('li', 'sep', '함께 내는 서류'); sep.setAttribute('role', 'presentation'); ul.appendChild(sep);
-        files.slice(1).forEach(function(x){ ul.appendChild(row(x)); });
-      }
+      files.slice(1).forEach(function(x){ ul.appendChild(row(x)); });   // 「함께 내는 서류」 제목은 2026-11-11 사용자 요청으로 뺌
       menu.appendChild(ul);
       btn.addEventListener('click', function(){
         if(box.classList.contains('open')){ close(box); return; }

@@ -66,6 +66,9 @@ function handleSave_(req) {
   var photoIds = idList_(req.photos), fileIds = idList_(req.files), cutoutIds = idList_(req.cutouts), videoIds = idList_(req.videos);
   if (!photoIds || !fileIds || !cutoutIds || !videoIds) return jsonResponse_(false, 'INVALID_INPUT', null);
   if (photoIds.length > board.maxPhotos() || fileIds.length > board.maxFiles() || cutoutIds.length > board.maxCutouts() || videoIds.length > board.maxVideos()) return jsonResponse_(false, 'FILE_REJECTED', null);
+  // 모집요강만: 파일마다 목록에 보일 이름(fileLabels, 파일 순서대로 · 비우면 기본 이름) — Guides.js
+  var fileLabels = req.board === 'guide' ? cleanFileLabels_(req.fileLabels, fileIds.length) : [];
+  if (!fileLabels) return jsonResponse_(false, 'INVALID_INPUT', null);
 
   return withLock_(function () {
     if (board.ensure) board.ensure();
@@ -138,9 +141,11 @@ function handleSave_(req) {
     [photoIds, fileIds, cutoutIds, videoIds].forEach(function (ids) {
       ids.forEach(function (aid, i) {
         var a = byId[aid];
-        if (a['글ID'] === id && Number(a['순서']) === i + 1) return;
+        var label = ids === fileIds && req.board === 'guide' ? (fileLabels[i] || '') : null;
+        if (a['글ID'] === id && Number(a['순서']) === i + 1 && (label === null || String(a['표시이름'] || '') === label)) return;
         a['글ID'] = id;
         a['순서'] = i + 1;
+        if (label !== null) a['표시이름'] = label;
         writeRow_('첨부', a, a._row);
       });
     });
@@ -351,8 +356,8 @@ function attachmentsOf_(postId, kind, attachments, admin) {
       // 동영상은 드라이브 조각(공유 안 함) 대신 영상 저장소 경로를 준다 (Media.js)
       var o = kind === '동영상' ? { src: mediaPath_(a['첨부ID']) } : { fileId: String(a['파일ID']) };
       if (kind !== '파일') { o.w = Number(a['가로']) || 0; o.h = Number(a['세로']) || 0; }
-      else { o.name = String(a['파일명']); o.size = Number(a['크기']) || 0; }
-      if (admin) { o.attachmentId = a['첨부ID']; o.name = String(a['파일명']); o.size = Number(a['크기']) || 0; }
+      else { o.name = String(a['파일명']); o.size = Number(a['크기']) || 0; if (a['표시이름']) o.label = String(a['표시이름']); }
+      if (admin) { o.attachmentId = a['첨부ID']; o.name = String(a['파일명']); o.size = Number(a['크기']) || 0; if (kind === '파일') o.label = String(a['표시이름'] || ''); }
       return o;
     });
 }

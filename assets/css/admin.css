@@ -154,6 +154,9 @@ main.mg-in{padding:34px 0 120px}
 .fl .st.err{color:#B42B38}
 .fl .ctl{display:flex;gap:4px}
 .fl .ctl button{border:1px solid #DCDDDA;background:#fff;width:32px;height:30px;cursor:pointer}
+/* 모집요강 파일 — 목록에 보일 이름 칸(줄 아래 칸 가득, 2026-11-11) */
+.fl.has-lb .fl-lb{grid-column:1 / -1;width:100%;padding:9px 12px;border:1px solid #DCDDDA;font:inherit;font-size:14px}
+.fl.has-lb .fl-lb:focus{outline:2px solid var(--teal);outline-offset:-1px}
 
 .mg-actions{display:flex;justify-content:space-between;gap:12px;margin-top:40px;padding-top:24px;border-top:1px solid var(--line);flex-wrap:wrap}
 .mg-actions .r{display:flex;gap:10px;margin-left:auto}
