@@ -1170,3 +1170,10 @@ body.dark .modal .btn.primary:hover { background: #333336; }
 .files-side .fl-it:last-child { border-bottom: 0; }
 .files-side .fl-it small { white-space: normal; flex: 1 1 100%; }
 @media (max-width: 640px) { .fl-it { flex-wrap: wrap; } .fl-it small { flex: 1 1 100%; white-space: normal; } }
+
+/* 세부(「-」) 줄: 줄마다 칸 하나 */
+.be-subs { display: flex; flex-direction: column; gap: 0; margin-top: 2px; }
+.be-subs .be-row.sub { margin-top: 0; align-items: flex-start; }
+.be-x { width: 26px; height: 26px; font-size: 11px; margin-top: 4px; flex: none; opacity: 0; transition: opacity .15s; }
+.be-row.sub:hover .be-x, .be-row.sub:focus-within .be-x { opacity: 1; }
+@media (hover: none) { .be-x { opacity: .6; } }
