@@ -289,8 +289,17 @@
     var used = {}; S.data.cats[i].prev.forEach(function (x) { if (x.from) used[x.from] = 1; });
     return (KR.normData(S.prevEntry.data).cats[i].next || []).filter(function (x) { return !KR.blockEmpty(x) && !used[x.id]; });
   }
+  var REDRAW = {};   // 분야·칸별 다시 그리기 (짝 항목을 같이 넣을 때 맞은편 칸도 그림)
+  /** 「ㅇ」 항목 추가: 지난 실적과 향후 계획에 한 쌍으로 넣음(빈 쪽은 비워 둬도 되고, 저장할 때 빈 항목은 빠짐) */
+  function addPair(i, side) {
+    var other = side === 'prev' ? 'next' : 'prev', a = { id: KR.uid(), t: '', c: '', d: '' }, o = { id: KR.uid(), t: '', c: '', d: '' };
+    a._pair = o.id; o._pair = a.id;
+    S.data.cats[i][side].push(a); S.data.cats[i][other].push(o);
+    touch(); [side, other].forEach(function (sd) { if (REDRAW[i + sd]) REDRAW[i + sd](); }); drawSteps(); drawFoot();
+  }
   function sideCard(i, side, label, period) {
     var list = S.data.cats[i][side], listBox = h('div', { class: 'blocks' });
+    REDRAW[i + side] = redraw;
     function redraw() {
       listBox.innerHTML = '';
       if (!list.length) listBox.appendChild(h('div', { class: 'empty-b', text: side === 'prev' ? L().cur + '에 한 일이 없으면 비워 두세요' : L().nxt + '에 할 일이 없으면 비워 두세요' }));
@@ -307,7 +316,7 @@
         } }, L().last + ' 계획 가져오기 · ' + imp.length) : null
       ]),
       listBox,
-      h('button', { class: 'add-b', onclick: function () { list.push({ id: KR.uid(), t: '', c: '', d: '' }); touch(); redraw(); drawSteps(); drawFoot(); var t = listBox.querySelectorAll('.be-t'); if (t.length) t[t.length - 1].focus(); } }, '＋ 항목 추가')
+      h('button', { class: 'add-b', title: '지난 실적과 향후 계획에 「ㅇ」 항목을 한 쌍으로 넣습니다', onclick: function () { addPair(i, side); var t = listBox.querySelectorAll('.be-t'); if (t.length) t[t.length - 1].focus(); } }, '＋ 항목 추가 (실적·계획 함께)')
     ]);
   }
   /**
@@ -426,7 +435,12 @@
         h('button', { class: 'icon-btn', title: '아래로', 'aria-label': '아래로', disabled: j === list.length - 1, onclick: function () { mv(1); } }, '↓'),
         h('button', { class: 'icon-btn danger', title: '삭제', 'aria-label': '삭제', onclick: async function () {
           if (!KR.blockEmpty(blk) && !(await KR.confirm('이 항목을 지울까요?', '지우기', true))) return;
-          list.splice(j, 1); touch(); redraw(); drawSteps(); drawFoot();
+          list.splice(j, 1);
+          // 함께 넣은 맞은편 항목이 비어 있으면 같이 지움
+          var other = side === 'prev' ? 'next' : 'prev', ol = S.data.cats[i][other];
+          var pk = blk._pair ? ol.findIndex(function (x) { return x.id === blk._pair; }) : -1;
+          if (pk >= 0 && KR.blockEmpty(ol[pk])) { ol.splice(pk, 1); if (REDRAW[i + other]) REDRAW[i + other](); }
+          touch(); redraw(); drawSteps(); drawFoot();
         } }, '✕')
       ])
     ]);
