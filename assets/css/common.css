@@ -397,6 +397,24 @@ html.zv-open{overflow:hidden}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .gal figcaption{margin-top:16px;font-size:17px;font-weight:700;letter-spacing:-.03em}
 .gal .m{margin-top:6px;font-size:14px}
+/* 갤러리 앨범 사진 목록 (#gallery/글ID — 2026-11-12 사용자, WBS 22.13, news.js). 앨범을 누르면 먼저 이 목록, 사진을 누르면 확대 보기 */
+.gal a.th{position:static;cursor:pointer}
+.gal a.th::after{content:"";position:absolute;inset:0}
+.gal a.th:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.gal-al-hd{padding-bottom:22px;margin-bottom:26px;border-bottom:2px solid var(--ink)}
+.gal-al-up{margin-bottom:14px;padding:0;border:0;background:none;font:inherit;font-size:14px;font-weight:700;color:var(--gray);cursor:pointer}
+.gal-al-up:hover{color:var(--ink)}
+.gal-al-hd h3{font-size:28px;font-weight:800;letter-spacing:-.05em;line-height:1.3}
+.gal-al-hd .meta{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:14px;font-weight:600;color:var(--gray)}
+.gal-al-hd .meta span + span::before{content:"";display:inline-block;width:1px;height:11px;margin-right:14px;background:var(--line);vertical-align:-1px}
+.gal-al-hd .m{margin-top:10px;font-size:15px;color:var(--gray);line-height:1.6}
+.gal-al{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.gal-al .al-ph{display:block;padding:0;border:0;aspect-ratio:1;overflow:hidden;background:#F4F2EC;cursor:zoom-in}
+.gal-al .al-ph img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.22,1,.36,1),opacity .2s}
+.gal-al .al-ph:hover img{transform:scale(1.06)}
+.gal-al .al-ph:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+@media(max-width:1100px){ .gal-al{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media(max-width:640px){ .gal-al{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .gal-al-hd h3{font-size:23px} }
 
 /* ---------- 모집 및 선발 — 리드(.p1-lead) · 분야 카드 4장 · 단계(구역 틀 .p1-sec) ---------- */
 #tabs.yr-tabs ul{gap:6px}

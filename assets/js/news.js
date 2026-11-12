@@ -2,6 +2,8 @@
    2026 K예술영재 프로젝트 — news.js
    소식 페이지: 공지 목록 · 상세(#notice/글ID) · 언론홍보 · 갤러리를 data/posts.json으로 채운다.
    ▣ 글 모양은 board.js(관리자 미리보기와 같은 함수)가 만든다. 운영진이 입력한 값은 textContent로만 넣는다.
+   ▣ 갤러리 앨범(2026-11-12 사용자, WBS 22.13): 앨범을 누르면 바로 확대 보기 대신 그 앨범 사진 목록(#gallery/글ID)을 먼저 보이고,
+     목록의 사진을 누르면 확대 보기. 「목록」 · 갤러리 탭 · 뒤로 가기로 앨범 목록으로 돌아온다(공지 상세와 같은 방식).
    ▣ 걸러 보기 (WBS 12.2, decisions.md 「6차 피드백 · 시안 1 확정」) — 목록 위 단추 묶음.
        연도(세 게시판): 전체 + 그 게시판 글 날짜 앞 네 자리(최신이 앞), 처음엔 전체.
        과정 · 분야(갤러리만): 아래 표의 단추가 늘 보인다. 묶음마다 하나만 고르고(2026-11-12), 세 묶음은 함께 걸러지고, 분야를 고르면 field가 빈 앨범(공통 · 지정 안 함)은 빠진다.
@@ -15,7 +17,8 @@
   if(!nBox || !pBox || !gBox || !window.Board) return;
 
   var data = null, nPage = 1, pPage = 1, gPage = 1, view = '', baseTitle = document.title,
-      fromList = false, listY = null;   // 목록에서 글을 열었으면 「목록」이 뒤로 가기로 돌아가 보던 자리를 찾는다
+      fromList = false, listY = null,   // 목록에서 글을 열었으면 「목록」이 뒤로 가기로 돌아가 보던 자리를 찾는다
+      gView = '', gFromList = false, gListY = null, gPick = null;   // 갤러리도 같은 방식(앨범 사진 목록)
 
   // 갤러리 과정 · 분야 코드 → 단추 · 이름표 글자 (docs/sheet-schema.md 「갤러리 과정 · 분야」). 목록에 없는 코드는 없는 것으로 본다
   var COURSE = [['workshop', '워크숍'], ['mentoring', '심화 멘토링'], ['camp', '겨울캠프']],
@@ -151,18 +154,23 @@
     toTop();
   }
 
-  function hashId(){
-    var m = location.hash.match(/^#notice\/(.+)$/);
+  function hashId(board){
+    var m = location.hash.match(board === 'gallery' ? /^#gallery\/(.+)$/ : /^#notice\/(.+)$/);
     if(!m) return null;
     try{ return decodeURIComponent(m[1]); }catch(e){ return m[1]; }
   }
-  // 주소가 바뀔 때: #notice/글ID → 상세, #notice(또는 해시 없음) → 목록. 다른 탭 해시는 공지 칸을 그대로 둔다.
+  // 주소가 바뀔 때: #notice/글ID → 공지 상세, #gallery/글ID → 앨범 사진 목록, 그 탭만(#notice · #gallery · 해시 없음) → 목록.
   function route(){
-    var id = hashId();
-    if(id !== null) return noticeDetail(id);
-    if(view === 'detail' && /^#?(notice)?$/.test(location.hash)){
+    var id = hashId(), gid = hashId('gallery');
+    if(id !== null) noticeDetail(id);
+    else if(view === 'detail' && /^#?(notice)?$/.test(location.hash)){
       if(!fromList) listY = null;
       noticeList();
+    }
+    if(gid !== null) galleryAlbum(gid);
+    else if(gView === 'album' && !/^#gallery\//.test(location.hash)){
+      if(!gFromList) gListY = null;
+      gallery();
     }
   }
 
@@ -172,6 +180,8 @@
   // 상세를 보다가 「공지사항」 탭을 다시 누르면 목록으로 (탭 코드는 주소만 바꾸고 hashchange를 내지 않음)
   var tab = document.querySelector('#tabs [data-tab="notice"]');
   if(tab) tab.addEventListener('click', function(){ if(data && view === 'detail'){ listY = null; noticeList(); } });
+  var gTab = document.querySelector('#tabs [data-tab="gallery"]');
+  if(gTab) gTab.addEventListener('click', function(){ if(data && gView === 'album'){ gListY = null; gallery(); } });
 
   /* ---------- 언론홍보 ---------- 누르면 기사 주소가 새 탭으로 열린다 (사이트 안 상세 화면 없음) */
   function press(){
@@ -196,6 +206,9 @@
     var f = pick.gallery, list = byYear(data.gallery, f.year).filter(function(g){
       return hit(f.course, g.course) && hit(f.field, g.field);   // 분야가 빈(공통) 앨범은 분야 「전체」일 때만
     });
+    gView = 'list'; gFromList = false;
+    document.title = baseTitle;
+    if(gPick) gPick.hidden = false;
     if(!list.length) return msg(gBox, data.gallery.length ? '해당하는 사진이 없습니다.' : Board.MSG.empty);
     var pages = Math.ceil(list.length / GALLERY_PER);
     gPage = Math.min(Math.max(1, gPage), pages);
@@ -204,12 +217,12 @@
     list.slice((gPage - 1) * GALLERY_PER, gPage * GALLERY_PER).forEach(function(g, k){
       var fig = el('figure'), th, tag = tagText(g);
       fig.setAttribute('data-rv', ''); fig.setAttribute('data-d', String(k % 4));
-      if(g.photos.length){   // 첫 사진이 대표. 누르면 앨범 전체를 확대 보기로
-        th = el('button', 'th'); th.type = 'button';
+      if(g.photos.length){   // 첫 사진이 대표. 누르면 그 앨범 사진 목록으로(2026-11-12 — 그 전엔 바로 확대 보기)
+        th = el('a', 'th'); th.href = '#gallery/' + encodeURIComponent(g.id);
         th.setAttribute('aria-label', (g.title || '') + (tag ? ' (' + tag + ')' : '') + ' — 사진 ' + g.photos.length + '장 보기');
         var img = el('img'); img.src = Board.photoUrl(g.photos[0].fileId, 640); img.alt = ''; img.loading = 'lazy';
         th.appendChild(img);
-        th.addEventListener('click', function(){ Board.viewer(g.photos, 0, g.title); });
+        th.addEventListener('click', function(){ gFromList = true; gListY = window.scrollY; });
       }else{   // 사진이 없으면 기본 그라디언트 칸. 마우스 반응은 같고 눌러도 아무 일도 없다
         th = el('div', 'th'); th.appendChild(el('i', 'ph')); fig.className = 'empty';
       }
@@ -223,6 +236,49 @@
     var pg = paging(pages, gPage, function(p){ gPage = p; gallery(); toTop(); });
     if(pg) gBox.appendChild(pg);
     if(window.__rvObserve) window.__rvObserve(gBox);
+    if(gListY !== null){ window.scrollTo({ top:gListY, behavior:'instant' }); gListY = null; }
+  }
+
+  // 앨범 사진 목록 — 제목 · 이름표 · 날짜 · 장수 · 설명, 사진 격자(누르면 그 사진부터 확대 보기), 아래 「목록」
+  function galleryAlbum(id){
+    var g = data.gallery.filter(function(x){ return x.id === id; })[0];
+    gView = 'album';
+    if(gPick) gPick.hidden = true;
+    gBox.textContent = '';
+    var top = el('div', 'gal-al-hd');
+    function goList(){ if(gFromList) history.back(); else location.hash = '#gallery'; }
+    var up = el('button', 'gal-al-up', '← 갤러리 목록'); up.type = 'button'; up.addEventListener('click', goList);
+    top.appendChild(up);   // 사진이 많은 앨범은 아래 「목록」까지 멀어서 위에도 둔다
+    if(g){
+      var tag = tagText(g);
+      top.appendChild(el('h3', null, g.title || ''));
+      var meta = el('p', 'meta');
+      [tag, /^\d{4}-\d{2}-\d{2}$/.test(g.date || '') ? g.date.split('-').map(Number).join('. ') + '.' : '', '사진 ' + g.photos.length + '장'].filter(Boolean).forEach(function(t){ meta.appendChild(el('span', null, t)); });
+      top.appendChild(meta);
+      if(g.desc) top.appendChild(el('p', 'm', g.desc));
+      gBox.appendChild(top);
+      var grid = el('div', 'gal-al');
+      g.photos.forEach(function(ph, i){
+        var b = el('button', 'al-ph'); b.type = 'button';
+        b.setAttribute('aria-label', (g.title || '사진') + ' ' + (i + 1) + '번째 사진 크게 보기');
+        var img = el('img'); img.src = Board.photoUrl(ph.fileId, 480); img.alt = ''; img.loading = i < 12 ? 'eager' : 'lazy';
+        b.appendChild(img);
+        b.addEventListener('click', function(){ Board.viewer(g.photos, i, g.title); });
+        grid.appendChild(b);
+      });
+      gBox.appendChild(grid);
+      document.title = (g.title || '갤러리') + ' | ' + baseTitle;
+    }else{
+      gBox.appendChild(top);
+      gBox.appendChild(el('p', 'bd-msg', '앨범을 찾을 수 없습니다. 삭제되었거나 비공개로 바뀐 앨범입니다.'));
+      document.title = baseTitle;
+    }
+    var foot = el('div', 'post-foot'), back = el('button', 'btn ghost', '목록');
+    back.type = 'button';
+    back.addEventListener('click', goList);
+    foot.appendChild(back);
+    gBox.appendChild(foot);
+    toTop();
   }
 
   /* ---------- 시작 ---------- 글이 하나도 없는 게시판은 단추 없이 안내만 */
@@ -231,11 +287,12 @@
     data = d;
     if(d.notices.length) nPick = picker(nBox, [['year', '연도', years(d.notices)]], pick.notice, function(){ nPage = 1; noticeList(); });
     if(d.press.length) picker(pBox, [['year', '연도', years(d.press)]], pick.press, function(){ pPage = 1; press(); });
-    if(d.gallery.length) picker(gBox, [['year', '연도', years(d.gallery)], ['course', '과정', COURSE], ['field', '분야', FIELD]], pick.gallery, function(){ gPage = 1; gallery(); });
+    if(d.gallery.length) gPick = picker(gBox, [['year', '연도', years(d.gallery)], ['course', '과정', COURSE], ['field', '분야', FIELD]], pick.gallery, function(){ gPage = 1; gallery(); });
     var id = hashId();
     if(id !== null) noticeDetail(id); else noticeList();
     press();
-    gallery();
+    var gid = hashId('gallery');
+    if(gid !== null) galleryAlbum(gid); else gallery();
     window.addEventListener('hashchange', route);
   });
 })();
