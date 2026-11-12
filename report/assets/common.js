@@ -108,9 +108,37 @@
 
   /** 세부 한 줄의 종류: cont(앞 줄 이어짐) · raw(기호·링크 그대로) · item(- 항목) */
   function lineKind(s) {
+    if (/^\s*§/.test(s)) return 'box';
     if (/^\s+\S/.test(s)) return 'cont';
     if (/^(\*|※|\[|·|○|►|▶|→|https?:\/\/)/.test(s)) return 'raw';
     return 'item';
+  }
+
+  /**
+   * 세부 줄별 상세 박스: 세부 내용(d) 안에서 「§」로 시작하는 줄은 바로 위 세부 줄의 상세 박스 줄이다.
+   *   예) 시안 3개 리뷰 / § * 주요 의견 / § 배경은 무채색 계열로 / 다음 세부 줄
+   * 한 글자로 저장해 두어 순서를 바꾸거나 합쳐도 박스가 제 줄을 따라간다.
+   */
+  var SUBBOX = '§';
+  function dParse(d) {
+    var out = [];
+    String(d || '').split('\n').forEach(function (l) {
+      if (lineKind(l) === 'box') {
+        var x = l.replace(/^\s*§\s?/, '');
+        if (!out.length) out.push({ t: '', box: null });
+        var u = out[out.length - 1]; u.box = u.box == null ? x : u.box + '\n' + x;
+      } else out.push({ t: l, box: null });
+    });
+    return out;
+  }
+  function dJoin(items) {
+    var lines = [];
+    items.forEach(function (u) {
+      lines.push(u.t);
+      var bx = String(u.box || '').replace(/\s+$/, '');
+      if (bx.trim()) bx.split('\n').forEach(function (x) { lines.push(SUBBOX + ' ' + x); });
+    });
+    return lines.join('\n').replace(/\n+$/, '');
   }
 
   /** 분야 이름 맞추기 (□ 줄) */
@@ -419,7 +447,7 @@
     call: call, me: me, meSave: meSave, meClear: meClear, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
     PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
     week: week, month: month, fromKey: fromKey, current: current, currentMonth: currentMonth, dday: dday, kd: kd, md: md, ymd: ymd, parse: parse, add: add, today: today, fmtTime: fmtTime, fileBase: fileBase,
-    uid: uid, emptyData: emptyData, fileUpload: fileUpload, fileDownload: fileDownload, fileItem: fileItem, fileSize: fileSize, FILE_MAX: FILE_MAX, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, parseText: parseText, catIndex: catIndex,
+    uid: uid, emptyData: emptyData, fileUpload: fileUpload, fileDownload: fileDownload, fileItem: fileItem, fileSize: fileSize, FILE_MAX: FILE_MAX, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, dParse: dParse, dJoin: dJoin, SUBBOX: SUBBOX, parseText: parseText, catIndex: catIndex,
     h: h, toast: toast, modal: modal, confirm: confirmBox, autosize: autosize, busy: busy, copy: copy, passwordModal: passwordModal, topbar: topbar, demoBar: demoBar, resetDemo: resetDemo
   };
 })(window);

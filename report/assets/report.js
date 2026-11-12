@@ -316,7 +316,9 @@
         lines = lines.concat(String(b.d || '').split('\n'));
       });
       var boxes = uniqLines(g.items.map(function (b) { return b.box || ''; }).join('\n').split('\n'));
-      return { id: KR.uid(), src: '', org: g.orgs.join(', '), by: g.items.length > 1 ? '주간보고 ' + g.items.length + '건 합침' : '주간보고에서', t: g.t, c: cl[0] || '', d: uniqLines(lines).join('\n'), box: boxes.join('\n'), sig: '', edited: false };
+      // 세부 줄은 박스와 한 묶음으로 같은 것만 하나로(박스 제목 「* 주요 의견」이 여러 번 나와도 박스끼리 섞이지 않게)
+      var seenU = {}, units = KR.dParse(lines.join('\n')).filter(function (u) { var k = (u.t.trim().replace(/\s+/g, ' ') + '§' + String(u.box || '').trim()); if (!u.t.trim() && !u.box) return false; if (seenU[k]) return false; seenU[k] = 1; return true; });
+      return { id: KR.uid(), src: '', org: g.orgs.join(', '), by: g.items.length > 1 ? '주간보고 ' + g.items.length + '건 합침' : '주간보고에서', t: g.t, c: cl[0] || '', d: KR.dJoin(units), box: boxes.join('\n'), sig: '', edited: false };
     });
   }
   /** weekDocs: [{key, doc}] 날짜순 */
@@ -378,12 +380,13 @@
     if (opts.showOrg && b.org) head.appendChild(h('span', { class: 'rb-org', text: b.org }));
     var kids = [head];
     lines.slice(1).forEach(function (l) { if (l.trim()) kids.push(h('div', { class: 'rb-cont' }, [span('', l.trim())])); });
-    String(b.d || '').split('\n').forEach(function (l) {
-      if (!l.trim()) return;
-      var k = KR.lineKind(l), t = l.trim();
-      if (k === 'item') kids.push(h('div', { class: 'rb-d' }, [h('span', { class: 'dash', 'aria-hidden': 'true', text: '-' }), span('', t)]));
+    KR.dParse(b.d).forEach(function (u) {
+      var l = u.t, k = KR.lineKind(l), t = l.trim();
+      if (!t) { /* 빈 줄 */ }
+      else if (k === 'item') kids.push(h('div', { class: 'rb-d' }, [h('span', { class: 'dash', 'aria-hidden': 'true', text: '-' }), span('', t)]));
       else if (/^[*※]/.test(t)) kids.push(h('div', { class: 'rb-note' }, [span('', t.replace(/^[*※]\s*/, ''))]));
       else kids.push(h('div', { class: k === 'cont' ? 'rb-dc' : 'rb-raw' }, [span('', t)]));
+      var sb = boxEl(u.box, 'rb-box sub'); if (sb) kids.push(sb);                       // 세부 줄의 상세 박스
     });
     var bx = boxEl(b.box); if (bx) kids.push(bx);
     return h('div', { class: 'rb' + (b.hide ? ' hidden-b' : '') }, kids);
@@ -498,11 +501,13 @@
     var lines = String(b.c || '').split('\n'), det = [];
     lines[0] = KR.dropLead(b.t, lines[0]);
     lines.slice(1).forEach(function (l) { if (l.trim()) det.push(h('li', { class: 'cont' }, [span('', l.trim())])); });
-    String(b.d || '').split('\n').forEach(function (l) {
-      if (!l.trim()) return;
-      var k = KR.lineKind(l), t = l.trim();
-      if (/^[*※]/.test(t)) det.push(h('li', { class: 'note' }, [span('', t.replace(/^[*※]\s*/, ''))]));
-      else det.push(h('li', { class: k }, [span('', t)]));
+    KR.dParse(b.d).forEach(function (u) {
+      var l = u.t, k = KR.lineKind(l), t = l.trim();
+      if (t) {
+        if (/^[*※]/.test(t)) det.push(h('li', { class: 'note' }, [span('', t.replace(/^[*※]\s*/, ''))]));
+        else det.push(h('li', { class: k }, [span('', t)]));
+      }
+      var sb = boxEl(u.box, 'mc-box sub'); if (sb) det.push(h('li', { class: 'sbx' }, [sb]));
     });
     return h('div', { class: 'mc' + (big ? ' big' : '') }, [
       h('div', { class: 'mc-top' }, [b.t && !big ? h('span', { class: 'mc-tag', style: 'background:' + CAT_C[i][0] + '33;color:' + CAT_C[i][1], text: b.t }) : null, showOrg && b.org ? h('span', { class: 'mc-org', text: b.org }) : null]),
@@ -705,6 +710,7 @@
     ".org{font-size:9pt;color:#6E6E73;}",
     ".bx{border:.12mm dotted #000;margin:.8mm 0 1.2mm 1.6em;padding:1mm 2.2mm;font:10pt/1.45 'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',sans-serif;}",
     ".bx .bh{font-weight:700;}.bx .bl{padding-left:1.1em;text-indent:-.75em;}",
+    ".bx.sub{margin-left:2.6em;}",
     ".gap{height:1.4mm;}"
   ].join('\n');
   /** 분야 안 항목을 소제목별로 묶어 행으로 — 한글 파일(hwpx.js rowsOf)과 같은 규칙 */
@@ -759,19 +765,23 @@
       if (doc.showOrg && b.org) it.appendChild(el('span', 'org gd', ' [' + b.org + ']'));
       out.push(it);
       cl.slice(1).forEach(function (l) { if (l.trim()) out.push(el('p', 'ct', l.trim())); });
-      String(b.d || '').split('\n').forEach(function (l) {
-        if (!l.trim()) return;
-        var k = KR.lineKind(l), t = l.trim();
-        if (/^[*※]/.test(t)) out.push(el('p', 'nt gd', t));
-        else if (k === 'item') out.push(el('p', 'sb', '- ' + t.replace(/^[-–]\s*/, '')));
-        else out.push(el('p', 'rw', t));
-      });
-      var bl = String(b.box || '').split('\n').filter(function (x) { return x.trim(); });
-      if (bl.length) {
-        var bx = el('div', 'bx');
+      function pbox(text, cls) {
+        var bl = String(text || '').split('\n').filter(function (x) { return x.trim(); });
+        if (!bl.length) return;
+        var bx = el('div', cls);
         bl.forEach(function (l) { var t = l.trim(); bx.appendChild(/^[*※]/.test(t) ? el('div', 'bh', t) : el('div', 'bl', '- ' + t.replace(/^[-–·]\s*/, ''))); });
         out.push(bx);
       }
+      KR.dParse(b.d).forEach(function (u) {
+        var l = u.t, k = KR.lineKind(l), t = l.trim();
+        if (t) {
+          if (/^[*※]/.test(t)) out.push(el('p', 'nt gd', t));
+          else if (k === 'item') out.push(el('p', 'sb', '- ' + t.replace(/^[-–]\s*/, '')));
+          else out.push(el('p', 'rw', t));
+        }
+        pbox(u.box, 'bx sub');                                                           // 세부 줄의 상세 박스
+      });
+      pbox(b.box, 'bx');
       return out;
     }
     var any = false;
@@ -804,7 +814,7 @@
   }
 
   var tplCache = null;
-  var HWPX_REV = '20261110b';   // 한글 파일 생성기·양식이 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
+  var HWPX_REV = '20261112c';   // 한글 파일 생성기·양식이 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
   async function hwpx(doc, ver) {
     if (!root.JSZip) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/vendor/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
     if (!root.HWPX) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/hwpx.js?v=' + HWPX_REV; s.onload = ok; s.onerror = no; document.head.appendChild(s); });

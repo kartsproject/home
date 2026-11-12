@@ -76,7 +76,7 @@
       var t = h('input', { class: 'input', value: blk.t, placeholder: '예: 키비주얼' });
       var c = h('textarea', { class: 'input', rows: 2, value: blk.c, placeholder: '예: 2차 리뷰 시사 보고(11/10,화)' });
       var bxIn = h('textarea', { class: 'input', rows: 4, value: blk.box || '', placeholder: '* 주요 의견\n배경은 무채색 계열로\n2안은 타이포를 달리해 재시안' });
-      var d = h('textarea', { class: 'input', rows: 6, value: blk.d, placeholder: '한 줄에 하나씩 (앞에 - 가 붙습니다)\n앞에 공백을 두면 윗줄에 이어지는 줄\n* ※ [ 로 시작하면 기호 그대로' });
+      var d = h('textarea', { class: 'input', rows: 6, value: blk.d, placeholder: '한 줄에 하나씩 (앞에 - 가 붙습니다)\n앞에 공백을 두면 윗줄에 이어지는 줄\n* ※ [ 로 시작하면 기호 그대로\n§ 로 시작하는 줄은 바로 윗줄의 상세 박스' });
       var orgSel = h('select', { class: 'input' }, S.companies.concat(blk.org && S.companies.indexOf(blk.org) < 0 ? [blk.org] : []).map(function (n) { return h('option', { value: n, text: n, selected: n === blk.org }); }));
       var catSel = h('select', { class: 'input' }, KR.CATS.map(function (n, k) { return h('option', { value: k, text: n, selected: k === ci }); }));
       var sideSel = h('select', { class: 'input' }, [h('option', { value: 'prev', text: '지난 실적', selected: side === 'prev' }), h('option', { value: 'next', text: '향후 계획', selected: side === 'next' })]);

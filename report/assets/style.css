@@ -1184,3 +1184,15 @@ body.dark .modal .btn.primary:hover { background: #333336; }
 .be-subs.box .be-box.tl { font-weight: 700; color: var(--c2); }
 .be-subs.box .be-dash { padding-top: 5px; }
 .be-boxh .chip-btn.sm { padding: 3px 10px; font-size: 11.5px; }
+
+/* 세부 줄 도구(↑↓ · 상세 박스 · 지우기)와 세부 줄의 상세 박스 */
+.be-st { display: inline-flex; gap: 0; flex: none; margin-top: 3px; opacity: 0; transition: opacity .15s; }
+.be-st .icon-btn { width: 26px; height: 26px; font-size: 12px; }
+.be-row.sub:hover .be-st, .be-row.sub:focus-within .be-st { opacity: 1; }
+@media (hover: none) { .be-st { opacity: .7; } }
+.be-sb.on { color: var(--c2); }
+.be-boxwrap.sub { margin: 2px 0 6px 38px; }
+.rb-box.sub { margin-left: 2.4em; }
+.mc-det li.sbx { list-style: none; padding-left: 0; }
+.mc-det li.sbx::before { content: none; display: none; }
+.mc-box.sub { margin: 6px 0 4px; }

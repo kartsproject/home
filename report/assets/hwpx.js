@@ -51,6 +51,7 @@
   function p(pp, runs) { return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pp + '" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">' + runs.join('') + '</hp:p>'; }
   function gap(cp) { return p(S.P_GAP, [run(cp, null)]); }
   function lineKind(s) {
+    if (/^\s*§/.test(s)) return 'box';
     if (/^\s+\S/.test(s)) return 'cont';
     if (/^(\*|※)/.test(s)) return 'note';
     if (/^(\[|·|○|►|▶|→|https?:\/\/)/.test(s)) return 'raw';
@@ -189,8 +190,8 @@
     return { score: endBest.score, lines: endBest.lines, cuts: cuts, sp: sp };
   }
   /** 문단 하나 → { xml, lines, h } */
-  function fitPara(segs, F) {
-    var chars = flatten(segs), W = F === FAM.box ? BOX_TEXT : TEXT_W, pick = null;
+  function fitPara(segs, F, width) {
+    var chars = flatten(segs), W = width || (F === FAM.box ? BOX_TEXT : TEXT_W), pick = null;
     STEPS.forEach(function (sp) {
       var r = bestBreaks(chars, F, sp, W);
       if (!r) return;
@@ -219,23 +220,26 @@
 
   /* ---------- 항목 ---------- */
   /** 상세 박스: 칸 안의 1칸짜리 표(바깥 실선 · 칸 점선, 맑은 고딕). 「*」로 시작하는 줄은 굵은 박스 제목 */
-  function boxTable(text) {
+  var SUB_IN = 1100;   // 세부 줄 아래 박스: 「-」 글머리만큼 더 들임
+  function boxTable(text, sub) {
     var lines = String(text || '').split('\n').map(tidy).filter(Boolean);
     if (!lines.length) return null;
-    var paras = [], hh = 0;
+    var paras = [], hh = 0, BW = sub ? BOX_W - SUB_IN : BOX_W;
     lines.forEach(function (t) {
       var segs = /^[*※]/.test(t) ? [{ s: 'tit', t: t }] : [{ s: 'pre', t: ' - ' }, { s: 'txt', t: t.replace(/^[-–·]\s*/, '') }];
-      var r = fitPara(segs, FAM.box); paras.push(r.xml); hh += r.h;
+      var r = fitPara(segs, FAM.box, BW - BOX_M * 2); paras.push(r.xml); hh += r.h;
     });
     var h = hh + 282 + 120;
     var tbl = '<hp:tbl id="' + (tid++) + '" zOrder="3" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="0" rowCnt="1" colCnt="1" cellSpacing="0" borderFillIDRef="' + S.B_BOXTBL + '" noAdjust="0">' +
-      '<hp:sz width="' + BOX_W + '" widthRelTo="ABSOLUTE" height="' + h + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+      '<hp:sz width="' + BW + '" widthRelTo="ABSOLUTE" height="' + h + '" heightRelTo="ABSOLUTE" protect="0"/>' +
       '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
       '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="' + BOX_M + '" right="' + BOX_M + '" top="141" bottom="141"/>' +
       '<hp:tr><hp:tc name="" header="0" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="' + S.B_BOXCELL + '">' +
       '<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + paras.join('') + '</hp:subList>' +
-      '<hp:cellAddr colAddr="0" rowAddr="0"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="' + BOX_W + '" height="' + h + '"/><hp:cellMargin left="' + BOX_M + '" right="' + BOX_M + '" top="141" bottom="141"/></hp:tc></hp:tr></hp:tbl>';
-    return { xml: p(S.P_BOXHOST, ['<hp:run charPrIDRef="' + S.C_GAP + '">' + tbl + '<hp:t/></hp:run>']), h: h + 200 };
+      '<hp:cellAddr colAddr="0" rowAddr="0"/><hp:cellSpan colSpan="1" rowSpan="1"/><hp:cellSz width="' + BW + '" height="' + h + '"/><hp:cellMargin left="' + BOX_M + '" right="' + BOX_M + '" top="141" bottom="141"/></hp:tc></hp:tr></hp:tbl>';
+    // 세부 줄 박스는 앞에 빈칸 두 개(본문 글자)를 두어 「-」 글 시작에 맞춤
+    var lead = sub ? '<hp:run charPrIDRef="' + S.C_ITEM0 + '"><hp:t>  </hp:t></hp:run>' : '';
+    return { xml: p(S.P_BOXHOST, [lead + '<hp:run charPrIDRef="' + S.C_GAP + '">' + tbl + '<hp:t/></hp:run>']), h: h + 200 };
   }
   /** 본문 줄(ㅇ 요지 · - 세부)의 글을 괄호 조각으로 */
   function bodySegs(text) { return parenSplit(tidy(text)); }
@@ -252,7 +256,12 @@
     if (opt.showOrg && b.org) segs.push({ s: 'org', t: ' [' + b.org + ']' });
     put(fitPara(segs, FAM.item));
     cl.slice(1).forEach(function (l) { if (tidy(l)) put(fitPara([{ s: 'pre', t: '    ' }].concat(bodySegs(l)), FAM.item)); });
-    String(b.d || '').split('\n').forEach(function (l) {
+    // 세부 줄 아래 「§」 줄은 그 줄의 상세 박스(common.js dParse와 같은 규칙)
+    var dls = String(b.d || '').split('\n'), sbuf = [];
+    function flushBox() { if (sbuf.length) { var sx = boxTable(sbuf.join('\n'), true); if (sx) put(sx); sbuf = []; } }
+    dls.forEach(function (l) {
+      if (lineKind(l) === 'box') { sbuf.push(l.replace(/^\s*§\s?/, '')); return; }
+      flushBox();
       var t = tidy(l);
       if (!t) return;
       var k = lineKind(l);
@@ -262,6 +271,7 @@
       } else if (k === 'item') put(fitPara([{ s: 'pre', t: '   - ' }].concat(bodySegs(t.replace(/^[-–]\s*/, ''))), FAM.sub));
       else put(fitPara([{ s: 'pre', t: '     ' }].concat(bodySegs(t)), FAM.sub));
     });
+    flushBox();
     var bx = boxTable(b.box);
     if (bx) put(bx);
     return { xml: out.join(''), h: h };
