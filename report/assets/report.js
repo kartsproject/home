@@ -875,7 +875,7 @@
   }
 
   var tplCache = null;
-  var HWPX_REV = '20261112f';   // 한글 파일 생성기·양식이 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
+  var HWPX_REV = '20261112g';   // 한글 파일 생성기·양식이 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
   async function hwpx(doc, ver) {
     if (!root.JSZip) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/vendor/jszip.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
     if (!root.HWPX) await new Promise(function (ok, no) { var s = document.createElement('script'); s.src = 'assets/hwpx.js?v=' + HWPX_REV; s.onload = ok; s.onerror = no; document.head.appendChild(s); });

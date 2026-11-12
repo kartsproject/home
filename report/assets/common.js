@@ -145,6 +145,7 @@
    * 지난 실적·향후 계획 줄 맞추기: 「ㅇ」 소제목이 같은 항목은 같은 행(같은 선상)에 놓는다.
    * 지난 실적 순서를 기준으로, 소제목이 같은 향후 계획 항목을 그 옆으로 끌어오고,
    * 짝 없는 향후 계획 항목은 원래 바로 앞에 있던 짝 항목 뒤에 둔다(앞에 짝이 없으면 맨 위).
+   * 짝 없는 항목은 맞은편 칸을 비운 채 따로 줄을 둔다(실적만 → 계획만 순서).
    * opts.split: 짝 없는 항목이 길면 약 8줄마다 행을 나눔(인쇄·한글 파일의 쪽 나눔 지점)
    * 반환: [{ prev:[블록], next:[블록], match: 소제목 짝이면 true }]
    */
@@ -168,10 +169,15 @@
     }
     function take(list) { var row = [], hh = 0; while (list.length && (!row.length || hh + lines(list[0]) <= 8)) { hh += lines(list[0]); row.push(list.shift()); } return row; }
     var out = [], lp = [], ln = (after[-1] || []).slice();
+    // 짝 없는 항목은 맞은편과 같은 줄에 두지 않음(관계없는 실적·계획이 나란히 보여 짝처럼 읽히지 않게): 실적만 있는 줄 → 계획만 있는 줄
     function flush() {
-      if (!lp.length && !ln.length) return;
-      if (!opts.split) out.push({ prev: lp, next: ln, match: false });
-      else while (lp.length || ln.length) out.push({ prev: take(lp), next: take(ln), match: false });
+      [['prev', lp], ['next', ln]].forEach(function (sd) {
+        var list = sd[1];
+        while (list.length) {
+          var part = opts.split ? take(list) : list.splice(0, list.length);
+          out.push(sd[0] === 'prev' ? { prev: part, next: [], match: false } : { prev: [], next: part, match: false });
+        }
+      });
       lp = []; ln = [];
     }
     pv.forEach(function (p, i) {
