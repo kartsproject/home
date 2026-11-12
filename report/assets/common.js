@@ -141,6 +141,49 @@
     return lines.join('\n').replace(/\n+$/, '');
   }
 
+  /**
+   * 지난 실적·향후 계획 줄 맞추기: 「ㅇ」 소제목이 같은 항목은 같은 행(같은 선상)에 놓는다.
+   * 지난 실적 순서를 기준으로, 소제목이 같은 향후 계획 항목을 그 옆으로 끌어오고,
+   * 짝 없는 향후 계획 항목은 원래 바로 앞에 있던 짝 항목 뒤에 둔다(앞에 짝이 없으면 맨 위).
+   * opts.split: 짝 없는 항목이 길면 약 8줄마다 행을 나눔(인쇄·한글 파일의 쪽 나눔 지점)
+   * 반환: [{ prev:[블록], next:[블록], match: 소제목 짝이면 true }]
+   */
+  function pairRows(pv, nx, opts) {
+    opts = opts || {};
+    function key(b) { return String(b.t || '').replace(/[\s()]+/g, ''); }
+    var used = {}, mate = {};   // mate[prev index] = next index
+    pv.forEach(function (p, i) {
+      var k = key(p); if (!k) return;
+      for (var j = 0; j < nx.length; j++) if (!used[j] && key(nx[j]) === k) { used[j] = 1; mate[i] = j; break; }
+    });
+    // 짝 없는 향후 계획: 원래 순서에서 바로 앞의 짝 항목(없으면 -1)에 붙임
+    var after = {}, anchor = -1, prevOfNext = {};
+    Object.keys(mate).forEach(function (i) { prevOfNext[mate[i]] = Number(i); });
+    nx.forEach(function (b, j) { if (used[j]) { anchor = prevOfNext[j]; return; } (after[anchor] = after[anchor] || []).push(b); });
+    function lines(x) {
+      var k = Math.ceil(String(String(x.c || '').split('\n')[0]).length / 22) || 1;
+      String(x.c || '').split('\n').slice(1).concat(String(x.d || '').split('\n')).forEach(function (l) { if (l.trim()) k += Math.ceil(l.trim().length / 24); });
+      String(x.box || '').split('\n').forEach(function (l) { if (l.trim()) k += 0.9; });
+      return k + 0.5;
+    }
+    function take(list) { var row = [], hh = 0; while (list.length && (!row.length || hh + lines(list[0]) <= 8)) { hh += lines(list[0]); row.push(list.shift()); } return row; }
+    var out = [], lp = [], ln = (after[-1] || []).slice();
+    function flush() {
+      if (!lp.length && !ln.length) return;
+      if (!opts.split) out.push({ prev: lp, next: ln, match: false });
+      else while (lp.length || ln.length) out.push({ prev: take(lp), next: take(ln), match: false });
+      lp = []; ln = [];
+    }
+    pv.forEach(function (p, i) {
+      if (mate[i] == null) { lp.push(p); return; }
+      flush();
+      out.push({ prev: [p], next: [nx[mate[i]]], match: true });
+      ln = (after[i] || []).slice();
+    });
+    flush();
+    return out.length ? out : [{ prev: [], next: [], match: false }];
+  }
+
   /** 분야 이름 맞추기 (□ 줄) */
   function catIndex(s) {
     s = String(s || '');
@@ -447,7 +490,7 @@
     call: call, me: me, meSave: meSave, meClear: meClear, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
     PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,
     week: week, month: month, fromKey: fromKey, current: current, currentMonth: currentMonth, dday: dday, kd: kd, md: md, ymd: ymd, parse: parse, add: add, today: today, fmtTime: fmtTime, fileBase: fileBase,
-    uid: uid, emptyData: emptyData, fileUpload: fileUpload, fileDownload: fileDownload, fileItem: fileItem, fileSize: fileSize, FILE_MAX: FILE_MAX, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, dParse: dParse, dJoin: dJoin, SUBBOX: SUBBOX, parseText: parseText, catIndex: catIndex,
+    uid: uid, emptyData: emptyData, fileUpload: fileUpload, fileDownload: fileDownload, fileItem: fileItem, fileSize: fileSize, FILE_MAX: FILE_MAX, normData: normData, blockEmpty: blockEmpty, lineKind: lineKind, dropLead: dropLead, dParse: dParse, dJoin: dJoin, SUBBOX: SUBBOX, pairRows: pairRows, parseText: parseText, catIndex: catIndex,
     h: h, toast: toast, modal: modal, confirm: confirmBox, autosize: autosize, busy: busy, copy: copy, passwordModal: passwordModal, topbar: topbar, demoBar: demoBar, resetDemo: resetDemo
   };
 })(window);

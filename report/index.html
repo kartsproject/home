@@ -9,18 +9,18 @@
 <link rel="preconnect" href="https://script.google.com" crossorigin>
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=20261112e">
+<link rel="stylesheet" href="assets/style.css?v=20261112f">
 </head>
 <body>
 <main id="app"></main>
-<script src="assets/common.js?v=20261112e"></script>
-<script src="assets/report.js?v=20261112e"></script>
-<script src="assets/open.js?v=20261112e"></script>
+<script src="assets/common.js?v=20261112f"></script>
+<script src="assets/report.js?v=20261112f"></script>
+<script src="assets/open.js?v=20261112f"></script>
 <script>
 /* 화면 고르기: #/login · #/write · #/hub · #/view · #/sched · #/admin */
 (function () {
   var pages = { login: 'login', write: 'write', hub: 'hub', view: 'view', sched: 'sched', admin: 'admin' };
-  var name = pages[KR.route.name] ? KR.route.name : 'login', REV = '20261112e';   // 화면 스크립트가 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
+  var name = pages[KR.route.name] ? KR.route.name : 'login', REV = '20261112f';   // 화면 스크립트가 바뀌면 올림(브라우저에 남은 예전 파일을 쓰지 않게)
   document.body.className = 'pg-' + name + (name === 'login' || name === 'view' ? ' dark' : '');
   window.addEventListener('hashchange', function () { location.reload(); });
   var s = document.createElement('script');

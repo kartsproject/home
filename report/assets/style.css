@@ -1199,3 +1199,13 @@ body.dark .modal .btn.primary:hover { background: #333336; }
 .sub-ed { --c2: #0071E3; background: var(--fill-2, #F5F5F7); border-radius: 12px; padding: 4px 6px 6px; }
 .sub-ed .be-row.sub { padding-left: 6px; }
 .sub-ed .be-boxwrap.sub { margin-left: 24px; }
+/* 같은 분야 안에서 이어지는 행: 행 사이 선은 옅게(소제목 짝을 같은 선상에 두려고 행을 나눔) */
+.rd-table tr.rc-open > td { border-bottom-color: #E8E8ED; }
+.rd-table tr.rc-more > td { border-top-color: #E8E8ED; padding-top: 10px; }
+.rd-table tr.rc-open > td { padding-bottom: 10px; }
+/* 취합 편집기: 소제목이 같은 실적·계획 카드를 같은 줄에 */
+.ed-cols .ed-col.ed-hd { padding-bottom: 0; }
+.ed-cols .ed-col.ed-row { padding-top: 4px; padding-bottom: 4px; }
+.ed-cols .ed-col.ed-row.match { background: color-mix(in srgb, var(--c1, #8E8E93) 8%, transparent); }
+.ed-cols .ed-col.ed-ft { padding-top: 8px; }
+@media (max-width: 640px) { .ed-cols .ed-col.ed-row.next { border-top: 0; } }

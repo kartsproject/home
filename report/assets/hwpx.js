@@ -324,7 +324,7 @@
     doc.cats.forEach(function (c, i) {
       var pv = visible(c.prev), nx = visible(c.next);
       if (!pv.length && !nx.length) return;
-      var groups = rowsOf(pv, nx);
+      var groups = (root.KR && root.KR.pairRows) ? root.KR.pairRows(pv, nx, { split: true }) : rowsOf(pv, nx);   // 화면·인쇄와 같은 줄 맞춤(common.js)
       groups.forEach(function (g, k) {
         function side(list, all) {
           var parts = [], h = 0;

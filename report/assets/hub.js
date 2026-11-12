@@ -36,15 +36,25 @@
     function draw() {
       box.innerHTML = '';
       doc.cats.forEach(function (cat, i) {
-        var cols = ['prev', 'next'].map(function (side) {
-          var list = cat[side];
-          return h('div', { class: 'ed-col ' + side }, [
-            h('div', { class: 'ed-colh' }, [h('b', { text: side === 'prev' ? (doc.headPrev || '지난 실적') : (doc.headNext || '향후 계획') }), h('span', { text: side === 'prev' ? doc.periodPrev : doc.periodNext })]),
-            list.length ? null : h('div', { class: 'ed-empty', text: '해당 사항 없음' }),
-            h('div', { class: 'ed-list' }, list.map(function (blk, j) { return card(i, side, list, j); })),
-            h('button', { class: 'add-b sm', onclick: function () { editBlock(null, i, side); } }, '+ 직접 추가')
-          ]);
+        // 「ㅇ」 소제목이 같은 실적·계획 카드는 같은 줄에(화면·인쇄·한글 파일과 같은 규칙 KR.pairRows)
+        function head(side) { return h('div', { class: 'ed-col ed-hd ' + side }, [h('div', { class: 'ed-colh' }, [h('b', { text: side === 'prev' ? (doc.headPrev || '지난 실적') : (doc.headNext || '향후 계획') }), h('span', { text: side === 'prev' ? doc.periodPrev : doc.periodNext })])]); }
+        var cells = [head('prev'), head('next')];
+        var groups = (cat.prev.length || cat.next.length) ? KR.pairRows(cat.prev, cat.next) : [];
+        groups.forEach(function (g, gi) {
+          ['prev', 'next'].forEach(function (side) {
+            var list = cat[side];
+            cells.push(h('div', { class: 'ed-col ed-row ' + side + (g.match ? ' match' : '') + (gi === groups.length - 1 ? ' last' : '') }, [
+              h('div', { class: 'ed-list' }, g[side].map(function (blk) { return card(i, side, list, list.indexOf(blk)); }))
+            ]));
+          });
         });
+        ['prev', 'next'].forEach(function (side) {
+          cells.push(h('div', { class: 'ed-col ed-ft ' + side }, [
+            cat[side].length ? null : h('div', { class: 'ed-empty', text: '해당 사항 없음' }),
+            h('button', { class: 'add-b sm', onclick: function () { editBlock(null, i, side); } }, '+ 직접 추가')
+          ]));
+        });
+        var cols = cells;
         box.appendChild(h('section', { class: 'ed-cat', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1] }, [
           h('header', {}, [h('span', { class: 'ed-n', text: String(i + 1).padStart(2, '0') }), h('h3', { text: KR.CATS[i] })]),
           h('div', { class: 'ed-cols' }, cols)
