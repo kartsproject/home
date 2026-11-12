@@ -314,3 +314,98 @@ window.Content = (function(){
   }
   return C;
 })();
+
+/* ---------- 표 → 도식 (2026-11-12 사용자 「홈페이지에 있는 표는 모두 도식으로」, WBS 22.15) ----------
+   항목 · 값 줄 목록(.ab-dl — 사업소개 「사업 개요」, 모집 「지원 안내」, 심화 멘토링 「운영 개요」, 페이지 직접 편집으로 더한 「표」 구역)을
+   아이콘 칸으로 그린다. 칸마다 항목 이름으로 고른 아이콘 · 항목 이름 · 값.
+   값은 모양을 읽어 그린다: 「A → B → C」는 단계 흐름, 「A · B · C」(띄어 쓴 가운뎃점, 짧은 낱말)는 칩(분야 이름이면 분야 아이콘),
+   끝의 「(…)」나 괄호로만 된 줄은 아래 작은 설명. 그 밖의 글 · 링크 · 로고는 그대로 둔다.
+   원래 글은 화면 읽기 프로그램용으로 남기고(.dg-sr) 그림은 aria-hidden. 운영진 글은 textContent로만 넣는다(CLAUDE.md 보안 5).
+   편집 화면에서는 그리지 않는다(글을 그대로 고치게) — 예전 줄 목록 모양 그대로. 고친 글이 덮인 뒤(Content.ready) 그린다. */
+(function(){
+  var editing = /[?&]edit=1(&|$)/.test(location.search);
+  try{ editing = editing || sessionStorage.getItem('hp_edit') === '1'; }catch(e){}
+  if(editing || !document.querySelector('.ab-dl')) return;
+
+  function el(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+  function pick(list, t, dflt){ for(var i = 0; i < list.length; i++) if(list[i][0].test(t)) return list[i][1]; return dflt; }
+  // 앞에 맞는 것이 먼저 — 「대상 분야」는 분야, 「지원 방법」은 방법
+  var ICON = [[/분야|전공/, 'field'], [/과정|단계|흐름|일정|절차/, 'route'], [/기관|주최|주관|운영 ?기관/, 'org'], [/사업명|이름|명칭/, 'flag'],
+    [/자격|대상|인원/, 'people'], [/방법|제출|접수|신청/, 'mail'], [/방식|내용|구성/, 'talk'], [/참가비|비용|금액|지원금/, 'fee'],
+    [/문의|연락|전화|메일/, 'ask'], [/기간|날짜|시기|일시/, 'cal'], [/장소|위치|곳/, 'pin']];
+  var FIELD = [[/음악/, 'music'], [/무용|발레/, 'dance'], [/전통|국악/, 'trad'], [/미술|시각/, 'art']];
+
+  function lines(dd){
+    var out = [''];
+    [].forEach.call(dd.childNodes, function(c){ if(c.nodeName === 'BR') out.push(''); else out[out.length - 1] += c.textContent; });
+    return out.map(function(t){ return t.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+  }
+  function hide(dd, vis){
+    var sr = el('span', 'dg-sr');
+    while(dd.firstChild) sr.appendChild(dd.firstChild);
+    vis.setAttribute('aria-hidden', 'true');
+    dd.appendChild(sr); dd.appendChild(vis);
+  }
+  // 값 하나 그리기. 돌려주는 값: 'flow' · 'chips' · 'text' · 넓게 둘지
+  function value(dd){
+    if(dd.querySelector('*:not(br)')) return { wide:false };   // 링크 · 로고는 그대로
+    var ls = lines(dd), all = ls.join(' ');
+    if(!ls.length) return { wide:false };
+    var steps = all.split(/\s*(?:→|->|⇒)\s*/).filter(Boolean);
+    if(ls.length === 1 && steps.length >= 2 && steps.length <= 6){
+      var fl = el('ol', 'dg-flow');
+      steps.forEach(function(s, i){
+        var li = el('li');
+        li.appendChild(el('b', null, (i < 9 ? '0' : '') + (i + 1)));
+        li.appendChild(el('span', null, s));
+        fl.appendChild(li);
+      });
+      hide(dd, fl);
+      return { wide:true };
+    }
+    var words = all.split(/\s+[·•ㆍ]\s+/);
+    if(ls.length === 1 && !/[()]/.test(all) && words.length >= 2 && words.length <= 8 && words.every(function(w){ return w.length && w.length <= 10; })){
+      var ch = el('div', 'dg-chips');
+      words.forEach(function(w){
+        var s = el('span', null, w), f = pick(FIELD, w, '');
+        if(f){ s.className = 'dg-f'; s.setAttribute('data-f', f); }
+        ch.appendChild(s);
+      });
+      hide(dd, ch);
+      return { wide:false };
+    }
+    // 글: 끝의 괄호 · 괄호로만 된 줄은 작은 설명으로
+    var main = [], notes = [];
+    ls.forEach(function(l){
+      var m = l.match(/^\((.+)\)$/) || null, t = l.match(/^(.+?)\s*\(([^()]+)\)$/);
+      if(m) notes.push(m[1]); else if(t){ main.push(t[1]); notes.push(t[2]); } else main.push(l);
+    });
+    if(!main.length) return { wide:false };
+    var tx = el('div', 'dg-tx');
+    tx.appendChild(el('p', 'mn', main.join(' ')));
+    notes.forEach(function(n){ tx.appendChild(el('p', 'nt', n)); });
+    hide(dd, tx);
+    return { wide:main.join(' ').length > 22 };
+  }
+
+  function draw(dl){
+    if(dl.classList.contains('dg')) return;
+    var items = [].filter.call(dl.children, function(d){ return d.tagName === 'DIV' && d.querySelector('dt') && d.querySelector('dd'); });
+    if(!items.length) return;
+    var wide = items.map(function(d){
+      d.classList.add('dg-it', 'ic-' + pick(ICON, d.querySelector('dt').textContent, 'dot'));
+      var w = value(d.querySelector('dd')).wide;
+      return w;
+    });
+    // 2칸 줄에서 빈자리가 생기지 않게: 왼쪽 칸에 온 좁은 칸 다음이 넓은 칸이거나 끝이면 그 칸도 넓게
+    var col = 0;
+    items.forEach(function(d, i){
+      if(!wide[i] && col === 0 && (i === items.length - 1 || wide[i + 1])) wide[i] = true;
+      if(wide[i]){ d.classList.add('w'); col = 0; } else col = col ? 0 : 1;
+    });
+    dl.classList.add('dg');
+  }
+  function all(){ [].forEach.call(document.querySelectorAll('.ab-dl'), draw); }
+  var ready = window.Content && Content.ready ? Content.ready : Promise.resolve();
+  ready.then(all, all);
+})();
