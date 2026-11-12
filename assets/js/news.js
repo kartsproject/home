@@ -4,7 +4,7 @@
    ▣ 글 모양은 board.js(관리자 미리보기와 같은 함수)가 만든다. 운영진이 입력한 값은 textContent로만 넣는다.
    ▣ 걸러 보기 (WBS 12.2, decisions.md 「6차 피드백 · 시안 1 확정」) — 목록 위 단추 묶음.
        연도(세 게시판): 전체 + 그 게시판 글 날짜 앞 네 자리(최신이 앞), 처음엔 전체.
-       과정 · 분야(갤러리만): 아래 표의 단추가 늘 보인다. 세 묶음은 함께 걸러지고, 분야를 고르면 field가 빈 앨범(공통 · 지정 안 함)은 빠진다.
+       과정 · 분야(갤러리만): 아래 표의 단추가 늘 보인다. 묶음마다 하나만 고르고(2026-11-12), 세 묶음은 함께 걸러지고, 분야를 고르면 field가 빈 앨범(공통 · 지정 안 함)은 빠진다.
        고르면 1쪽부터. 공지 글 보기에서는 단추를 숨기고, 목록으로 돌아오면 고른 값이 그대로다.
    ============================================================ */
 (function(){
@@ -20,7 +20,7 @@
   // 갤러리 과정 · 분야 코드 → 단추 · 이름표 글자 (docs/sheet-schema.md 「갤러리 과정 · 분야」). 목록에 없는 코드는 없는 것으로 본다
   var COURSE = [['workshop', '워크숍'], ['mentoring', '심화 멘토링'], ['camp', '겨울캠프']],
       FIELD = [['music', '음악'], ['dance', '무용'], ['trad', '전통예술'], ['art', '미술']];
-  // 고른 값 — 묶음마다 여러 개(7차 피드백), 빈 목록은 전체
+  // 고른 값 — 묶음마다 0개(전체) 또는 1개(2026-11-12 사용자, 그 전엔 여러 개)
   var pick = { notice:{ year:[] }, press:{ year:[] }, gallery:{ year:[], course:[], field:[] } }, nPick = null;
 
   function el(tag, cls, text){
@@ -64,8 +64,9 @@
 
   /* ---------- 걸러 보기 단추 ----------
      groups: [[키, 묶음 이름, [[값, 단추 글자] …]] …] — 첫 단추는 늘 「전체」(''). 목록 칸 바로 앞에 놓는다.
-     한 묶음에서 여러 개를 고를 수 있다(7차 피드백): 누르면 켜고, 켜진 것을 다시 누르면 끈다. 하나도 안 켜지면 「전체」.
-     「전체」를 누르면 그 묶음의 고른 것을 모두 끈다. 바뀔 때마다 state[키](고른 값 목록)를 고치고 onPick() */
+     한 묶음에서 하나만 고른다(2026-11-12 사용자 — 「누른 단추에 해당하는 것만 보이게」. 그 전 7차 피드백의 여러 개 고르기를 바꿈):
+     누르면 그것만 켜지고 나머지는 꺼진다. 이미 켜진 단추를 다시 눌러도 그대로. 「전체」는 고른 것을 지운다.
+     묶음끼리(연도 · 과정 · 분야)는 지금처럼 함께 걸러진다. 바뀔 때마다 state[키](고른 값 — 0개나 1개)를 고치고 onPick() */
   function picker(box, groups, state, onPick){
     var wrap = el('div', 'pick'), row = el('div', 'pick-in');
     groups.forEach(function(g){
@@ -83,10 +84,8 @@
         var b = el('button', null, o[1]);
         b.type = 'button';
         b.addEventListener('click', function(){
-          var i = cur.indexOf(o[0]);
           if(!o[0]){ if(!cur.length) return; cur.length = 0; }
-          else if(i >= 0) cur.splice(i, 1);
-          else cur.push(o[0]);
+          else { if(cur.length === 1 && cur[0] === o[0]) return; cur.length = 0; cur.push(o[0]); }
           mark();
           onPick();
         });
