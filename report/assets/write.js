@@ -310,37 +310,38 @@
       h('button', { class: 'add-b', onclick: function () { list.push({ id: KR.uid(), t: '', c: '', d: '' }); touch(); redraw(); drawSteps(); drawFoot(); var t = listBox.querySelectorAll('.be-t'); if (t.length) t[t.length - 1].focus(); } }, '＋ 항목 추가')
     ]);
   }
-  function blockEditor(i, side, list, j, redraw) {
-    var blk = list[j];
-    var t = h('input', { class: 'be-t', value: blk.t, placeholder: '소제목', maxlength: 40, 'aria-label': '소제목' });
-    var c = h('textarea', { class: 'be-c', rows: 1, value: blk.c, placeholder: side === 'prev' ? '한 일  예) 2026. 10. 31.(토) 10:00~12:00 /비대면' : '할 일  예) 2차 리뷰 시사 보고(11/10,화)', 'aria-label': '내용' });
-    // 세부 내용(「-」 줄): 줄마다 칸 하나. Enter로 다음 「-」 줄, 빈 줄에서 Backspace로 지움, 여러 줄 붙여넣기는 줄마다 나눔
-    var dl = String(blk.d || '').split('\n');
-    var subBox = h('div', { class: 'be-subs' });
-    function dSync() { blk.d = dl.join('\n').replace(/\n+$/, ''); }
-    function drawSubs(focusK, caret) {
-      subBox.innerHTML = '';
+  /**
+   * 줄마다 칸 하나인 입력(세부 「-」 줄 · 상세 박스): Enter로 다음 줄, 줄 맨 앞 Backspace로 윗줄과 합침(빈 줄이면 지움),
+   * ↑↓로 줄 이동, 여러 줄 붙여넣기는 줄마다 나눔(앞의 「- 」는 뗌). 한글 조합 중 Enter는 건드리지 않음
+   */
+  function lineRows(init, o) {
+    var dl = (init && init.length ? init : ['']).slice();
+    var el = h('div', { class: 'be-subs' + (o.cls === 'be-box' ? ' box' : '') });
+    function draw(focusK, caret) {
+      el.innerHTML = '';
       if (!dl.length) dl = [''];
       dl.forEach(function (line, k) {
-        var ta = h('textarea', { class: 'be-d', rows: 1, value: line, placeholder: k === 0 ? '세부 내용 — Enter를 누르면 다음 「-」 줄' : '세부 내용', 'aria-label': '세부 내용 ' + (k + 1) });
-        var kind = KR.lineKind(line);
-        var mark = h('span', { class: 'be-dash', text: kind === 'item' ? '–' : '' });
-        ta.addEventListener('input', function () { KR.autosize(ta); dl[k] = ta.value.replace(/\n/g, ' '); var kd = KR.lineKind(dl[k]); mark.textContent = kd === 'item' ? '–' : ''; upd(); });
+        var ta = h('textarea', { class: o.cls + (o.title && o.title(line) ? ' tl' : ''), rows: 1, value: line, placeholder: k === 0 ? o.first : o.other, 'aria-label': o.label + ' ' + (k + 1) });
+        var mark = h('span', { class: 'be-dash', text: o.mark(line) });
+        ta.addEventListener('input', function () {
+          KR.autosize(ta); dl[k] = ta.value.replace(/\n/g, ' ');
+          mark.textContent = o.mark(dl[k]); if (o.title) ta.classList.toggle('tl', o.title(dl[k]));
+          o.onChange();
+        });
         ta.addEventListener('keydown', function (e) {
-          if (e.isComposing || e.keyCode === 229) return;          // 한글 조합 중에는 건드리지 않음
+          if (e.isComposing || e.keyCode === 229) return;
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            var pos = ta.selectionStart;
-            dl.splice(k, 1, ta.value.slice(0, pos), ta.value.slice(ta.selectionEnd));
-            upd(); drawSubs(k + 1, 0);
+            dl.splice(k, 1, ta.value.slice(0, ta.selectionStart), ta.value.slice(ta.selectionEnd));
+            o.onChange(); draw(k + 1, 0);
           } else if (e.key === 'Backspace' && ta.selectionStart === 0 && ta.selectionEnd === 0 && (k > 0 || (ta.value === '' && dl.length > 1))) {
             e.preventDefault();
             var keep = k > 0 ? dl[k - 1].length : 0;
             if (k > 0) dl[k - 1] += dl[k];
             dl.splice(k, 1);
-            upd(); drawSubs(Math.max(0, k - 1), keep);
-          } else if (e.key === 'ArrowUp' && k > 0 && ta.selectionStart === 0) { e.preventDefault(); drawFocus(k - 1, dl[k - 1].length); }
-          else if (e.key === 'ArrowDown' && k < dl.length - 1 && ta.selectionEnd === ta.value.length) { e.preventDefault(); drawFocus(k + 1, 0); }
+            o.onChange(); draw(Math.max(0, k - 1), keep);
+          } else if (e.key === 'ArrowUp' && k > 0 && ta.selectionStart === 0) { e.preventDefault(); focus(k - 1, dl[k - 1].length); }
+          else if (e.key === 'ArrowDown' && k < dl.length - 1 && ta.selectionEnd === ta.value.length) { e.preventDefault(); focus(k + 1, 0); }
         });
         ta.addEventListener('paste', function (e) {
           var tx = ((e.clipboardData || window.clipboardData) || { getData: function () { return ''; } }).getData('text');
@@ -350,20 +351,33 @@
           var before = ta.value.slice(0, ta.selectionStart), after = ta.value.slice(ta.selectionEnd);
           parts[0] = before + parts[0]; var lastLen = parts[parts.length - 1].length; parts[parts.length - 1] += after;
           dl.splice.apply(dl, [k, 1].concat(parts));
-          upd(); drawSubs(k + parts.length - 1, lastLen);
+          o.onChange(); draw(k + parts.length - 1, lastLen);
         });
-        var del = h('button', { class: 'icon-btn be-x', title: '이 줄 지우기', 'aria-label': '세부 ' + (k + 1) + '번째 줄 지우기', hidden: dl.length === 1 && !line ? true : null, onclick: function () { dl.splice(k, 1); upd(); drawSubs(Math.min(k, dl.length - 1), null); } }, '✕');
-        subBox.appendChild(h('div', { class: 'be-row sub' }, [mark, ta, del]));
+        var del = h('button', { class: 'icon-btn be-x', title: '이 줄 지우기', 'aria-label': o.label + ' ' + (k + 1) + '번째 줄 지우기', hidden: dl.length === 1 && !line ? true : null, onclick: function () { dl.splice(k, 1); o.onChange(); draw(Math.min(k, Math.max(0, dl.length - 1)), null); } }, '✕');
+        el.appendChild(h('div', { class: 'be-row sub' }, [mark, ta, del]));
         setTimeout(function () { KR.autosize(ta); }, 0);
       });
-      if (focusK != null) drawFocus(focusK, caret);
+      if (focusK != null) focus(focusK, caret);
     }
-    function drawFocus(k, caret) {   // 바로 옮김(빨리 이어 치는 글자가 앞 칸에 들어가지 않게)
-      var ta = subBox.querySelectorAll('.be-d')[k]; if (!ta) return;
+    function focus(k, caret) {   // 바로 옮김(빨리 이어 치는 글자가 앞 칸에 들어가지 않게)
+      var ta = el.querySelectorAll('textarea')[k]; if (!ta) return;
       ta.focus(); var p = caret == null ? ta.value.length : Math.min(caret, ta.value.length); ta.setSelectionRange(p, p);
     }
-    function addSub() { if (dl.length === 1 && dl[0] === '') { drawFocus(0, 0); return; } dl.push(''); upd(); drawSubs(dl.length - 1, 0); }
-    drawSubs(null);
+    function add() { if (dl.length === 1 && dl[0] === '') { focus(0, 0); return; } if (dl[dl.length - 1] === '') { focus(dl.length - 1, 0); return; } dl.push(''); o.onChange(); draw(dl.length - 1, 0); }
+    draw(null);
+    return { el: el, lines: function () { return dl; }, focus: focus, add: add, set: function (ls) { dl = ls.slice(); draw(null); } };
+  }
+  function blockEditor(i, side, list, j, redraw) {
+    var blk = list[j];
+    var t = h('input', { class: 'be-t', value: blk.t, placeholder: '소제목', maxlength: 40, 'aria-label': '소제목' });
+    var c = h('textarea', { class: 'be-c', rows: 1, value: blk.c, placeholder: side === 'prev' ? '한 일  예) 2026. 10. 31.(토) 10:00~12:00 /비대면' : '할 일  예) 2차 리뷰 시사 보고(11/10,화)', 'aria-label': '내용' });
+    // 세부 내용(「-」 줄): 줄마다 칸 하나. Enter로 다음 「-」 줄, 빈 줄에서 Backspace로 지움, 여러 줄 붙여넣기는 줄마다 나눔
+    var subs = lineRows(String(blk.d || '').split('\n'), { cls: 'be-d', label: '세부 내용', first: '세부 내용 — Enter를 누르면 다음 「-」 줄', other: '세부 내용',
+      mark: function (l) { return KR.lineKind(l) === 'item' ? '–' : ''; }, onChange: function () { upd(); } });
+    var subBox = subs.el;
+    function dSync() { blk.d = subs.lines().join('\n').replace(/\n+$/, ''); }
+    function drawFocus(k, caret) { subs.focus(k, caret); }
+    function addSub() { subs.add(); }
     var dates = h('div', { class: 'be-dates' });
     function showDates() {
       dates.innerHTML = '';
@@ -373,14 +387,23 @@
       ds.slice(0, 6).forEach(function (x) { var dt = KR.parse(x.date); dates.appendChild(h('span', { class: 'bd', text: (dt.getMonth() + 1) + '.' + dt.getDate() + ' ' + '일월화수목금토'[dt.getDay()] + (x.time ? ' ' + x.time : '') })); });
     }
     // 상세 박스: 자세한 내용(주요 의견·검토 의견 등)을 상자 안에 따로 적음. 첫 줄을 「* 제목」으로 쓰면 박스 제목
-    var bx = h('textarea', { class: 'be-box', rows: 3, value: blk.box || '', placeholder: '* 주요 의견\n배경은 무채색 계열로\n2안은 타이포를 달리해 재시안', 'aria-label': '상세 박스' });
-    var bxWrap = h('div', { class: 'be-boxwrap' + (String(blk.box || '').trim() ? ' on' : '') }, [h('div', { class: 'be-boxh' }, [h('span', { text: '상세 박스' }), h('small', { text: '「* 」로 시작하는 줄은 박스 제목, 나머지는 한 줄에 하나씩' }), h('button', { class: 'icon-btn', title: '박스 지우기', 'aria-label': '박스 지우기', onclick: function () { bx.value = ''; bxWrap.classList.remove('on'); boxBtn.hidden = false; upd(); } }, '✕')]), bx]);
-    var boxBtn = h('button', { class: 'chip-btn', hidden: String(blk.box || '').trim() ? true : null, onclick: function () { bxWrap.classList.add('on'); boxBtn.hidden = true; if (!bx.value) bx.value = '* 주요 의견\n'; KR.autosize(bx); bx.focus(); } }, '＋ 상세 박스');
-    function upd() { blk.t = t.value; blk.c = c.value; dSync(); blk.box = bx.value.replace(/\s+$/, '').replace(/^\* 주요 의견$/, ''); touch(); showDates(); drawStepsLight(); }
-    bx.addEventListener('input', function () { KR.autosize(bx); upd(); });
+    // 상세 박스: 자세한 내용(주요 의견·검토 의견 등)을 상자 안에 따로 적음. 「* 」로 시작하는 줄은 박스 제목(굵게), 나머지는 「-」 줄마다 칸 하나
+    var hasBox = !!String(blk.box || '').trim();
+    var boxRows = lineRows(hasBox ? String(blk.box).split('\n') : ['* 주요 의견', ''], { cls: 'be-box', label: '상세 박스', first: '* 박스 제목', other: '박스 내용 — Enter를 누르면 다음 「-」 줄',
+      mark: function (l) { return /^\s*[*※]/.test(l) ? '' : '–'; }, title: function (l) { return /^\s*[*※]/.test(l); }, onChange: function () { upd(); } });
+    var bxWrap = h('div', { class: 'be-boxwrap' + (hasBox ? ' on' : '') }, [h('div', { class: 'be-boxh' }, [h('span', { text: '상세 박스' }), h('small', { text: '「* 」로 시작하는 줄은 박스 제목, 나머지는 「-」 줄마다 하나씩' }),
+      h('button', { class: 'chip-btn sm', title: '박스에 「-」 줄 하나 더', onclick: function () { boxRows.add(); } }, '＋ 박스 줄(-)'),
+      h('button', { class: 'icon-btn', title: '박스 지우기', 'aria-label': '박스 지우기', onclick: function () { boxRows.set(['* 주요 의견', '']); bxWrap.classList.remove('on'); boxBtn.hidden = false; upd(); } }, '✕')]), boxRows.el]);
+    var boxBtn = h('button', { class: 'chip-btn', hidden: hasBox ? true : null, onclick: function () { bxWrap.classList.add('on'); boxBtn.hidden = true; var ls = boxRows.lines(); boxRows.focus(ls.length > 1 ? 1 : 0, null); } }, '＋ 상세 박스');
+    function upd() {
+      blk.t = t.value; blk.c = c.value; dSync();
+      var box = boxRows.lines().join('\n').replace(/\s+$/, '');
+      blk.box = bxWrap.classList.contains('on') ? box.replace(/^\* 주요 의견$/, '') : '';
+      touch(); showDates(); drawStepsLight();
+    }
     [t, c].forEach(function (el) { el.addEventListener('input', function () { if (el.tagName === 'TEXTAREA') KR.autosize(el); upd(); }); });
     c.addEventListener('keydown', function (e) { if (e.isComposing || e.keyCode === 229) return; if (e.key === 'Enter' && !e.shiftKey && !c.value.includes('\n')) { e.preventDefault(); drawFocus(0, 0); } });
-    setTimeout(function () { KR.autosize(c); KR.autosize(bx); }, 0);
+    setTimeout(function () { KR.autosize(c); }, 0);
     showDates();
     function mv(k) { var x = list.splice(j, 1)[0]; list.splice(j + k, 0, x); touch(); redraw(); }
     return h('div', { class: 'be', style: '--c1:' + R.CAT_C[i][0] + ';--c2:' + R.CAT_C[i][1] }, [
