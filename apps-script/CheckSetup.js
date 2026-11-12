@@ -30,15 +30,25 @@ function checkSetup() {
   var codes = readTab_('접근코드').filter(function (r) { return String(r['코드']).trim() && r['상태'] !== '정지'; });
   if (codes.length) pass('사용 중인 접근코드 ' + codes.length + '개'); else fail('사용 중인 접근코드가 없음 — 「접근코드」 탭에 줄을 넣을 것');
 
-  // 4. 첨부가 새 계정 드라이브에 있는지 (이전 도구 moveAttachments)
+  // 4. 첨부가 새 계정 드라이브에 있는지 (이전 도구 moveAttachments) · 게시판별 폴더로 정리됐는지 (sortUploads, Folders.js)
   try {
-    var folderId = getUploadFolder_().getId(), old = 0;
+    var here = uploadFolderIds_(), props4 = PropertiesService.getScriptProperties(), old = 0, loose = 0;
     readTab_('첨부').forEach(function (a) {
       var id = String(a['파일ID']).split(',')[0];
-      try { if (id && !isInFolder_(DriveApp.getFileById(id), folderId)) old++; } catch (err) { old++; }
+      if (!id) return;
+      try {
+        var parents = parentIds_(DriveApp.getFileById(id));
+        if (!parents.some(function (p) { return here[p]; })) { old++; return; }
+        var board = boardOfPostId_(a['글ID']), sub = board && props4.getProperty('DRIVE_SUB_' + board);
+        if (board && parents.indexOf(sub) === -1) loose++;
+      } catch (err) { old++; }
     });
     if (old) fail('예전 드라이브(또는 열 수 없는 곳)에 있는 첨부 ' + old + '개 → moveAttachments 실행');
     else pass('첨부가 모두 새 계정 드라이브에 있음');
+    if (!old) {
+      if (loose) fail('게시판별 폴더(공지사항 · 갤러리 · 모집요강 …)에 아직 정리되지 않은 첨부 ' + loose + '개 → sortUploads 실행');
+      else pass('첨부가 게시판별 폴더로 정리돼 있음');
+    }
   } catch (err) { /* 폴더 문제는 2번에서 알림 */ }
 
   // 5. GitHub 발행

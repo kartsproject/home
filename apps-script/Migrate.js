@@ -20,7 +20,7 @@
 var MIGRATE_KEEP_HERO_ = false;
 
 function moveAttachments() {
-  var folder = getUploadFolder_(), folderId = folder.getId();
+  var folder = getUploadFolder_(), here = uploadFolderIds_();   // 새 첨부 폴더와 그 안의 게시판별 하위 폴더 (Folders.js)
   var started = Date.now(), timeLimit = 4.5 * 60 * 1000;
   var rows = readTab_('첨부');
   var drop = [], moved = 0, already = 0, failed = [], stopped = false;
@@ -33,7 +33,7 @@ function moveAttachments() {
     try {
       var newIds = ids.map(function (id) {
         var file = DriveApp.getFileById(id);
-        if (isInFolder_(file, folderId)) return id;
+        if (parentIds_(file).some(function (p) { return here[p]; })) return id;
         var copy = file.makeCopy(file.getName(), folder);
         if (a['구분'] !== '동영상') copy.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         return copy.getId();
@@ -63,12 +63,6 @@ function moveAttachments() {
   Logger.log(JSON.parse(result.getContent()).ok
     ? '✅ 끝 — 사이트에 반영했습니다. 1~2분 뒤 사이트의 사진이 새 계정 드라이브의 사진으로 바뀝니다.'
     : '❌ 옮기기는 끝났지만 사이트 반영에 실패 — GITHUB_TOKEN을 확인한 뒤 관리자 페이지 [다시 반영] 또는 checkSetup');
-}
-
-function isInFolder_(file, folderId) {
-  var parents = file.getParents();
-  while (parents.hasNext()) if (parents.next().getId() === folderId) return true;
-  return false;
 }
 
 // 표지 첨부를 지웠으니 2.5D 표시도 끈다(누끼가 없는 2.5D는 저장 때 거절되므로)

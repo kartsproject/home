@@ -417,7 +417,7 @@
   function upload(t, r, name){
     busy('사진을 올리고 사이트에 반영하는 중…\n20초 정도 걸립니다.');
     return blobToBase64(r.blob).then(function(b64){
-      return api('upload', { kind:'photo', name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
+      return api('upload', { kind:'photo', board:t.kind === 'hero' ? 'hero' : 'photo', name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
     }).then(function(d){
       return saveSlot(t, [d.attachmentId]).then(function(res){
         E.local[t.kind + ':' + t.slot] = r.preview;

@@ -45,6 +45,7 @@
 |---|---|
 | `setup` (홍보) · `setupTokenSecret` · `setupAdminSheets` (아카이빙) | `Setup.gs` |
 | `moveAttachments` (홍보) | `Migrate.gs` |
+| `sortUploads` (홍보 — 첨부를 게시판별 폴더로 정리, 2026-11-12) | `Folders.gs` |
 | `importProgramSheets` (아카이빙) | `Import.gs` |
 | `installTriggers` (아카이빙) | `Triggers.gs` |
 | `checkVimeoConnection` (아카이빙) | `Vimeo.gs` |

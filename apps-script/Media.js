@@ -36,7 +36,7 @@ function handleVideoPart_(req, auth) {
   if (last && (width < 1 || height < 1 || width > 10000 || height > 10000)) return reject();
 
   // 드라이브 저장은 잠금 밖에서 (사진 업로드와 같음). 폴더가 공유되지 않으므로 조각도 공유되지 않는다
-  var file = getUploadFolder_().createFile(Utilities.newBlob(b64, 'text/plain', 'video-' + uploadId + '-' + part + '.b64.txt'));
+  var file = getBoardFolder_('hero').createFile(Utilities.newBlob(b64, 'text/plain', 'video-' + uploadId + '-' + part + '.b64.txt'));
   var cache = CacheService.getScriptCache();
   cache.put('vpart_' + uploadId + '_' + part, file.getId(), VIDEO_PART_TTL_);
   if (!last) return jsonResponse_(true, null, { part: part });

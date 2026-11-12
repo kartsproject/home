@@ -674,7 +674,7 @@
     return prepared.then(function(r){
       ph.local = r.preview; ph.w = r.w; ph.h = r.h; drawPhotos(null, e);
       return blobToBase64(r.blob).then(function(b64){
-        return api('upload', { kind:'photo', name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
+        return api('upload', { kind:'photo', board:e.board, name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
       });
     }).then(function(d){
       ph.attachmentId = d.attachmentId; ph.fileId = d.fileId; ph.size = d.size; ph.uploading = false; markDirty();
@@ -768,7 +768,7 @@
       e.files.push(f);
       jobs.push(function(){
         return blobToBase64(file).then(function(b64){
-          return api('upload', { kind:'file', name:file.name, mimeType:file.type || '', base64:b64 }, 120000);
+          return api('upload', { kind:'file', board:e.board, name:file.name, mimeType:file.type || '', base64:b64 }, 120000);
         }).then(function(d){
           f.attachmentId = d.attachmentId; f.fileId = d.fileId; f.size = d.size; f.uploading = false; markDirty();
         }, function(err){ f.uploading = false; f.error = errMsg(err); })

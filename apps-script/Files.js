@@ -1,7 +1,7 @@
 /**
  * 첨부(사진·파일) 업로드와 드라이브 처리. docs/api.md 3-4, docs/decisions.md 5절.
  * 올리는 즉시 「링크가 있는 사용자 — 보기」로 공유한다(관리자 화면이 비공개 글의 사진도 보여 주기 위함, 2026-10-13 결정).
- * 폴더는 공유하지 않는다. 글에서 빠지거나 글이 지워지면 공유를 끊고 휴지통으로 보낸다(30일 안에 복구 가능).
+ * 게시판별 하위 폴더(공지사항 · 갤러리 · 모집요강 …)에 둔다(Folders.js). 폴더는 공유하지 않는다. 글에서 빠지거나 글이 지워지면 공유를 끊고 휴지통으로 보낸다(30일 안에 복구 가능).
  */
 
 function handleUpload_(req) {
@@ -41,7 +41,8 @@ function handleUpload_(req) {
 
   // 드라이브 저장은 오래 걸려(수 초) 잠금 밖에서 한다 — 관리자 화면이 여러 장을 동시에 올릴 수 있게.
   // 번호 매기기와 시트 기록만 잠근다. 잠금을 못 잡으면 올린 파일을 버리고 BUSY.
-  var file = getUploadFolder_().createFile(Utilities.newBlob(bytes, mimeType, name));
+  // 게시판별 하위 폴더에 둔다(Folders.js). board가 없거나 모르는 값이면 첨부 폴더 바로 아래
+  var file = getBoardFolder_(req.board).createFile(Utilities.newBlob(bytes, mimeType, name));
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
   var lock = LockService.getScriptLock();

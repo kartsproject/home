@@ -27,7 +27,6 @@ var IMPORT_PHOTOS_ = {
 
 function importSitePhotos() {
   ensurePhotoSlots_();
-  var folder = getUploadFolder_();
   var attachments = readTab_('첨부');
   var has = {};
   attachments.forEach(function (a) { if (a['구분'] === '사진' && a['글ID']) has[a['글ID']] = true; });
@@ -40,7 +39,7 @@ function importSitePhotos() {
       var res = UrlFetchApp.fetch(IMPORT_RAW_BASE_ + spec[0], { muteHttpExceptions: true });
       if (res.getResponseCode() !== 200) throw new Error('사진을 받지 못함 ' + res.getResponseCode());
       var bytes = res.getContent(), size = jpegSize_(bytes);
-      var file = folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', spec[0]));
+      var file = getBoardFolder_(boardOfPostId_(postId)).createFile(Utilities.newBlob(bytes, 'image/jpeg', spec[0]));
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       var busy = withLock_(function () {
         var id = nextId_('A', 5, readTab_('첨부').map(function (r) { return r['첨부ID']; }));
