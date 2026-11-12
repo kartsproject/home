@@ -76,7 +76,9 @@
       var t = h('input', { class: 'input', value: blk.t, placeholder: '예: 키비주얼' });
       var c = h('textarea', { class: 'input', rows: 2, value: blk.c, placeholder: '예: 2차 리뷰 시사 보고(11/10,화)' });
       var bxIn = h('textarea', { class: 'input', rows: 4, value: blk.box || '', placeholder: '* 주요 의견\n배경은 무채색 계열로\n2안은 타이포를 달리해 재시안' });
-      var d = h('textarea', { class: 'input', rows: 6, value: blk.d, placeholder: '한 줄에 하나씩 (앞에 - 가 붙습니다)\n앞에 공백을 두면 윗줄에 이어지는 줄\n* ※ [ 로 시작하면 기호 그대로\n§ 로 시작하는 줄은 바로 윗줄의 상세 박스' });
+      // 세부 「-」 줄: 작성 화면과 같은 입력(줄마다 칸 · ↑↓ 이동 · 줄별 상세 박스)
+      var dVal = blk.d || '', dEd = R.subRows(blk.d, function (v) { dVal = v; });
+      var d = h('div', { class: 'sub-ed' }, [dEd.el]);
       var orgSel = h('select', { class: 'input' }, S.companies.concat(blk.org && S.companies.indexOf(blk.org) < 0 ? [blk.org] : []).map(function (n) { return h('option', { value: n, text: n, selected: n === blk.org }); }));
       var catSel = h('select', { class: 'input' }, KR.CATS.map(function (n, k) { return h('option', { value: k, text: n, selected: k === ci }); }));
       var sideSel = h('select', { class: 'input' }, [h('option', { value: 'prev', text: '지난 실적', selected: side === 'prev' }), h('option', { value: 'next', text: '향후 계획', selected: side === 'next' })]);
@@ -94,7 +96,7 @@
         h('div', { class: 'grid2' }, [h('label', { class: 'field' }, [h('span', { text: '소제목 ( ) 안' }), t]), h('label', { class: 'field' }, [h('span', { text: '업체' }), orgSel])]),
         h('label', { class: 'field' }, [h('span', { text: '내용 (ㅇ 줄)' }), c]),
         h('label', { class: 'field' }, [h('span', { text: '세부 내용' }), d]),
-        h('label', { class: 'field' }, [h('span', { text: '상세 박스 (첫 줄을 「* 주요 의견」처럼 쓰면 박스 제목)' }), bxIn]),
+        h('label', { class: 'field' }, [h('span', { text: '항목 전체 상세 박스 (「ㅇ」 아래 맨 끝 · 첫 줄을 「* 주요 의견」처럼 쓰면 박스 제목)' }), bxIn]),
         blk.src && blk.edited ? h('p', { class: 'muted small', text: '이 항목은 편집한 상태라 작성자가 원문을 고쳐도 자동으로 바뀌지 않습니다.' }) : null,
         blk.src && !isNew ? h('p', { class: 'muted small', text: '원문 작성: ' + (blk.by || '') + ' (' + (blk.org || '') + ')' }) : null,
         paste
@@ -108,7 +110,7 @@
         h('span', { class: 'spacer' }),
         h('button', { class: 'btn', text: '취소', onclick: function () { m.close(); } }),
         h('button', { class: 'btn primary', text: '저장', onclick: function () {
-          blk.t = t.value.trim(); blk.c = c.value.replace(/\s+$/, ''); blk.d = d.value.replace(/\s+$/, ''); blk.box = bxIn.value.replace(/\s+$/, ''); blk.org = orgSel.value;
+          blk.t = t.value.trim(); blk.c = c.value.replace(/\s+$/, ''); blk.d = dVal; blk.box = bxIn.value.replace(/\s+$/, ''); blk.org = orgSel.value;
           if (KR.blockEmpty(blk)) { KR.toast('내용을 입력하세요', true); return; }
           if (blk.src && !isNew) blk.edited = true;
           var nc = Number(catSel.value), ns = sideSel.value;
@@ -238,15 +240,52 @@
     doc.absorbed = doc.absorbed || {};
     Object.keys(byId).forEach(function (k) { var o = byId[k]; if (o.src && !present[o.src]) doc.absorbed[o.src] = o.sig || ''; });
   }
+  /**
+   * 세부 줄의 상세 박스(「§」 줄)는 문장 정리(AI·기본)에 보내지 않고 따로 두었다가, 정리된 글에서 가장 닮은 「-」 줄 아래에 다시 붙인다.
+   * (AI가 줄을 다듬거나 순서를 바꿔도 박스가 다른 줄로 섞이거나 사라지지 않게)
+   */
+  function stripSub(cats) {
+    var keep = {};
+    function f(list) { return (list || []).map(function (b) { var us = KR.dParse(b.d); if (us.some(function (u) { return u.box; })) keep[b.id] = us; return Object.assign({}, b, { d: us.filter(function (u) { return u.t.trim(); }).map(function (u) { return u.t; }).join('\n') }); }); }
+    return { cats: cats.map(function (c) { return { prev: f(c.prev), next: f(c.next) }; }), keep: keep };
+  }
+  function simText(a, b) {   // 두 글자씩 겹치는 정도(0~1)
+    function grams(s) { s = String(s || '').replace(/\s+/g, ''); var g = {}; for (var i = 0; i < s.length - 1; i++) g[s.substr(i, 2)] = (g[s.substr(i, 2)] || 0) + 1; return g; }
+    var A = grams(a), B = grams(b), n = 0, ta = 0, tb = 0, k;
+    for (k in A) { ta += A[k]; if (B[k]) n += Math.min(A[k], B[k]); }
+    for (k in B) tb += B[k];
+    return ta + tb ? 2 * n / (ta + tb) : (String(a).trim() === String(b).trim() ? 1 : 0);
+  }
+  function reattachSub(out, keep) {
+    (out || []).forEach(function (c) {
+      ['prev', 'next'].forEach(function (sd) {
+        (c[sd] || []).forEach(function (r) {
+          var froms = Array.isArray(r.from) ? r.from : [r.from], subs = [];
+          froms.forEach(function (id) { (keep[id] || []).forEach(function (u) { if (u.box) subs.push(u); }); });
+          if (!subs.length) return;
+          var us = KR.dParse(String(r.d || '').split('\n').filter(function (l) { return KR.lineKind(l) !== 'box'; }).join('\n')).filter(function (u) { return u.t.trim(); });
+          subs.forEach(function (u) {
+            var best = -1, bs = -1;
+            us.forEach(function (x, j) { var sc = simText(u.t, x.t); if (sc > bs) { bs = sc; best = j; } });
+            if (best < 0 || bs < 0.2) { us.push({ t: u.t, box: u.box }); return; }   // 맞는 줄이 없으면 원래 줄과 함께 붙임
+            us[best].box = us[best].box ? us[best].box + '\n' + u.box : u.box;
+          });
+          r.d = KR.dJoin(us);
+        });
+      });
+    });
+    return out;
+  }
   async function refine(doc, mode, src, onDone) {
     var before = JSON.parse(JSON.stringify(doc.cats));
     var wait = KR.modal('문장 정리 중', [h('div', { class: 'ai-wait' }, [h('div', { class: 'ai-orb' }), h('p', { text: b.ai ? 'AI가 실적·계획 문장으로 다듬고 있습니다. 보통 10~40초 걸립니다.' : '기본 정리 중…' })])], [], { locked: true, noFocus: true });
-    var out = null, note = '';
+    var out = null, note = '', sp = stripSub(src || payloadOf(doc));
     if (b.ai) {
-      try { var r = await KR.call('compile.ai', { mode: mode, cats: src || payloadOf(doc) }); out = r.cats; note = 'AI(' + r.model + ')로 정리했습니다'; }
+      try { var r = await KR.call('compile.ai', { mode: mode, cats: sp.cats }); out = r.cats; note = 'AI(' + r.model + ')로 정리했습니다'; }
       catch (e) { note = e.message + ' — 기본 정리만 했습니다'; }
     } else note = 'AI 키가 없어 기본 정리(공백·중복)만 했습니다';
-    if (!out) out = tidy(src || payloadOf(doc));
+    if (!out) out = tidy(sp.cats);
+    reattachSub(out, sp.keep);
     wait.close();
     applyRefined(doc, out, src);
     S.undo = { key: doc.key, cats: before };

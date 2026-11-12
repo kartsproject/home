@@ -1196,3 +1196,6 @@ body.dark .modal .btn.primary:hover { background: #333336; }
 .mc-det li.sbx { list-style: none; padding-left: 0; }
 .mc-det li.sbx::before { content: none; display: none; }
 .mc-box.sub { margin: 6px 0 4px; }
+.sub-ed { --c2: #0071E3; background: var(--fill-2, #F5F5F7); border-radius: 12px; padding: 4px 6px 6px; }
+.sub-ed .be-row.sub { padding-left: 6px; }
+.sub-ed .be-boxwrap.sub { margin-left: 24px; }
