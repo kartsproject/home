@@ -11,11 +11,12 @@ var SITE = {
   org  : "한국예술영재교육연구원",   /* 주관 */
   mail : "kgifted2026@naver.com",
   /* SNS(머리 오른쪽 · 1100px 이하는 전체메뉴 안, WBS 9.9) — url을 넣으면 새 탭 링크가 된다. 비어 있으면 아이콘만 보이고 눌러도 이동하지 않는다.
-     주소는 2026-10-14 차장님 전달 (인스타그램만 계정 이름이 kartgifted — 실제 프로젝트 계정임을 확인함) */
+     주소는 2026-10-14 차장님 전달. 2026-11-12 사용자 「kartsgifted → kartsproject로 바뀐 계정 확인」 — 인스타그램 · 스레드는 @kartsproject로 바뀜
+     (옛 kartgifted · kartsgifted는 없는 계정). 유튜브 · 틱톡은 아직 @kartsgifted(@kartsproject는 없는 계정, 2026-11-12 확인) */
   sns  : [
     { id:"youtube",   name:"유튜브",     url:"https://www.youtube.com/@kartsgifted" },
-    { id:"instagram", name:"인스타그램", url:"https://www.instagram.com/kartgifted/" },
-    { id:"threads",   name:"스레드",     url:"https://www.threads.com/@kartsgifted" },
+    { id:"instagram", name:"인스타그램", url:"https://www.instagram.com/kartsproject/" },
+    { id:"threads",   name:"스레드",     url:"https://www.threads.com/@kartsproject" },
     { id:"tiktok",    name:"틱톡",       url:"https://www.tiktok.com/@kartsgifted" }
   ]
 };
