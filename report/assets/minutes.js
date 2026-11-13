@@ -14,6 +14,14 @@
 
   function dateLabel(s) { var d = KR.parse(s); return d.getFullYear() + '. ' + (d.getMonth() + 1) + '. ' + d.getDate() + '.(' + WD[d.getDay()] + ')'; }
   function title(f) { return String(f.name).replace(/^\d{6}[_\s-]*/, '').replace(/\.[A-Za-z0-9]{2,5}$/, '') || f.name; }
+  /** 바로 내려받기 주소: 드라이브 파일은 uc?export=download, 구글 문서·시트는 내보내기(docx·xlsx) */
+  function dl(f) {
+    var id = encodeURIComponent(f.id);
+    if (/google-apps\.document/.test(f.mime)) return 'https://docs.google.com/document/d/' + id + '/export?format=docx';
+    if (/google-apps\.spreadsheet/.test(f.mime)) return 'https://docs.google.com/spreadsheets/d/' + id + '/export?format=xlsx';
+    if (/google-apps\.presentation/.test(f.mime)) return 'https://docs.google.com/presentation/d/' + id + '/export/pptx';
+    return 'https://drive.google.com/uc?export=download&id=' + id;
+  }
   function ext(f) { var m = String(f.name).match(/\.([A-Za-z0-9]{2,5})$/); if (m) return m[1].toUpperCase(); if (/google-apps\.document/.test(f.mime)) return '문서'; if (/google-apps\.spreadsheet/.test(f.mime)) return '시트'; return '파일'; }
 
   var head = h('header', { class: 'sc-head' });
@@ -27,7 +35,7 @@
     head.appendChild(h('div', {}, [
       h('div', { class: 'eyebrow', text: '회의 기록' }),
       h('h1', { text: '지난 회의록' }),
-      h('p', { class: 'muted', text: '주간회의 회의록을 날짜순으로 모았습니다. 제목을 누르면 구글 드라이브에서 열립니다.' })
+      h('p', { class: 'muted', text: '주간회의 회의록을 날짜순으로 모았습니다. 제목을 누르면 파일이 바로 내려받아집니다.' })
     ]));
     if (d && d.folder) head.appendChild(h('div', { class: 'mi-folder' }, [
       h('a', { class: 'btn', href: d.folder.url, target: '_blank', rel: 'noopener' }, '드라이브 폴더 열기 ↗'),
@@ -65,14 +73,14 @@
     files.forEach(function (f) {
       var key = f.date || f.modified.slice(0, 10), m = key.slice(0, 7);
       if (m !== month) { month = m; list.appendChild(h('h2', { class: 'mi-month', text: Number(m.slice(0, 4)) + '년 ' + Number(m.slice(5, 7)) + '월' })); }
-      list.appendChild(h('a', { class: 'mi-it', href: f.url, target: '_blank', rel: 'noopener', title: f.name + ' — 드라이브에서 열기' }, [
+      list.appendChild(h('a', { class: 'mi-it', href: dl(f), download: f.name, rel: 'noopener', title: f.name + ' — 내려받기' }, [
         h('div', { class: 'mi-date' }, [h('b', { text: f.date ? String(Number(f.date.slice(8, 10))) : '–' }), h('small', { text: f.date ? Number(f.date.slice(5, 7)) + '월 ' + WD[KR.parse(f.date).getDay()] : '날짜 없음' })]),
         h('div', { class: 'mi-body' }, [
           h('strong', { text: title(f) }),
           h('small', { text: (f.date ? dateLabel(f.date) + ' 회의' : '') + (f.path ? ' · ' + f.path : '') + ' · 수정 ' + f.modified + (f.size ? ' · ' + KR.fileSize(f.size) : '') })
         ]),
         h('span', { class: 'mi-ext', text: ext(f) }),
-        h('span', { class: 'mi-go', 'aria-hidden': 'true', text: '↗' })
+        h('span', { class: 'mi-go', 'aria-hidden': 'true', text: '↓' })
       ]));
     });
   }
