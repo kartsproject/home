@@ -168,7 +168,7 @@
     { id: 'fixed|m-art-1', date: '2026-10-31', time: '10:00~12:00', text: '미술 멘토링 · 비대면', cat: 0, match: ['미술'] },
     { id: 'fixed|m-music-1', date: '2026-11-01', time: '10:00~18:00', text: '음악 멘토링 · 서초동캠퍼스', cat: 0, match: ['음악'] },
     { id: 'fixed|m-trad', date: '2026-11-21', time: '10:00~17:00', text: '전통예술 멘토링 · 석관동캠퍼스', cat: 0, match: ['전통'] },
-    { id: 'fixed|m-dance-2', date: '2026-11-22', time: '11:00~13:00', text: '무용 멘토링 2회차 · 비대면 1:1', cat: 0, match: ['무용'] },
+    { id: 'fixed|m-dance-2', date: '2026-11-21', time: '10:00~12:00', text: '무용 멘토링 2회차 · 비대면 1:1', cat: 0, match: ['무용'] },   // ’26.11.11 11/22→11/21(토), 1시간 앞당김
     { id: 'fixed|m-music-2', date: '2026-11-22', time: '15:00~18:00', text: '음악 멘토링 · 서초동캠퍼스', cat: 0, match: ['음악'] },
     { id: 'fixed|m-art-2', date: '2026-11-28', time: '10:00~12:00', text: '미술 멘토링 · 비대면', cat: 0, match: ['미술'] },
     { id: 'fixed|m-dance-3', date: '2026-12-06', time: '17:30~19:30', text: '무용 멘토링 3회차 · 비대면 1:1', cat: 0, match: ['무용'] },
