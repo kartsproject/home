@@ -1209,3 +1209,26 @@ body.dark .modal .btn.primary:hover { background: #333336; }
 .ed-cols .ed-col.ed-row.match { background: color-mix(in srgb, var(--c1, #8E8E93) 8%, transparent); }
 .ed-cols .ed-col.ed-ft { padding-top: 8px; }
 @media (max-width: 640px) { .ed-cols .ed-col.ed-row.next { border-top: 0; } }
+
+/* ===== 지난 회의록 ===== */
+.mi { max-width: 980px; }
+.mi .sc-head { padding-top: 40px; }
+.mi-folder { display: flex; gap: 8px; flex-wrap: wrap; }
+.mi-tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 26px 0 6px; }
+.mi-tools .input { max-width: 340px; }
+.mi-month { font-size: 15px; font-weight: 700; color: var(--text-3); margin: 26px 4px 10px; letter-spacing: -0.01em; }
+.mi-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 60px; }
+.mi-it { display: flex; align-items: center; gap: 18px; padding: 14px 18px; background: #fff; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 0 0 1px rgba(0,0,0,.04); color: var(--text); text-decoration: none; transition: transform .15s, box-shadow .15s; }
+.mi-it:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.08), 0 0 0 1px rgba(0,113,227,.25); }
+.mi-it:focus-visible { outline: 2px solid var(--blue, #0071E3); outline-offset: 2px; }
+.mi-date { width: 54px; flex: none; text-align: center; line-height: 1.1; }
+.mi-date b { display: block; font-size: 26px; letter-spacing: -0.04em; }
+.mi-date small { font-size: 11.5px; color: var(--text-3); }
+.mi-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mi-body strong { font-size: 15.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-body small { font-size: 12.5px; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-ext { flex: none; font-size: 11px; font-weight: 700; color: #0B57D0; background: #E8F0FE; border-radius: 6px; padding: 3px 7px; letter-spacing: .02em; }
+.mi-go { flex: none; color: var(--text-4); font-size: 16px; }
+.mi-it:hover .mi-go { color: var(--blue, #0071E3); }
+.empty-state.err h3 { color: #C0392B; }
+@media (max-width: 640px) { .mi-it { gap: 12px; padding: 12px 14px; } .mi-ext { display: none; } .mi-body small { white-space: normal; } }

@@ -194,6 +194,7 @@
     var st = S.data.settings, on = st.viewCodeOn;
     var code = h('input', { class: 'input mono', value: st.viewCode });
     var due = h('input', { class: 'input', value: st.writeDue || '', placeholder: '예: 금요일 12:00' });
+    var mf = h('input', { class: 'input', value: st.minutesFolder || '', placeholder: 'https://drive.google.com/drive/folders/…' });
     var url = KR.baseUrl() + '#/view';
     main.appendChild(h('div', { class: 'settings' }, [
       h('section', { class: 'card set-card' }, [
@@ -215,13 +216,20 @@
         h('p', { class: 'muted small', text: '무료 등급은 구글이 입력·출력을 서비스 개선에 쓸 수 있습니다. 학생 이름·연락처 같은 개인정보는 보고 내용에 쓰지 않도록 안내해 주세요.' })
       ]),
       h('section', { class: 'card set-card' }, [
+        h('h3', { text: '지난 회의록' }),
+        h('p', { class: 'muted', text: '상단 「회의록」 메뉴에 보여 줄 구글 드라이브 폴더입니다. 드라이브에서 회의록 폴더를 연 뒤 주소창의 주소를 그대로 붙여 넣으세요. 하위 폴더 안 파일까지 날짜순(파일 이름 앞 「261110_」)으로 보여 줍니다.' }),
+        h('label', { class: 'field' }, [h('span', { text: '회의록 폴더 주소' }), mf]),
+        h('p', { class: 'muted small', text: '목록의 링크는 드라이브 공유 설정을 따릅니다. 보는 사람이 열 수 있게 폴더를 「링크가 있는 모든 사용자 — 뷰어」로 공유해 두세요(편집자로 두면 누구나 고치거나 지울 수 있습니다).' }),
+        st.minutesFolder ? h('a', { class: 'btn sm', href: st.minutesFolder, target: '_blank', rel: 'noopener' }, '지금 폴더 열기 ↗') : null
+      ]),
+      h('section', { class: 'card set-card' }, [
         h('h3', { text: '작성' }),
         h('label', { class: 'field' }, [h('span', { text: '작성 마감 (작성 화면에 표시)' }), due]),
         h('p', { class: 'muted small', text: '주체 목록과 순서는 「주체별 권한」 탭에서 바꿉니다.' })
       ]),
       h('div', { class: 'set-save' }, [h('button', { class: 'btn primary', onclick: async function (e) {
         KR.busy(e.target, true);
-        try { S.data.settings = await KR.call('settings.save', { viewCode: code.value, viewCodeOn: on, writeDue: due.value }); KR.toast('설정을 저장했습니다'); }
+        try { S.data.settings = await KR.call('settings.save', { viewCode: code.value, viewCodeOn: on, writeDue: due.value, minutesFolder: mf.value }); KR.toast('설정을 저장했습니다'); }
         catch (x) { KR.toast(x.message, true); }
         KR.busy(e.target, false);
       } }, '설정 저장')])
