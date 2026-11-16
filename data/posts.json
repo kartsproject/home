@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-16T13:35:39+09:00",
+  "updatedAt": "2026-11-16T13:36:30+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -63,6 +63,13 @@
     }
   ],
   "press": [
+    {
+      "id": "P-0014",
+      "source": "월간조선",
+      "title": "영재에서 예술가로, 음악을 대하는 새로운 질문",
+      "date": "2026-11-07",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=71913"
+    },
     {
       "id": "P-0013",
       "source": "월간조선",
