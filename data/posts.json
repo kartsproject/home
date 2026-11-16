@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-12T10:44:02+09:00",
+  "updatedAt": "2026-11-16T13:35:17+09:00",
   "notices": [
     {
       "id": "N-0008",
@@ -63,6 +63,13 @@
     }
   ],
   "press": [
+    {
+      "id": "P-0013",
+      "source": "월간조",
+      "title": "그림만 잘 그리면 미술영재일까...KAIST 캠퍼스를 걸으며 '자신만의 지도'를 만든 아이들… K예술영재 미술 분야 워크숍",
+      "date": "2026-10-30",
+      "url": "https://monthly.chosun.com/news/articleView.html?idxno=71842"
+    },
     {
       "id": "P-0012",
       "source": "월간조선",
