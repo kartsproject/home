@@ -7,6 +7,7 @@
   if (S.key) S.kind = S.key[0];
 
   // 「최종본 열람」 권한으로 로그인한 상태면 코드 없이
+  if (!KR.token() && KR.deviceId(false)) await KR.autoLogin();   // 자동 로그인이 켜진 기기
   if (KR.token()) { try { var b = await KR.me(); var pp = b.user.perm || {}; if (pp.view || pp.compile || pp.open || pp.admin) { S.isOp = true; S.me = b; KR.boot = b; } } catch (e) { } }
   if (!S.isOp) { try { S.codeOn = (await KR.call('view.info')).codeOn; } catch (e) { } }
 
@@ -82,7 +83,7 @@
     var p = S.me.user.perm;
     if (p.compile) return h('a', { class: 'btn-ghost-w', href: '#/hub' }, '취합으로');
     if (p.write) return h('a', { class: 'btn-ghost-w', href: '#/write' }, '작성으로');
-    return h('button', { class: 'btn-ghost-w', onclick: async function () { try { await KR.call('logout'); } catch (e) { } sessionStorage.removeItem('kr4_token'); KR.go('#/login'); } }, '로그아웃');
+    return h('button', { class: 'btn-ghost-w', onclick: KR.logout }, '로그아웃');
   }
   async function open() {
     if (S.mt) { S.mt.destroy(); S.mt = null; }

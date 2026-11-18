@@ -278,7 +278,37 @@
     }
     var b = await call('me'); meSave(b); return b;
   }
-  async function call(action, data) {
+  /* ===== 자동 로그인 (이 기기에서 30일) =====
+   * localStorage에는 무작위 기기 키만 둔다(비밀번호·세션 토큰은 두지 않음). 서버는 그 키의 해시만 기억하고, 키를 보내면 새 세션을 준다. */
+  var DEV_KEY = 'kr4_dev';
+  function deviceId(create) {
+    var d = ''; try { d = localStorage.getItem(DEV_KEY) || ''; } catch (e) { }
+    if (!d && create) {
+      var a = new Uint8Array(32); (root.crypto || root.msCrypto).getRandomValues(a);
+      d = Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+      try { localStorage.setItem(DEV_KEY, d); } catch (e) { }
+    }
+    return d;
+  }
+  function deviceForget() { try { localStorage.removeItem(DEV_KEY); } catch (e) { } }
+  var autoTry = null;
+  /** 세션이 없거나 끝났을 때 이 기기 키로 다시 들어가기. 성공하면 boot, 아니면 null */
+  function autoLogin() {
+    var d = deviceId(false);
+    if (!d) return Promise.resolve(null);
+    if (autoTry) return autoTry;
+    autoTry = call('auto.login', { device: d, ua: String(navigator.userAgent || '').slice(0, 120) }).then(function (b) {
+      sessionStorage.setItem('kr4_token', b.token); meSave(b); return b;
+    }).catch(function (e) { if (e.code === 'auth') deviceForget(); return null; }).then(function (b) { autoTry = null; return b; });
+    return autoTry;
+  }
+  async function logout() {
+    var d = deviceId(false);
+    try { await call('logout', d ? { device: d } : {}); } catch (e) { }
+    deviceForget(); sessionStorage.removeItem('kr4_token'); meClear();
+    go('#/login');
+  }
+  async function call(action, data, retried) {
     var q = Object.assign({ action: action, token: token() }, data || {}), j;
     if (DEMO) {
       j = (await demo()).post(q);
@@ -292,7 +322,12 @@
       catch (e) { throw new Error('서버 응답 오류(' + res.status + '). Apps Script 배포의 액세스가 "모든 사용자"인지 확인하세요'); }
     }
     if (!j.ok) {
-      if (j.code === 'auth' && action !== 'login' && !/^view\./.test(action)) { sessionStorage.removeItem('kr4_token'); go('#/login?next=' + encodeURIComponent(ROUTE.name)); }
+      if (j.code === 'auth' && action !== 'login' && action !== 'auto.login' && !/^view\./.test(action)) {
+        sessionStorage.removeItem('kr4_token');
+        // 접속 시간이 지났어도 자동 로그인이 켜져 있으면 새 세션으로 한 번 다시 시도
+        if (!retried && deviceId(false) && (await autoLogin())) return call(action, data, true);
+        go('#/login?next=' + encodeURIComponent(ROUTE.name));
+      }
       if (j.code === 'pw') { go('#/login'); }
       var e = new Error(j.error || '서버 오류'); e.code = j.code; throw e;
     }
@@ -334,7 +369,7 @@
     open: '주간·월간 공유본을 주체별로 언제부터 보여 줄지 정함'
   };
   async function requireLogin(permKey) {
-    if (!token()) { go('#/login?next=' + ROUTE.name); return new Promise(function () { }); }
+    if (!token() && !(await autoLogin())) { go('#/login?next=' + ROUTE.name); return new Promise(function () { }); }
     var b = await me();
     if (b.user.mustChange) { go('#/login'); return new Promise(function () { }); }
     var p = b.user.perm || {};
@@ -412,7 +447,7 @@
         if (n1.value.length < 6) { err.textContent = '6자 이상으로 정하세요'; return; }
         if (n1.value !== n2.value) { err.textContent = '새 비밀번호가 서로 다릅니다'; return; }
         busy(btn, true);
-        try { await call('password', { old: old.value, next: n1.value }); meClear(); m.close(); toast('비밀번호를 바꿨습니다'); resolve(true); }
+        try { await call('password', { old: old.value, next: n1.value, device: deviceId(false) }); meClear(); m.close(); toast('비밀번호를 바꿨습니다'); resolve(true); }
         catch (e) { err.textContent = e.message; }
         busy(btn, false);
       };
@@ -480,7 +515,7 @@
       h('div', { class: 'who' }, [
         h('span', { class: 'me', text: u.name + ' · ' + u.company }),
         h('button', { class: 'btn-ghost-w', text: '비밀번호', onclick: function () { passwordModal(false); } }),
-        h('button', { class: 'btn-ghost-w', text: '로그아웃', onclick: async function () { try { await call('logout'); } catch (e) { } sessionStorage.removeItem('kr4_token'); go('#/login'); } })
+        h('button', { class: 'btn-ghost-w', text: '로그아웃', title: '로그아웃하면 이 기기의 자동 로그인도 꺼집니다', onclick: logout })
       ])
     ]));
     document.body.insertBefore(bar, document.body.firstChild);
@@ -493,6 +528,7 @@
   }
 
   root.KR = {
+    deviceId: deviceId, deviceForget: deviceForget, autoLogin: autoLogin, logout: logout,
     CONFIG: CONFIG, CATS: CATS, CAT_SHORT: CAT_SHORT, CAT_HINT: CAT_HINT, DEMO: DEMO,
     call: call, me: me, meSave: meSave, meClear: meClear, link: link, go: go, param: param, setParams: setParams, route: ROUTE, baseUrl: baseUrl, requireLogin: requireLogin, homeOf: homeOf, token: token,
     PERMS: ['write', 'team', 'view', 'compile', 'share', 'open', 'admin'], PERM_LABEL: PERM_LABEL, PERM_DESC: PERM_DESC,

@@ -8,11 +8,14 @@
   var pw = h('input', { class: 'input', id: 'pw', type: 'password', name: 'password', autocomplete: 'current-password', required: true, 'aria-label': '비밀번호', placeholder: '비밀번호' });
   var err = h('div', { class: 'err', role: 'alert' });
   var go = h('button', { class: 'btn primary lg block', id: 'go' }, '들어가기');
+  // 자동 로그인: 켜면 이 기기에서 30일 동안 다시 로그인하지 않아도 됨(로그아웃하면 꺼짐)
+  var remember = h('input', { type: 'checkbox', id: 'remember', class: 'chk', checked: KR.deviceId(false) ? true : null });
+  var rememberRow = h('label', { class: 'remember', for: 'remember' }, [remember, h('span', { text: '자동 로그인' }), h('small', { text: '이 기기에서 30일 · 여러 사람이 쓰는 컴퓨터에서는 켜지 마세요' })]);
   var demoBox = h('div');
   var form = h('form', { class: 'login-card', id: 'f', autocomplete: 'on' }, [
     h('h2', { text: '로그인' }),
     h('p', { text: '이름과 본인 비밀번호로 들어갑니다. 계정은 케이브레인 관리자가 만들어 드립니다.' }),
-    name, pw, err, go,
+    name, pw, rememberRow, err, go,
     h('a', { class: 'view-link', href: '#/view' }, '한예종 담당자이신가요? 열람 코드로 보기 ›'),
     demoBox
   ]);
@@ -47,13 +50,19 @@
     demoBox.appendChild(box);
   }
   if (KR.token()) KR.me().then(after).catch(function () { sessionStorage.removeItem('kr4_token'); });
+  else if (KR.deviceId(false)) {   // 자동 로그인이 켜진 기기: 바로 들어감
+    go.disabled = true; go.textContent = '자동 로그인 중…';
+    KR.autoLogin().then(function (b) { if (b) return after(b); go.disabled = false; go.textContent = '들어가기'; remember.checked = false; }).catch(function () { go.disabled = false; go.textContent = '들어가기'; });
+  }
   else KR.call('ping').catch(function () { });   // 이름·비밀번호를 치는 동안 서버를 미리 깨움
   form.addEventListener('submit', async function (e) {
     e.preventDefault(); err.textContent = '';
     if (/[\u3131-\u318E\uAC00-\uD7A3]/.test(pw.value)) { err.textContent = '비밀번호가 한글로 입력됐습니다. 한/영 키를 눌러 영문으로 바꾼 뒤 다시 입력하세요.'; pw.value = ''; pw.focus(); return; }
     KR.busy(go, true);
     try {
-      var b = await KR.call('login', { name: name.value.trim(), password: pw.value });
+      var dev = remember.checked ? KR.deviceId(true) : KR.deviceId(false);
+      var b = await KR.call('login', { name: name.value.trim(), password: pw.value, remember: remember.checked, device: dev || '', ua: String(navigator.userAgent || '').slice(0, 120) });
+      if (!remember.checked || !b.remember) KR.deviceForget();
       sessionStorage.setItem('kr4_token', b.token);
       KR.meSave(b);
       await after(b);
