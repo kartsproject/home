@@ -162,6 +162,7 @@
       '줄 나누기: Enter. 붙여 넣으면 글자만 들어갑니다.',
       '목록: 카드 · 단계 · 표 줄 위에 마우스를 올리면 [앞으로] [뒤로] [복제] [삭제] 단추가 나옵니다.',
       '문단: 문단을 누르면 위에 뜨는 [아래에 문단 추가]로 문단을 더하고, 더한 문단은 [문단 빼기]로 뺍니다.',
+      '칸 지우기: 제목 · 설명 · 바로가기 같은 원래 있던 글자 칸은 눌러서 위에 뜨는 [이 칸 지우기]로 뺍니다. 지운 칸은 편집 화면에서 흐리게(빨간 줄) 보이고, 저장하면 사이트에서 빠집니다. 다시 누르면 [이 칸 되살리기].',
       '구역: 구역 사이의 [+ 여기에 구역 추가]를 누르고 모양(글 · 사진 + 글 · 표 · 카드 · 단계)을 고르면 새 구역이 생깁니다. 더한 구역 위에 마우스를 올리면 [위로] [아래로] [구역 삭제]가 나옵니다.',
       '원래 있던 구역(제목과 내용이 든 상자)이 통째로 필요 없으면, 그 위에 마우스를 올려 [구역 숨기기]를 누릅니다. 숨긴 구역은 편집 화면에서 흐리게 보이고, 저장하면 사이트에서 빠집니다. 다시 보이게 하려면 [숨김 풀기].',
       '이전 버전: 아래 [이전 버전]에서 저장하기 전 모습 5개를 볼 수 있습니다. [불러오기]로 화면에 띄워 확인한 뒤 [저장]하면 그 모습으로 되돌아갑니다(되돌리기도 다시 되돌릴 수 있습니다). 사진은 누르는 즉시 저장되므로 버전에 들어가지 않습니다.',
@@ -261,6 +262,17 @@
     cell.parentNode.removeChild(cell);
     cur.ed = null; changed(); place();
   }
+  // 글자 칸 지우기 · 되살리기 (2026-11-24 사용자 「제목 · 설명 · 바로가기 같은 칸을 추가 · 삭제」, WBS 22.17)
+  // HTML에 있던 칸은 지우지 않고 감춘다(content.js setOff) — 저장하면 사이트에서 빠지고, 다시 누르면 되살린다
+  function offCell(cell){ return cell && (cell.hasAttribute('data-e') || cell.hasAttribute('data-ei')) ? cell : null; }
+  function toggleCell(){
+    var cell = cur.ed && offCell(cellOf(cur.ed));
+    if(!cell) return;
+    var on = !cell.classList.contains('cell-off');
+    C.setOff(cell, on);
+    changed(); place();
+    toast(on ? '이 칸을 지웠습니다. [저장]하면 사이트에서 보이지 않습니다. 되살리려면 칸을 눌러 [이 칸 되살리기].' : '되살렸습니다. [저장]하면 사이트에 다시 보입니다.');
+  }
   function original(cell){
     if(cell.hasAttribute('data-e')) return C.orig[cell.getAttribute('data-e')];
     var item = cell.closest('[data-s]'), box = item && item.parentNode, L = box && C.lists[box.getAttribute('data-list')];
@@ -290,7 +302,8 @@
       h('span', { class:'rt-sep fx' }),
       btn('원래대로', revert, 'fr', '이 칸을 처음 글로 되돌립니다'),
       btn('아래에 문단 추가', addPara, 'fa', '이 문단 바로 아래에 새 문단을 더합니다'),
-      btn('문단 빼기', removePara, 'fd warn', '더한 문단을 뺍니다')
+      btn('문단 빼기', removePara, 'fd warn', '더한 문단을 뺍니다'),
+      btn('이 칸 지우기', toggleCell, 'fh warn', '이 칸을 사이트에서 뺍니다(다시 되살릴 수 있음)')
     ]
   });
   var fmtBar = h('div', { class:'ed-tool ed-fmt', hidden:true }, [rtBar]);
@@ -662,7 +675,10 @@
       fmtBar.querySelector('.fr').hidden = !(cell && (cell.hasAttribute('data-e') || cell.hasAttribute('data-ei')));
       fmtBar.querySelector('.fa').hidden = !paraCell(cell);
       fmtBar.querySelector('.fd').hidden = !(cell && (cell.hasAttribute('data-ap') || cell.getAttribute('data-xf') === 'p'));
-      fmtBar.querySelector('.fx').hidden = fmtBar.querySelector('.fr').hidden && fmtBar.querySelector('.fa').hidden && fmtBar.querySelector('.fd').hidden;
+      var fh = fmtBar.querySelector('.fh'), offc = offCell(cell);
+      fh.hidden = !offc;
+      if(offc){ var isOff = offc.classList.contains('cell-off'); fh.textContent = isOff ? '이 칸 되살리기' : '이 칸 지우기'; fh.classList.toggle('warn', !isOff); }
+      fmtBar.querySelector('.fx').hidden = fmtBar.querySelector('.fr').hidden && fmtBar.querySelector('.fa').hidden && fmtBar.querySelector('.fd').hidden && fh.hidden;
       fmtBar.style.left = Math.max(6, Math.min(pr.left, window.innerWidth - fmtBar.offsetWidth - 6)) + 'px';
       fmtBar.style.top = Math.max(6, pr.top - fmtBar.offsetHeight - 6) + 'px';
     }
@@ -691,7 +707,9 @@
       origBtn.textContent = off ? '숨김 풀기' : '구역 숨기기';
       origBtn.classList.toggle('warn', !off);
       var oh = origBar.offsetHeight, oabove = orr.top - oh - 3;
-      origBar.style.left = Math.max(6, Math.min(orr.left, window.innerWidth - origBar.offsetWidth - 6)) + 'px';
+      // 메인처럼 화면 너비 띠인 구역은 안쪽 내용 칸의 왼쪽에 맞춘다
+      var inner = cur.orig.querySelector(':scope > .mn-in, :scope > .inner'), oleft = inner ? inner.getBoundingClientRect().left : orr.left;
+      origBar.style.left = Math.max(6, Math.min(oleft, window.innerWidth - origBar.offsetWidth - 6)) + 'px';
       origBar.style.top = (oabove > 6 ? oabove : Math.max(6, orr.top + 4)) + 'px';
     }
     var el = cur.photo && document.body.contains(cur.photo) ? cur.photo : null, rr = el && el.getBoundingClientRect();
@@ -763,7 +781,7 @@
       drawAddBars();
       E.base = JSON.stringify(C.collect());
       var meta = (d.pageMeta || {})[C.page];
-      stateEl.textContent = meta && meta.updatedAt ? '마지막 저장 ' + meta.updatedAt : '모두 저장됨';
+      stateEl.textContent = meta && meta.updatedAt ? '마지막 저장 ' + (when({ savedAt:meta.updatedAt }) || meta.updatedAt) : '모두 저장됨';
     }, function(e){
       toast(errMsg(e), true);
       stateEl.textContent = '불러오지 못했습니다 — 새로 고쳐 주세요';

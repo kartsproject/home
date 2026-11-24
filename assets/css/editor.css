@@ -125,6 +125,7 @@ html.ed-on [data-xs]{box-shadow:0 0 0 1px rgba(23,108,134,.25)}
 /* 숨긴 원래 구역 · 이전 버전 (WBS 22.16) */
 html.ed-on .sec-off{position:relative;opacity:.32;outline:2px dashed #B42B38;outline-offset:6px;filter:grayscale(1)}
 html.ed-on .sec-off:hover{opacity:.55}
+html.ed-on .cell-off{opacity:.4;text-decoration:line-through;text-decoration-color:#B42B38;outline:1px dashed #B42B38!important;outline-offset:2px}
 .ed-orig{background:#F3E7E8;border-color:#B42B38}
 .ed-orig .lb{color:#7A1C26}
 .ed-ver{width:min(380px,calc(100vw - 12px));max-height:calc(100vh - 120px);overflow:auto}

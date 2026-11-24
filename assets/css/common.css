@@ -1039,3 +1039,5 @@ html.ed-on .rc-nav{display:none}
 }
 /* 페이지 직접 편집으로 숨긴 원래 구역 (content.js, WBS 22.16). 편집 화면 모양은 editor.css */
 html:not(.ed-on) .sec-off{display:none!important}
+/* 지운 글자 칸 (content.js, WBS 22.17) */
+html:not(.ed-on) .cell-off,html:not(.ed-on) .cell-off-w{display:none!important}

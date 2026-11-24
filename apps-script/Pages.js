@@ -8,7 +8,8 @@
  *        s: HTML의 몇 번째 항목을 본뜬 것인지(0부터), t: 항목 안 글자 칸(data-ei) 중 고친 것, p: 복제한 항목의 새 사진 자리
  *     a: { k5: ["더한 문단", …] },                        // 글자 칸 k5(문단) 바로 뒤에 더한 문단 (WBS 18.7)
  *     x: { s4: [ { k, h, d, p, i, ph }, … ] },           // 구역 자리 s4 바로 뒤에 더한 구역 (WBS 18.7)
- *     h: [ "s3", … ] }                                   // 숨긴 원래 구역(HTML의 data-sec) — 사이트에서 보이지 않는다 (2026-11-24, WBS 22.16)
+ *     h: [ "s3", … ],                                   // 숨긴 원래 구역(HTML의 data-sec) — 사이트에서 보이지 않는다 (2026-11-24, WBS 22.16)
+ *     hx: [ "k11", … ] }                                // 지운 글자 칸(data-e). 목록 항목 안은 항목마다 o: [ "2", … ](data-ei) (2026-11-24, WBS 22.17)
  *        k: text · photo · table · cards · steps, h: 제목, d: 제목 밑 설명, p: [문단], i: [[제목 · 항목, 설명 · 내용]], ph: 사진 자리
  * 글은 **굵게** · ==형광== · 줄바꿈(\n)만 쓴다. 화면은 textContent · DOM으로만 넣는다(CLAUDE.md 보안 5).
  * 탭은 처음 저장할 때 만든다(setup을 다시 돌리지 않아도 되게, 사진 · 모집요강 탭과 같은 방식).
@@ -90,6 +91,12 @@ function validatePageContent_(c) {
     }
     if (hid.length) out.h = hid;
   }
+  // 지운 글자 칸 (WBS 22.17)
+  if (c.hx != null) {
+    var hx = cleanKeyList_(c.hx, /^k\d{1,4}$/, PAGE_LIMITS_.texts);
+    if (!hx) return null;
+    if (hx.length) out.hx = hx;
+  }
   var tk = Object.keys(t), lk = Object.keys(l);
   if (tk.length > PAGE_LIMITS_.texts || lk.length > PAGE_LIMITS_.lists) return null;
   for (var i = 0; i < tk.length; i++) {
@@ -120,6 +127,11 @@ function validatePageContent_(c) {
           o.t[rk[r]] = rs;
         }
       }
+      if (it.o != null) {
+        var off = cleanKeyList_(it.o, /^\d{1,3}$/, PAGE_LIMITS_.itemTexts);
+        if (!off) return null;
+        if (off.length) o.o = off;
+      }
       if (it.p != null) {
         if (typeof it.p !== 'string' || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(it.p) || it.p.length > 48) return null;
         o.p = it.p;
@@ -149,6 +161,17 @@ function validatePageContent_(c) {
     if (cleanSecs.length) { out.x = out.x || {}; out.x[xk[w]] = cleanSecs; }
   }
   return JSON.stringify(out).length > PAGE_LIMITS_.json ? null : out;
+}
+
+// 열쇠 목록: 배열 max개까지, 모두 re에 맞는 문자열. 같은 값은 하나로. 아니면 null
+function cleanKeyList_(v, re, max) {
+  if (!Array.isArray(v) || v.length > max) return null;
+  var out = [];
+  for (var i = 0; i < v.length; i++) {
+    if (typeof v[i] !== 'string' || !re.test(v[i])) return null;
+    if (out.indexOf(v[i]) === -1) out.push(v[i]);
+  }
+  return out;
 }
 
 // 글자 칸 배열(max개까지)을 정리한다. 아니면 null

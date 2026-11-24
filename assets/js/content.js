@@ -11,6 +11,7 @@
      x:{ s4:[ 구역, … ] }      구역 자리 [data-sec="s4"] 바로 뒤에 더한 구역 [data-xs="s4"]
         구역 = { k:'text'|'photo'|'table'|'cards'|'steps', h:제목, d:제목 밑 설명, p:[문단], i:[[제목 · 항목, 설명 · 내용]], ph:사진 자리 }
      h:[ "s3", … ]             숨긴 원래 구역 [data-sec="s3"] — .sec-off (방문자 화면에서 빠짐, WBS 22.16)
+     hx:[ "k11", … ]           지운 글자 칸 — .cell-off (방문자 화면에서 빠짐). 목록 항목 안은 l의 항목마다 o:[ "2", … ] (WBS 22.17)
         모양은 사이트에 있는 것(.p1-sec · .ab-dl · .cp-cards · .p1-st)을 그대로 쓴다. 메인은 띠(section.x-band)로 감싼다
    열쇠는 docs/tools/annotate-edit.py가 HTML에 붙인다. 고친 것이 없는 페이지는 HTML 그대로다.
    글 서식은 글쓰기 도구(richtext.js)의 조각 — 예전 글(**굵게** ==형광==)도 읽는다. 넣을 때는 DOM으로만 만든다(innerHTML 없음 — CLAUDE.md 보안 5).
@@ -84,6 +85,16 @@ window.Content = (function(){
     items.forEach(function(it, i){ it.setAttribute('data-s', String(i)); });
     lists[box.getAttribute('data-list')] = { box:box, tpl:items.map(function(it){ return it.cloneNode(true); }) };
   });
+  // 지운 글자 칸 (WBS 22.17): 칸에 .cell-off. 칸을 감싼 제목 · 문단이 그 칸만 가졌으면 감싼 것도(.cell-off-w) 함께 뺀다
+  function wrapOf(el){
+    var p = el.parentElement;
+    return p && /^(H[1-6]|P|STRONG|EM|B)$/.test(p.tagName) && p.children.length === 1 && p.textContent.trim() === el.textContent.trim() ? p : null;
+  }
+  function setOff(el, on){
+    el.classList.toggle('cell-off', !!on);
+    var w = wrapOf(el);
+    if(w) w.classList.toggle('cell-off-w', !!on);
+  }
   function find(item, rk){ return item.getAttribute('data-ei') === rk ? item : item.querySelector('[data-ei="' + rk + '"]'); }
   function leavesOf(item){ return (item.hasAttribute('data-ei') ? [item] : []).concat(qsa(item, '[data-ei]')); }
   function photoOf(item){ return item.hasAttribute('data-photo') ? item : item.querySelector('[data-photo]'); }
@@ -104,6 +115,7 @@ window.Content = (function(){
         if(e && cellv(tt[rk])){ set(e, tt[rk]); made.push(e); }
       });
       if(typeof r.p === 'string' && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(r.p)){ var ph = photoOf(c); if(ph) ph.setAttribute('data-photo', r.p); }
+      (Array.isArray(r.o) ? r.o : []).forEach(function(rk){ var e = typeof rk === 'string' && find(c, rk); if(e) setOff(e, true); });
       frag.appendChild(c);
     });
     if(recs.length && !frag.childNodes.length) return;   // 쓸 수 있는 항목이 하나도 없으면 HTML 그대로
@@ -249,10 +261,12 @@ window.Content = (function(){
       if(recs) rebuild(lists[k], recs);
       else if(reset) rebuild(lists[k], lists[k].tpl.map(function(_, i){ return { s:i }; }));
     });
+    var hx = Array.isArray(pd.hx) ? pd.hx : [];
     qsa(document, '[data-e]').forEach(function(el){
       var k = el.getAttribute('data-e');
       if(cellv(t[k])) set(el, t[k]);
       else if(reset && !eq(read(el), orig[k])) set(el, orig[k]);
+      if(reset || hx.indexOf(k) !== -1) setOff(el, hx.indexOf(k) !== -1);
     });
     applyAdded(obj(pd.a), obj(pd.x));
     // 숨긴 원래 구역 (WBS 22.16) — 방문자 화면에서는 빼고, 편집 화면에서는 흐리게 보인다(common.css .sec-off)
@@ -278,9 +292,11 @@ window.Content = (function(){
           if(!o || !eq(v, read(o))) tt[rk] = v;
         });
         if(Object.keys(tt).length) r.t = tt;
+        var off = leavesOf(it).filter(function(e){ return e.classList.contains('cell-off'); }).map(function(e){ return e.getAttribute('data-ei'); });
+        if(off.length) r.o = off;
         var ph = photoOf(it), oph = photoOf(tpl);
         if(ph && oph && ph.getAttribute('data-photo') !== oph.getAttribute('data-photo')) r.p = ph.getAttribute('data-photo');
-        if(s !== i || r.t || r.p) same = false;
+        if(s !== i || r.t || r.p || r.o) same = false;
         recs.push(r);
       });
       if(!same) l[k] = recs;
@@ -290,12 +306,14 @@ window.Content = (function(){
     if(Object.keys(ad.x).length) out.x = ad.x;
     var hid = qsa(document, '[data-sec].sec-off').map(function(e){ return e.getAttribute('data-sec'); });
     if(hid.length) out.h = hid;
+    var hx = qsa(document, '[data-e].cell-off').map(function(e){ return e.getAttribute('data-e'); });
+    if(hx.length) out.hx = hx;
     return out;
   }
 
   C.lists = lists; C.orig = orig; C.read = read; C.set = set; C.apply = apply; C.collect = collect;
   C.find = find; C.leavesOf = leavesOf; C.photoOf = photoOf; C.cols = cols; C.textNode = textNode;
-  C.newPara = newPara; C.buildSec = buildSec; C.fixAdded = fixAdded; C.KINDS = X_KINDS;
+  C.setOff = setOff; C.newPara = newPara; C.buildSec = buildSec; C.fixAdded = fixAdded; C.KINDS = X_KINDS;
 
   /* ---------- 방문자 화면: 발행된 내용 ---------- */
   C.ready = window.Board ? Board.load().then(function(d){ if(d) apply(obj(d.pages)[page]); return d; }) : Promise.resolve(null);
