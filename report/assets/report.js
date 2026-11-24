@@ -597,11 +597,13 @@
   }
   /**
    * @param getDoc  최신 문서를 돌려주는 함수
-   * @param opts {startAt, onExit}
+   * @param opts {startAt, extra, files: 참고 자료 목록, fileGet(f) → Promise<{name, mime, b64}>}
    * @return {el, go, refresh, destroy}
    */
   function meeting(getDoc, opts) {
     opts = opts || {};
+    var files = (opts.files || []).slice().sort(function (a, b) { return String(a.company).localeCompare(String(b.company), 'ko') || String(a.at).localeCompare(String(b.at)); });
+    var viewer = null, blobs = {};
     var calMonth = 0, idx = opts.startAt || 0, scale = Number(localStorage.getItem('kr3_scale') || 1);
     var el = h('section', { class: 'meet', tabindex: '-1' });
     var rail = h('nav', { class: 'm-rail', 'aria-label': '회의 순서' }), stage = h('div', { class: 'm-stage' }), bar = h('div', { class: 'm-bar' });
@@ -615,6 +617,7 @@
         tp.forEach(function (t, j) { s.push({ k: 'top', i: i, j: j, n: tp.length, cat: at, t: t.t, prev: t.prev, next: t.next, name: t.t || '그 밖의 내용' }); });
       });
       s.push({ k: 'cal', name: '다가오는 일정' });
+      if (files.length && opts.fileGet) s.push({ k: 'files', name: '참고 자료' });
       return s;
     }
     function draw() {
@@ -632,9 +635,9 @@
           return;
         }
         rail.appendChild(h('button', { class: 'm-step' + (j === idx ? ' on' : '') + (s.k === 'cat' && s.i === openCat && j !== idx ? ' open' : ''), 'aria-current': j === idx ? 'step' : null, onclick: function () { go(j); } }, [
-          h('span', { class: 'm-dot', style: s.k === 'cat' ? 'background:' + CAT_C[s.i][0] : '' , text: s.k === 'cat' ? '' : (s.k === 'ov' ? '◎' : '▦') }),
+          h('span', { class: 'm-dot', style: s.k === 'cat' ? 'background:' + CAT_C[s.i][0] : '' , text: s.k === 'cat' ? '' : (s.k === 'ov' ? '◎' : s.k === 'files' ? '⎘' : '▦') }),
           h('span', { class: 'm-sn', text: s.name }),
-          s.cnt ? h('span', { class: 'm-sc', title: '한 일 ' + s.cnt.p + ' · 할 일 ' + s.cnt.n, text: s.cnt.p + ' · ' + s.cnt.n }) : (s.k === 'cal' ? h('span', { class: 'm-sc', text: String(sch.length) }) : null)
+          s.cnt ? h('span', { class: 'm-sc', title: '한 일 ' + s.cnt.p + ' · 할 일 ' + s.cnt.n, text: s.cnt.p + ' · ' + s.cnt.n }) : (s.k === 'cal' ? h('span', { class: 'm-sc', text: String(sch.length) }) : s.k === 'files' ? h('span', { class: 'm-sc', text: String(files.length) }) : null)
         ]));
       });
       // 본문
@@ -700,6 +703,8 @@
           h('h2', { class: 'tp-t', text: cur.t || '그 밖의 내용' }),
           h('div', { class: 'tp-cols' + (!cur.prev.length || !cur.next.length ? ' one' : '') }, [tcol('prev', doc.headPrev || '지난 실적', doc.periodPrev, cur.prev), tcol('next', doc.headNext || '향후 계획', doc.periodNext, cur.next)])
         ]);
+      } else if (cur.k === 'files') {
+        body = filesSlide();
       } else {
         var from = w.type === 'M' ? w.nfirst : w.nmon;
         body = h('div', { class: 's-cal' }, [
@@ -718,10 +723,76 @@
       bar.appendChild(h('span', { class: 'm-pg', text: (idx + 1) + ' / ' + list.length }));
       bar.appendChild(h('button', { class: 'm-btn', 'aria-label': '다음', disabled: idx === list.length - 1, onclick: function () { go(idx + 1); } }, '→'));
       bar.appendChild(h('span', { class: 'spacer' }));
+      var fIdx = list.findIndex(function (s) { return s.k === 'files'; });
+      if (fIdx >= 0 && fIdx !== idx) bar.appendChild(h('button', { class: 'm-btn sm m-files', title: '이번 회차에 올린 참고 자료 보기', onclick: function () { go(fIdx); } }, '참고 자료 ' + files.length));
       bar.appendChild(h('button', { class: 'm-btn sm', title: '글자 작게', onclick: function () { zoom(-0.1); } }, '가−'));
       bar.appendChild(h('button', { class: 'm-btn sm', title: '글자 크게', onclick: function () { zoom(0.1); } }, '가+'));
       bar.appendChild(h('button', { class: 'm-btn sm', title: '전체 화면 (F)', onclick: full }, document.fullscreenElement ? '전체화면 끄기' : '전체 화면'));
       if (opts.extra) opts.extra(bar);
+    }
+    /* ---- 참고 자료: 주체별 목록 → 누르면 회의 화면 안에서 바로 열기(사진·PDF·영상·글), 그 밖의 형식은 내려받기 ---- */
+    function extOf(f) { var m = String(f.file || '').match(/\.([A-Za-z0-9]{1,5})$/); return m ? m[1].toLowerCase() : ''; }
+    function kindOf(f, mime) {
+      var e = extOf(f); mime = String(mime || f.mime || '');
+      if (/^image\/(png|jpe?g|gif|webp|bmp|svg\+xml)$/.test(mime) || /^(png|jpe?g|gif|webp|bmp)$/.test(e)) return 'img';
+      if (mime === 'application/pdf' || e === 'pdf') return 'pdf';
+      if (/^video\/(mp4|webm|ogg|quicktime)$/.test(mime) || /^(mp4|webm|mov)$/.test(e)) return 'video';
+      if (/^audio\//.test(mime) || /^(mp3|m4a|wav|ogg)$/.test(e)) return 'audio';
+      if (/^text\/(plain|csv)$/.test(mime) || /^(txt|csv)$/.test(e)) return 'text';
+      return '';
+    }
+    var EXT_MIME = { pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', mp4: 'video/mp4', webm: 'video/webm', mov: 'video/mp4', mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav', txt: 'text/plain;charset=utf-8', csv: 'text/plain;charset=utf-8' };
+    function filesSlide() {
+      var groups = [], gm = {};
+      files.forEach(function (f) { var g = f.company || '그 밖'; if (!gm[g]) { gm[g] = []; groups.push([g, gm[g]]); } gm[g].push(f); });
+      return h('div', { class: 's-files' }, [
+        h('div', { class: 'sf-top' }, [h('h2', { text: '참고 자료' }), h('div', { class: 'sf-sum', text: '이번 회차에 올린 자료 ' + files.length + '개 · 누르면 이 화면에서 엽니다' })]),
+        h('div', { class: 'sf-groups' }, groups.map(function (g) {
+          return h('section', { class: 'sf-g' }, [
+            h('h3', { class: 'sf-org', text: g[0] }),
+            h('div', { class: 'sf-list' }, g[1].map(function (f) {
+              var k = kindOf(f), e = extOf(f);
+              return h('button', { class: 'sf-it', onclick: function () { openFile(f); } }, [
+                h('span', { class: 'sf-ext' + (k ? ' ' + k : ''), text: (e || '파일').toUpperCase().slice(0, 4) }),
+                h('span', { class: 'sf-body' }, [h('strong', { text: f.file }), h('small', { text: [f.name, KR.fileSize(f.size), f.at ? KR.fmtTime(f.at) : ''].filter(String).join(' · ') })]),
+                h('span', { class: 'sf-go', text: k ? '열기' : '받기' })
+              ]);
+            }))
+          ]);
+        }))
+      ]);
+    }
+    async function blobOf(f) {
+      if (blobs[f.id]) return blobs[f.id];
+      var r = await opts.fileGet(f), bin = atob(r.b64), arr = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      var k = kindOf(f, r.mime), mime = k ? (EXT_MIME[extOf(f)] || r.mime) : (r.mime || 'application/octet-stream');
+      if (k === 'img' && /^image\//.test(r.mime)) mime = r.mime;
+      blobs[f.id] = { url: URL.createObjectURL(new Blob([arr], { type: mime })), name: r.name || f.file, kind: k, arr: arr };
+      return blobs[f.id];
+    }
+    function save(b) { var a = h('a', { href: b.url, download: b.name }); el.appendChild(a); a.click(); a.remove(); }
+    function closeViewer() { if (viewer) { viewer.remove(); viewer = null; el.focus(); } }
+    async function openFile(f) {
+      closeViewer();
+      var dl = h('button', { class: 'm-btn sm', disabled: true }, '내려받기');
+      var bodyEl = h('div', { class: 'mv-body' }, [h('div', { class: 'mv-msg', text: '자료를 불러오는 중…' })]);
+      var v = viewer = h('div', { class: 'm-view', role: 'dialog', 'aria-label': f.file }, [
+        h('div', { class: 'mv-bar' }, [h('strong', { class: 'mv-name', text: f.file }), h('small', { text: [f.company, f.name, KR.fileSize(f.size)].filter(String).join(' · ') }), h('span', { class: 'spacer' }), dl, h('button', { class: 'm-btn sm', title: '닫기 (Esc)', onclick: closeViewer }, '닫기')]),
+        bodyEl
+      ]);
+      el.appendChild(v);
+      var b;
+      try { b = await blobOf(f); } catch (e) { if (viewer === v) { bodyEl.innerHTML = ''; bodyEl.appendChild(h('div', { class: 'mv-msg err', text: e.message || '자료를 불러오지 못했습니다' })); } return; }
+      if (viewer !== v) return;
+      dl.disabled = false; dl.onclick = function () { save(b); };
+      bodyEl.innerHTML = '';
+      if (b.kind === 'img') bodyEl.appendChild(h('img', { class: 'mv-img', src: b.url, alt: f.file }));
+      else if (b.kind === 'pdf') { bodyEl.appendChild(h('iframe', { class: 'mv-frame', src: b.url, title: f.file })); bodyEl.appendChild(h('small', { class: 'mv-hint', text: '휴대폰 등에서 PDF가 보이지 않으면 위의 「내려받기」를 누르세요.' })); }
+      else if (b.kind === 'video') bodyEl.appendChild(h('video', { class: 'mv-img', src: b.url, controls: true }));
+      else if (b.kind === 'audio') bodyEl.appendChild(h('audio', { src: b.url, controls: true }));
+      else if (b.kind === 'text') bodyEl.appendChild(h('pre', { class: 'mv-text', text: new TextDecoder('utf-8').decode(b.arr) }));
+      else bodyEl.appendChild(h('div', { class: 'mv-msg' }, [h('p', { text: extOf(f).toUpperCase() + ' 파일은 이 화면에서 바로 열 수 없습니다. 내려받아서 여세요.' }), h('button', { class: 'm-btn', onclick: function () { save(b); } }, '내려받기')]));
     }
     function zoom(d) { scale = Math.max(0.7, Math.min(1.6, Math.round((scale + d) * 10) / 10)); try { localStorage.setItem('kr3_scale', scale); } catch (e) { } stage.style.setProperty('--ms', scale); fit(); }
     /** 분야 표지·소제목 화면은 화면을 채우도록 키우고, 넘치면 줄임(0.6~1.4배) */
@@ -737,9 +808,10 @@
     var rz = null;
     function onResize() { clearTimeout(rz); rz = setTimeout(fit, 120); }
     function full() { if (document.fullscreenElement) document.exitFullscreen(); else if (el.requestFullscreen) el.requestFullscreen(); }
-    function go(j) { idx = j; draw(); }
+    function go(j) { closeViewer(); idx = j; draw(); }
     function key(e) {
       if (!document.body.contains(el) || /INPUT|TEXTAREA|SELECT/.test((e.target || {}).tagName || '') || document.querySelector('.modal-bg')) return;
+      if (viewer) { if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); closeViewer(); } return; }
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) { e.preventDefault(); if (idx < slides().length - 1) go(idx + 1); }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || (e.key === ' ' && e.shiftKey)) { e.preventDefault(); if (idx > 0) go(idx - 1); }
       else if (e.key === 'Home') go(0); else if (e.key === 'End') go(slides().length - 1);
@@ -751,7 +823,7 @@
     window.addEventListener('resize', onResize);
     draw();
     requestAnimationFrame(fit);
-    return { el: el, go: go, refresh: draw, destroy: function () { document.removeEventListener('keydown', key); document.removeEventListener('fullscreenchange', fsChange); window.removeEventListener('resize', onResize); } };
+    return { el: el, go: go, refresh: draw, destroy: function () { closeViewer(); Object.keys(blobs).forEach(function (k) { URL.revokeObjectURL(blobs[k].url); }); blobs = {}; document.removeEventListener('keydown', key); document.removeEventListener('fullscreenchange', fsChange); window.removeEventListener('resize', onResize); } };
   }
 
   /* =========================================================

@@ -1236,3 +1236,36 @@ body.dark .modal .btn.primary:hover { background: #333336; }
 .login-card .remember { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 2px 4px; cursor: pointer; font-size: 14px; color: var(--k-text, #F5F5F7); }
 .login-card .remember input { width: 18px; height: 18px; accent-color: #0A84FF; margin: 0; flex: none; }
 .login-card .remember small { flex: 1 1 100%; padding-left: 26px; font-size: 12px; color: var(--k-text-3, #A1A1A6); }
+/* 회의 화면 · 참고 자료 */
+.meet { position: relative; }
+.s-files { display: flex; flex-direction: column; gap: 1.2em; }
+.sf-top h2 { font-size: 3em; letter-spacing: -0.05em; background: var(--grad-silver); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0; }
+.sf-sum { margin-top: .4em; color: var(--k-text-3); font-size: .9em; word-break: keep-all; }
+.sf-groups { display: grid; gap: 1.3em; }
+.sf-org { font-size: .9em; font-weight: 700; color: var(--k-text-2); margin: 0 0 .5em; letter-spacing: -0.01em; }
+.sf-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19em), 1fr)); gap: .55em; }
+.sf-it { display: grid; grid-template-columns: 3em minmax(0, 1fr) auto; align-items: center; gap: .85em; text-align: left; border: 0; background: var(--k-card); color: var(--k-text); border-radius: 1em; padding: .8em 1em; font: inherit; cursor: pointer; transition: background .2s, transform .2s var(--ease); }
+.sf-it:hover { background: rgba(255,255,255,.1); transform: translateY(-2px); }
+.sf-ext { display: grid; place-items: center; height: 3em; border-radius: .7em; background: rgba(255,255,255,.08); color: var(--k-text-2); font-size: .72em; font-weight: 800; letter-spacing: .02em; }
+.sf-ext.pdf { background: rgba(255,69,58,.16); color: #FF6961; }
+.sf-ext.img { background: rgba(48,209,88,.16); color: #4CD964; }
+.sf-ext.video, .sf-ext.audio { background: rgba(191,90,242,.16); color: #D08CF5; }
+.sf-ext.text { background: rgba(10,132,255,.16); color: #4BA3FF; }
+.sf-body { display: grid; gap: .15em; min-width: 0; }
+.sf-body strong { font-size: 1em; font-weight: 600; color: #F5F5F7; overflow-wrap: anywhere; word-break: keep-all; line-height: 1.35; }
+.sf-body small { font-size: .74em; color: var(--k-text-3); }
+.sf-go { font-size: .78em; font-weight: 700; color: #2997FF; white-space: nowrap; }
+.m-btn.m-files { color: #2997FF; }
+.m-view { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; background: rgba(0,0,0,.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.mv-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 18px; border-bottom: 1px solid var(--k-hair); }
+.mv-name { color: #F5F5F7; font-size: 15px; overflow-wrap: anywhere; word-break: keep-all; }
+.mv-bar small { color: var(--k-text-3); font-size: 12.5px; }
+.mv-bar .spacer { flex: 1; }
+.mv-body { flex: 1; min-height: 0; display: grid; place-items: center; grid-template-rows: minmax(0, 1fr) auto; gap: 8px; padding: 16px; overflow: auto; }
+.mv-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.mv-frame { width: 100%; height: 100%; border: 0; border-radius: 6px; background: #fff; }
+.mv-text { align-self: start; width: min(100%, 980px); margin: 0; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; color: var(--k-text); font-size: 15px; line-height: 1.6; }
+.mv-msg { text-align: center; color: var(--k-text-2); font-size: 15px; word-break: keep-all; display: grid; gap: 14px; justify-items: center; }
+.mv-msg.err { color: #FF6961; }
+@media (max-width: 760px) { .sf-list { grid-template-columns: 1fr; } .mv-bar small { display: none; } }
+.mv-hint { color: var(--k-text-3); font-size: 12px; word-break: keep-all; }

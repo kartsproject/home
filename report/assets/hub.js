@@ -170,9 +170,9 @@
   }
 
   /** 회의 화면 미리보기 (편집본으로) */
-  function meetPreview(getDoc) {
+  function meetPreview(getDoc, files) {
     var ov = h('div', { class: 'meet-ov' });
-    var mt = R.meeting(getDoc, { extra: function (bar) { bar.appendChild(h('button', { class: 'm-btn sm', onclick: close }, '닫기')); } });
+    var mt = R.meeting(getDoc, { files: files || [], fileGet: function (f) { return KR.call('file.get', { id: f.id }); }, extra: function (bar) { bar.appendChild(h('button', { class: 'm-btn sm', onclick: close }, '닫기')); } });
     function close() { mt.destroy(); ov.remove(); document.removeEventListener('keydown', esc); }
     function esc(e) { if (e.key === 'Escape' && !document.fullscreenElement) close(); }
     document.addEventListener('keydown', esc);
@@ -389,7 +389,7 @@
     // 도구
     var orgChk = h('input', { type: 'checkbox', checked: !!doc.showOrg, onchange: function () { doc.showOrg = orgChk.checked; onChange(); } });
     main.appendChild(h('div', { class: 'toolbar' }, [
-      h('button', { class: 'btn primary', onclick: function () { meetPreview(function () { return doc; }); } }, '▶ 회의 화면으로 보기'),
+      h('button', { class: 'btn primary', onclick: function () { meetPreview(function () { return doc; }, data.files); } }, '▶ 회의 화면으로 보기'),
       h('button', { class: 'btn', onclick: function () { docPreview(doc); } }, '문서로 보기'),
       h('label', { class: 'chk' }, [orgChk, ' 업체명 표기']),
       h('button', { class: 'btn ai', onclick: function () { refine(doc, 'week', null, function () { weekRedraw(); }); } }, '✦ 문장 정리'),
@@ -547,7 +547,7 @@
     }
     var orgChk = h('input', { type: 'checkbox', checked: !!doc.showOrg, onchange: function () { doc.showOrg = orgChk.checked; onChange(); } });
     main.appendChild(h('div', { class: 'toolbar' }, [
-      h('button', { class: 'btn primary', onclick: function () { meetPreview(function () { return doc; }); } }, '▶ 회의 화면으로 보기'),
+      h('button', { class: 'btn primary', onclick: function () { meetPreview(function () { return doc; }, data.files); } }, '▶ 회의 화면으로 보기'),
       h('button', { class: 'btn', onclick: function () { docPreview(doc); } }, '문서로 보기'),
       h('label', { class: 'chk' }, [orgChk, ' 업체명 표기']),
       h('button', { class: 'btn ai', onclick: function () { refine(doc, 'month', monthSrc(), function () { st.dirty = true; saveNow().then(function () { monthTab(); }); }); } }, '✦ 실적으로 다시 정리'),

@@ -109,7 +109,7 @@
     if (!S.cur) return;
     var doc = S.cur.doc;
     document.title = doc.title + ' · K예술영재 프로젝트';
-    if (S.mode === 'meet') { S.mt = R.meeting(function () { return doc; }); stage.appendChild(S.mt.el); stage.classList.add('is-meet'); }
+    if (S.mode === 'meet') { S.mt = R.meeting(function () { return doc; }, { files: S.cur.files || [], fileGet: function (f) { return api('view.file', { id: f.id }); } }); stage.appendChild(S.mt.el); stage.classList.add('is-meet'); }
     else {
       stage.classList.remove('is-meet');
       var sch = R.docSchedule(doc), sn = soonOf(S.kind);
