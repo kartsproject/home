@@ -7,14 +7,25 @@
  *     l: { l1: [ { s: 0, t: { "2": "글" }, p: "mu1-x4k2" }, … ] } }   // 목록(data-list) — 바꾼 목록만, 화면 순서대로
  *        s: HTML의 몇 번째 항목을 본뜬 것인지(0부터), t: 항목 안 글자 칸(data-ei) 중 고친 것, p: 복제한 항목의 새 사진 자리
  *     a: { k5: ["더한 문단", …] },                        // 글자 칸 k5(문단) 바로 뒤에 더한 문단 (WBS 18.7)
- *     x: { s4: [ { k, h, d, p, i, ph }, … ] } }           // 구역 자리 s4 바로 뒤에 더한 구역 (WBS 18.7)
+ *     x: { s4: [ { k, h, d, p, i, ph }, … ] },           // 구역 자리 s4 바로 뒤에 더한 구역 (WBS 18.7)
+ *     h: [ "s3", … ] }                                   // 숨긴 원래 구역(HTML의 data-sec) — 사이트에서 보이지 않는다 (2026-11-24, WBS 22.16)
  *        k: text · photo · table · cards · steps, h: 제목, d: 제목 밑 설명, p: [문단], i: [[제목 · 항목, 설명 · 내용]], ph: 사진 자리
  * 글은 **굵게** · ==형광== · 줄바꿈(\n)만 쓴다. 화면은 textContent · DOM으로만 넣는다(CLAUDE.md 보안 5).
  * 탭은 처음 저장할 때 만든다(setup을 다시 돌리지 않아도 되게, 사진 · 모집요강 탭과 같은 방식).
+ *
+ * 이전 버전 (2026-11-24 사용자 「이전 버전을 5개 정도 저장해서 잘못 편집했을 때 되돌릴 수 있게」, WBS 22.16)
+ *   「페이지기록」 탭: 기록ID | 페이지 | 내용 | 수정자 | 수정시각(그 버전을 저장한 사람 · 때) | 보관시각
+ *   저장할 때 지금 내용과 달라지면, 덮어쓰기 전의 내용을 기록에 남기고 페이지마다 새것 5개만 둔다.
+ *   그 페이지를 처음 저장할 때는 「편집 전 처음 모습」(빈 내용 = HTML 그대로)을 남긴다.
+ *   pageVersions로 목록 · 내용을 받고, 편집 화면이 그 내용을 불러와 보여 준 뒤 운영진이 [저장]하면 되돌아간다
+ *   (되돌리기도 저장이라 되돌리기 전 내용이 다시 기록에 남는다 — 되돌리기를 되돌릴 수 있다).
+ *   사진 자리의 사진(Photos.js)은 누르는 즉시 따로 저장되므로 버전에 들어가지 않는다.
  */
 var PAGE_TAB_ = '페이지';
+var PAGE_HISTORY_TAB_ = '페이지기록';
+var PAGE_KEEP_VERSIONS_ = 5;
 var PAGE_IDS_ = ['index', 'about', 'recruit', 'programs', 'mentoring', 'camp', 'news'];
-var PAGE_LIMITS_ = { text: 3000, texts: 400, lists: 30, items: 60, itemTexts: 40, paraAnchors: 100, paras: 20, secAnchors: 60, secs: 10, secParas: 30, json: 45000 };
+var PAGE_LIMITS_ = { hidden: 60, text: 3000, texts: 400, lists: 30, items: 60, itemTexts: 40, paraAnchors: 100, paras: 20, secAnchors: 60, secs: 10, secParas: 30, json: 45000 };
 var PAGE_SEC_KINDS_ = ['text', 'photo', 'table', 'cards', 'steps'];   // 시트 한 칸은 5만 자까지
 
 function pageTabMissing_() {
@@ -22,15 +33,16 @@ function pageTabMissing_() {
 }
 
 // 잠금 안에서만 부른다
-function ensurePageTab_() {
+function ensurePageTab_(name) {
+  name = name || PAGE_TAB_;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(PAGE_TAB_);
-  var headers = TAB_HEADERS_[PAGE_TAB_];
-  if (sheet) { addMissingHeaders_(sheet, PAGE_TAB_); return; }
-  sheet = ss.insertSheet(PAGE_TAB_, ss.getSheets().length);
+  var sheet = ss.getSheetByName(name);
+  var headers = TAB_HEADERS_[name];
+  if (sheet) { addMissingHeaders_(sheet, name); return; }
+  sheet = ss.insertSheet(name, ss.getSheets().length);
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
   sheet.setFrozenRows(1);
-  (TEXT_COLUMNS_[PAGE_TAB_] || []).forEach(function (h) {
+  (TEXT_COLUMNS_[name] || []).forEach(function (h) {
     sheet.getRange(2, headers.indexOf(h) + 1, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
   });
 }
@@ -68,6 +80,16 @@ function validatePageContent_(c) {
   var out = { t: {}, l: {} };
   var t = c.t == null ? {} : c.t, l = c.l == null ? {} : c.l, a = c.a == null ? {} : c.a, x = c.x == null ? {} : c.x;
   if (!isPlainObject_(t) || !isPlainObject_(l) || !isPlainObject_(a) || !isPlainObject_(x)) return null;
+  // 숨긴 원래 구역 (WBS 22.16) — 같은 열쇠는 한 번만
+  if (c.h != null) {
+    if (!Array.isArray(c.h) || c.h.length > PAGE_LIMITS_.hidden) return null;
+    var hid = [];
+    for (var hi = 0; hi < c.h.length; hi++) {
+      if (typeof c.h[hi] !== 'string' || !/^s\d{1,3}$/.test(c.h[hi])) return null;
+      if (hid.indexOf(c.h[hi]) === -1) hid.push(c.h[hi]);
+    }
+    if (hid.length) out.h = hid;
+  }
   var tk = Object.keys(t), lk = Object.keys(l);
   if (tk.length > PAGE_LIMITS_.texts || lk.length > PAGE_LIMITS_.lists) return null;
   for (var i = 0; i < tk.length; i++) {
@@ -212,9 +234,65 @@ function handleSavePage_(req) {
   return withLock_(function () {
     ensurePageTab_();
     var row = readTab_(PAGE_TAB_).filter(function (r) { return String(r['페이지']) === req.page; })[0];
-    writeRow_(PAGE_TAB_, { '페이지': req.page, '내용': JSON.stringify(content), '수정자': auth.name, '수정시각': new Date() }, row && row._row);
+    var json = JSON.stringify(content);
+    keepPageVersion_(req.page, row, json);
+    writeRow_(PAGE_TAB_, { '페이지': req.page, '내용': json, '수정자': auth.name, '수정시각': new Date() }, row && row._row);
     logAccess_('성공', auth.code, auth.name, '', 'savePage', req.page);
     var published = publish_(auth.name);
     return jsonResponse_(true, null, { published: published.ok });
   });
+}
+
+/* ---------- 이전 버전 (2026-11-24, WBS 22.16) ---------- */
+var PAGE_EMPTY_JSON_ = '{"t":{},"l":{}}';
+
+// 잠금 안에서만 부른다. row = 덮어쓰기 전 「페이지」 줄(없으면 처음 저장), next = 새로 쓸 내용(JSON)
+function keepPageVersion_(page, row, next) {
+  var prev = row ? String(row['내용'] || '') : PAGE_EMPTY_JSON_;
+  if (samePageJson_(prev, next)) return;
+  ensurePageTab_(PAGE_HISTORY_TAB_);
+  var rows = readTab_(PAGE_HISTORY_TAB_);
+  writeRow_(PAGE_HISTORY_TAB_, {
+    '기록ID': nextId_('V', 5, rows.map(function (r) { return String(r['기록ID']); })),
+    '페이지': page,
+    '내용': prev,
+    '수정자': row ? String(row['수정자'] || '') : '',
+    '수정시각': row && isDate_(row['수정시각']) ? row['수정시각'] : '',
+    '보관시각': new Date()
+  });
+  // 페이지마다 새것 PAGE_KEEP_VERSIONS_개만 (아래로 쌓이므로 위쪽 줄이 오래된 것)
+  var mine = rows.filter(function (r) { return String(r['페이지']) === page; });
+  var extra = mine.length + 1 - PAGE_KEEP_VERSIONS_;
+  if (extra > 0) deleteRows_(PAGE_HISTORY_TAB_, mine.slice(0, extra).map(function (r) { return r._row; }));
+}
+
+function isDate_(v) { return Object.prototype.toString.call(v) === '[object Date]'; }
+
+function samePageJson_(a, b) {
+  try { return JSON.stringify(JSON.parse(a)) === JSON.stringify(JSON.parse(b)); } catch (err) { return a === b; }
+}
+
+// docs/api.md 3-8-1: { action:'pageVersions', token, page } → { versions:[ { id, savedBy, savedAt, first, content } ] } (새것부터)
+//   first: 편집 전 처음 모습(HTML 그대로). content는 Pages 모양 그대로 다시 검사해 깨진 것은 뺀다
+function handlePageVersions_(req) {
+  var auth = requireAuth_(req);
+  if (!auth.ok) return jsonResponse_(false, auth.error, null);
+  if (PAGE_IDS_.indexOf(req.page) === -1) return jsonResponse_(false, 'INVALID_INPUT', null);
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), out = [];
+  if (ss.getSheetByName(PAGE_HISTORY_TAB_)) {
+    readTab_(PAGE_HISTORY_TAB_).filter(function (r) { return String(r['페이지']) === req.page; }).reverse().forEach(function (r) {
+      var content = null;
+      try { content = validatePageContent_(JSON.parse(String(r['내용'] || '{}'))); } catch (err) { content = null; }
+      if (!content) return;
+      var by = String(r['수정자'] || '');
+      out.push({
+        id: String(r['기록ID']),
+        savedBy: by,
+        savedAt: isDate_(r['수정시각']) ? formatDateTimeCell_(r['수정시각']) : '',
+        first: !by && samePageJson_(JSON.stringify(content), PAGE_EMPTY_JSON_),
+        content: content
+      });
+    });
+  }
+  return jsonResponse_(true, null, { versions: out.slice(0, PAGE_KEEP_VERSIONS_) });
 }

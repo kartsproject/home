@@ -1037,3 +1037,5 @@ html.ed-on .rc-nav{display:none}
   .dg-flow li,.dg-flow li + li,.dg-flow li:first-child,.dg-flow li:last-child{flex-direction:row;align-items:center;gap:10px;margin:0;padding:11px 14px;border-radius:10px;clip-path:none}
   .dg-flow li + li::before{content:"";position:absolute;left:50%;top:-12px;width:8px;height:8px;margin-left:-4px;border-right:1.5px solid var(--gray-lt);border-bottom:1.5px solid var(--gray-lt);transform:rotate(45deg)}
 }
+/* 페이지 직접 편집으로 숨긴 원래 구역 (content.js, WBS 22.16). 편집 화면 모양은 editor.css */
+html:not(.ed-on) .sec-off{display:none!important}

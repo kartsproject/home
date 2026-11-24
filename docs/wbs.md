@@ -375,6 +375,7 @@
 | 22.13 | 갤러리 앨범 → 사진 목록 → 확대 보기 | news.js · common.css | 완료 (1440 · 390 — 앨범 열기 · 사진 확대 · 목록 돌아가기 · 주소로 바로 열기) |
 | 22.14 | 첨부를 드라이브 게시판별 하위 폴더(공지사항 · 언론홍보 · 갤러리 · 모집요강 · 표지 사진 · 사이트 사진)에 올리기 · 이미 올린 첨부 옮기기(`sortUploads`) · 설정 점검에 정리 상태 | `apps-script/Folders.js` · Files.js · Media.js · ImportPhotos.js · Migrate.js · CheckSetup.js, admin.js · editor.js | 완료 (관문 흉내 시험) — 사용자가 `sortUploads` 한 번 실행 |
 | 22.15 | 표(항목 · 값 줄 목록 — 사업 개요 · 지원 안내 · 운영 개요 · 더한 표 구역)를 아이콘 칸 도식으로 | content.js · common.css | 완료 (1440 · 390 — 세 페이지, 편집 화면은 그대로) |
+| 22.16 | 페이지 직접 편집: 이전 버전 5개(「페이지기록」 탭 · `pageVersions` · [이전 버전] 불러오기) · 원래 구역 숨기기/숨김 풀기 | Pages.js · Setup.js · Code.js, content.js · editor.js · common.css · editor.css | 완료 (관문 흉내 시험 · 편집 화면 1440 · 390) |
 
 ---
 

@@ -122,6 +122,16 @@ html.ed-on .wk-ph.ph-none::after,html.ed-on .mn-ph i.ph-none::after{content:"사
 .ed-sec{background:#E7F0F3;border-color:#176C86}
 .ed-sec .lb{font-size:12.5px;padding:0 6px;color:#0F4A5C}
 html.ed-on [data-xs]{box-shadow:0 0 0 1px rgba(23,108,134,.25)}
+/* 숨긴 원래 구역 · 이전 버전 (WBS 22.16) */
+html.ed-on .sec-off{position:relative;opacity:.32;outline:2px dashed #B42B38;outline-offset:6px;filter:grayscale(1)}
+html.ed-on .sec-off:hover{opacity:.55}
+.ed-orig{background:#F3E7E8;border-color:#B42B38}
+.ed-orig .lb{color:#7A1C26}
+.ed-ver{width:min(380px,calc(100vw - 12px));max-height:calc(100vh - 120px);overflow:auto}
+.ed-ver .ed-hint{display:block;margin:0 2px 6px;font-size:12.5px;line-height:1.5;color:#5A6065}
+.ed-ver .ed-empty{margin:4px 2px 8px;font-size:13px;color:#5A6065}
+.ed-ver .ed-v{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:default}
+.ed-ver .ed-v > div{min-width:0}
 html.ed-on [data-xs]:hover{box-shadow:0 0 0 2px rgba(23,108,134,.6)}
 html.ed-on [data-xl] > *:hover{box-shadow:0 0 0 2px rgba(242,194,48,.85)}
 html.ed-on .x-sec .p1-ld:empty,html.ed-on .x-tx p:empty{display:block}

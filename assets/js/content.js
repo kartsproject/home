@@ -10,6 +10,7 @@
      a:{ k5:["문단", …] }      글자 칸 k5(문단 p) 바로 뒤에 더한 문단 — 같은 모양(태그 · class)으로 [data-ap="k5"]
      x:{ s4:[ 구역, … ] }      구역 자리 [data-sec="s4"] 바로 뒤에 더한 구역 [data-xs="s4"]
         구역 = { k:'text'|'photo'|'table'|'cards'|'steps', h:제목, d:제목 밑 설명, p:[문단], i:[[제목 · 항목, 설명 · 내용]], ph:사진 자리 }
+     h:[ "s3", … ]             숨긴 원래 구역 [data-sec="s3"] — .sec-off (방문자 화면에서 빠짐, WBS 22.16)
         모양은 사이트에 있는 것(.p1-sec · .ab-dl · .cp-cards · .p1-st)을 그대로 쓴다. 메인은 띠(section.x-band)로 감싼다
    열쇠는 docs/tools/annotate-edit.py가 HTML에 붙인다. 고친 것이 없는 페이지는 HTML 그대로다.
    글 서식은 글쓰기 도구(richtext.js)의 조각 — 예전 글(**굵게** ==형광==)도 읽는다. 넣을 때는 DOM으로만 만든다(innerHTML 없음 — CLAUDE.md 보안 5).
@@ -254,6 +255,9 @@ window.Content = (function(){
       else if(reset && !eq(read(el), orig[k])) set(el, orig[k]);
     });
     applyAdded(obj(pd.a), obj(pd.x));
+    // 숨긴 원래 구역 (WBS 22.16) — 방문자 화면에서는 빼고, 편집 화면에서는 흐리게 보인다(common.css .sec-off)
+    var hid = Array.isArray(pd.h) ? pd.h : [];
+    qsa(document, '[data-sec]').forEach(function(anc){ anc.classList.toggle('sec-off', hid.indexOf(anc.getAttribute('data-sec')) !== -1); });
   }
 
   // 지금 화면 → 저장할 내용. HTML과 같은 칸 · 목록은 넣지 않는다
@@ -284,6 +288,8 @@ window.Content = (function(){
     var ad = collectAdded(), out = { t:t, l:l };
     if(Object.keys(ad.a).length) out.a = ad.a;
     if(Object.keys(ad.x).length) out.x = ad.x;
+    var hid = qsa(document, '[data-sec].sec-off').map(function(e){ return e.getAttribute('data-sec'); });
+    if(hid.length) out.h = hid;
     return out;
   }
 

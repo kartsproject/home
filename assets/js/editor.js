@@ -150,6 +150,7 @@
     h('b', { text:'편집 중 · ' + (PAGE_NAMES[C.page] || C.page) }),
     stateEl,
     h('span', { class:'sp' }),
+    btn('이전 버전', openVersions),
     btn('도움말', help),
     h('a', { class:'ed-b', href:'admin.html', text:'관리자 페이지' }),
     btn('편집 끝내기', quit),
@@ -162,6 +163,8 @@
       '목록: 카드 · 단계 · 표 줄 위에 마우스를 올리면 [앞으로] [뒤로] [복제] [삭제] 단추가 나옵니다.',
       '문단: 문단을 누르면 위에 뜨는 [아래에 문단 추가]로 문단을 더하고, 더한 문단은 [문단 빼기]로 뺍니다.',
       '구역: 구역 사이의 [+ 여기에 구역 추가]를 누르고 모양(글 · 사진 + 글 · 표 · 카드 · 단계)을 고르면 새 구역이 생깁니다. 더한 구역 위에 마우스를 올리면 [위로] [아래로] [구역 삭제]가 나옵니다.',
+      '원래 있던 구역(제목과 내용이 든 상자)이 통째로 필요 없으면, 그 위에 마우스를 올려 [구역 숨기기]를 누릅니다. 숨긴 구역은 편집 화면에서 흐리게 보이고, 저장하면 사이트에서 빠집니다. 다시 보이게 하려면 [숨김 풀기].',
+      '이전 버전: 아래 [이전 버전]에서 저장하기 전 모습 5개를 볼 수 있습니다. [불러오기]로 화면에 띄워 확인한 뒤 [저장]하면 그 모습으로 되돌아갑니다(되돌리기도 다시 되돌릴 수 있습니다). 사진은 누르는 즉시 저장되므로 버전에 들어가지 않습니다.',
       '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(보통 1~2분, 늦으면 10분쯤 뒤 보임).',
       '사진: 사진 위에 마우스를 올리면 [사진 바꾸기] [자르기] [빼기]가 나옵니다. 사진은 누르는 즉시 저장됩니다.',
       '머리 · 바닥 메뉴와 공지 · 갤러리 · 모집요강 파일은 관리자 페이지에서 고칩니다.'
@@ -291,7 +294,7 @@
     ]
   });
   var fmtBar = h('div', { class:'ed-tool ed-fmt', hidden:true }, [rtBar]);
-  var cur = { ed:null, item:null, photo:null, sec:null };
+  var cur = { ed:null, item:null, photo:null, sec:null, orig:null };
 
   document.addEventListener('focusin', function(ev){
     var ed = editRoot(ev.target);
@@ -587,6 +590,66 @@
   ]);
   function setSec(el){ if(cur.sec === el) return; cur.sec = el; place(); }
 
+  /* ---------- 원래 구역 숨기기 (2026-11-24 사용자 「박스 전체가 필요 없을 때 통째로 삭제」, WBS 22.16) ----------
+     HTML에 있던 구역은 지우지 않고 숨긴다(content.js .sec-off) — 저장하면 사이트에서 빠지고, [숨김 풀기]로 되살린다 */
+  function toggleOrig(){
+    var sec = cur.orig; if(!sec) return;
+    var off = !sec.classList.contains('sec-off');
+    sec.classList.toggle('sec-off', off);
+    changed(); place();
+    toast(off ? '구역을 숨겼습니다. [저장]하면 사이트에서 보이지 않습니다. 다시 보이게 하려면 [숨김 풀기].' : '숨김을 풀었습니다. [저장]하면 사이트에 다시 보입니다.');
+  }
+  var origLabel = h('b', { class:'lb', text:'구역' });
+  var origBtn = btn('구역 숨기기', toggleOrig, 'warn');
+  var origBar = h('div', { class:'ed-tool ed-sec ed-orig', hidden:true }, [origLabel, origBtn]);
+  function setOrig(el){ if(cur.orig === el) return; cur.orig = el; place(); }
+
+  /* ---------- 이전 버전 (2026-11-24 사용자 「이전 버전 5개 정도 저장해 잘못 편집했을 때 되돌릴 수 있게」, WBS 22.16) ----------
+     관문이 저장할 때마다 저장 전 모습을 페이지마다 5개 남긴다(Pages.js). [불러오기]는 화면에만 띄우고, [저장]해야 되돌아간다 */
+  var verBox = h('div', { class:'ed-tool ed-pick ed-ver', hidden:true, role:'dialog', 'aria-label':'이전 버전' });
+  function when(v){
+    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(v.savedAt || '');
+    return m ? Number(m[2]) + '월 ' + Number(m[3]) + '일 ' + m[4] + ':' + m[5] : '';
+  }
+  function openVersions(){
+    if(!E.data || E.saving) return;
+    busy('이전 버전을 불러오는 중…');
+    api('pageVersions', { page:C.page }, 60000).then(function(d){
+      busy(null);
+      var list = (d && d.versions) || [];
+      verBox.textContent = '';
+      verBox.appendChild(h('b', { class:'lb', text:'이전 버전 (새것부터, 최대 5개)' }));
+      verBox.appendChild(h('span', { class:'ed-hint', text:'저장할 때마다 저장하기 전 모습이 남습니다. [불러오기]로 화면에 띄워 확인한 뒤 [저장]을 누르면 그 모습으로 되돌아갑니다. 사진은 버전에 들어가지 않습니다.' }));
+      if(!list.length) verBox.appendChild(h('p', { class:'ed-empty', text:'아직 이전 버전이 없습니다. 다음에 저장하면 그 전 모습이 여기에 남습니다.' }));
+      list.forEach(function(v, i){
+        var title = v.first ? '편집 전 처음 모습' : (when(v) || '저장 시각 모름');
+        var sub = v.first ? '사이트에서 직접 편집으로 고치기 전 원래 글' : ((v.savedBy ? v.savedBy + ' 저장' : '') + (i === 0 ? ' · 바로 전 모습' : ''));
+        verBox.appendChild(h('div', { class:'ed-k ed-v' }, [
+          h('div', {}, [h('b', { text:title }), h('span', { text:sub })]),
+          btn('불러오기', function(){ loadVersion(v); })
+        ]));
+      });
+      verBox.appendChild(btn('닫기', function(){ verBox.hidden = true; }));
+      verBox.hidden = false;
+      var r = bar.getBoundingClientRect();
+      verBox.style.left = Math.max(6, window.innerWidth - verBox.offsetWidth - 6) + 'px';
+      verBox.style.top = Math.max(6, r.top - verBox.offsetHeight - 8) + 'px';
+    }, function(e){ busy(null); toast(errMsg(e), true); });
+  }
+  function loadVersion(v){
+    if(dirty() && !window.confirm('저장하지 않은 고침이 있습니다. 이전 버전을 불러오면 사라집니다. 불러올까요?')) return;
+    verBox.hidden = true;
+    cur.ed = cur.item = cur.photo = cur.sec = cur.orig = null;
+    C.apply(v.content, true);
+    if(window.Photos) Photos.fill(E.photos, E.data.photoMode === 'attached');
+    [].forEach.call(document.querySelectorAll(CELLS), prepare);
+    drawAddBars();
+    changed(); place();
+    var same = !dirty();
+    toast(same ? '지금 저장된 모습과 같습니다.' : '불러왔습니다. 확인한 뒤 [저장]을 누르면 이 모습으로 되돌아갑니다. 그만두려면 [편집 끝내기].');
+  }
+  document.addEventListener('pointerdown', function(ev){ if(!verBox.hidden && !ev.target.closest('.ed-ver,.ed-bar')) verBox.hidden = true; });
+
   /* ---------- 떠 있는 단추 자리 ---------- */
   function vis(r){ return r.bottom > 0 && r.top < window.innerHeight && r.width > 0; }
   function place(){
@@ -619,6 +682,18 @@
       secBar.style.left = Math.max(6, Math.min(sr.left, window.innerWidth - secBar.offsetWidth - 6)) + 'px';
       secBar.style.top = (sabove > 6 ? sabove : Math.max(6, sr.top + 4)) + 'px';
     }
+    var orr = cur.orig && document.body.contains(cur.orig) && cur.orig.getBoundingClientRect();
+    origBar.hidden = !(orr && vis(orr));
+    if(!origBar.hidden){
+      // 구역 바로 위 왼쪽(자리가 없으면 구역 안 위쪽) — 더한 구역 단추와 같은 자리
+      var off = cur.orig.classList.contains('sec-off');
+      origLabel.textContent = off ? '숨긴 구역' : '구역';
+      origBtn.textContent = off ? '숨김 풀기' : '구역 숨기기';
+      origBtn.classList.toggle('warn', !off);
+      var oh = origBar.offsetHeight, oabove = orr.top - oh - 3;
+      origBar.style.left = Math.max(6, Math.min(orr.left, window.innerWidth - origBar.offsetWidth - 6)) + 'px';
+      origBar.style.top = (oabove > 6 ? oabove : Math.max(6, orr.top + 4)) + 'px';
+    }
     var el = cur.photo && document.body.contains(cur.photo) ? cur.photo : null, rr = el && el.getBoundingClientRect();
     photoBar.hidden = !(rr && vis(rr));
     if(!photoBar.hidden){
@@ -641,7 +716,7 @@
   // 마우스(휴대폰은 누른 곳)가 있는 항목 · 사진 · 더한 구역.
   // 다른 항목으로 가면 바로 바꾸고, 빈 곳으로 나가면 0.9초 기다린 뒤 단추를 숨긴다 — 단추까지 마우스를 옮기는 동안 사라지지 않게.
   // 떠 있는 단추 위에서는 숨기지 않는다
-  var SETTERS = { item:setItem, photo:setPhoto, sec:setSec }, hideT = {};
+  var SETTERS = { item:setItem, photo:setPhoto, sec:setSec, orig:setOrig }, hideT = {};
   function want(kind, el){
     if(el){ clearTimeout(hideT[kind]); hideT[kind] = null; SETTERS[kind](el); return; }
     if(!cur[kind] || hideT[kind]) return;
@@ -653,12 +728,13 @@
     if(!t.closest) return;
     if(t.closest('.ed-tool')){ keep(); return; }
     if(t.closest('.ed-ui')) return;
-    if(t.closest('#header,#footer,#allmenu')){ want('item', null); want('photo', null); want('sec', null); return; }
+    if(t.closest('#header,#footer,#allmenu')){ want('item', null); want('photo', null); want('sec', null); want('orig', null); return; }
     want('item', t.closest('[data-list] > [data-s], [data-xl] > *'));
     var ph = t.closest('[data-photo]');
     if(!ph && heroEl && t.closest('#hero') && !t.closest('[data-ed]')) ph = heroEl;
     want('photo', ph);
     want('sec', t.closest('[data-xs]'));
+    want('orig', t.closest('[data-sec]'));
   }
   document.addEventListener('pointerover', hover);
   document.addEventListener('pointerdown', hover);
@@ -666,7 +742,7 @@
   /* ---------- 시작 ---------- */
   function start(){
     document.documentElement.classList.add('ed-on');
-    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, secBar, pickBox, bar, fileIn].forEach(function(x){ ui.appendChild(x); });
+    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, secBar, origBar, pickBox, verBox, bar, fileIn].forEach(function(x){ ui.appendChild(x); });
     document.body.appendChild(ui);
     saveBtn.disabled = true;
 
