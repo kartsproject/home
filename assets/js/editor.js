@@ -566,25 +566,25 @@
     var lim = E.data.limits || {}, PART = lim.videoPartBytes, slot = t.slot;
     if(!/\.mp4$/i.test(file.name) || (file.type && file.type !== 'video/mp4')) return toast('MP4 파일만 올릴 수 있습니다. 아이폰 영상(MOV)은 MP4(H.264)로 바꿔 올려 주세요.', true);
     if(file.size > lim.videoBytes) return toast('동영상이 너무 큽니다(' + Board.formatSize(file.size) + '). ' + Board.formatSize(lim.videoBytes) + ' 이하로 줄여 주세요. 10~20초 · 1080p면 보통 맞습니다.', true);
-    var base = file.name.replace(/\.[^.]+$/, ''), n = Math.max(1, Math.ceil(file.size / PART)), probe;
+    var base = file.name.replace(/\.[^.]+$/, ''), n = Math.max(1, Math.ceil(file.size / PART)), probe, stage = '영상 열기';
     var uploadId = crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
     busy('동영상을 여는 중…');
     probeVideo(file, photoSide()).then(function(r){
       probe = r;
-      busy('첫 장면을 표지 사진으로 올리는 중…');
+      busy('첫 장면을 표지 사진으로 올리는 중…'); stage = '첫 장면 사진 올리기';
       return blobToBase64(r.poster).then(function(b64){
         return api('upload', { kind:'photo', board:'hero', name:base + '-첫장면.jpg', mimeType:'image/jpeg', base64:b64, width:r.pw, height:r.ph }, 120000);
       });
     }).then(function(poster){
       var i = 0;
       var next = function(){
-        busy('동영상을 올리는 중… (' + (i + 1) + ' / ' + n + ')\n창을 닫지 말아 주세요.');
+        busy('동영상을 올리는 중… (' + (i + 1) + ' / ' + n + ')\n창을 닫지 말아 주세요.'); stage = '동영상 조각 ' + (i + 1) + ' / ' + n + ' 올리기';
         return blobToBase64(file.slice(i * PART, (i + 1) * PART)).then(function(b64){
           return api('upload', { kind:'video', name:base + '.mp4', mimeType:'video/mp4', width:probe.w, height:probe.h, uploadId:uploadId, part:i, parts:n, base64:b64 }, 180000);
         }).then(function(d){ i++; return i < n ? next() : d; });
       };
       return next().then(function(v){
-        busy('저장하고 영상 저장소에 올리는 중…\n영상 크기에 따라 1~2분 걸릴 수 있습니다. 창을 닫지 말아 주세요.');
+        busy('저장하고 영상 저장소에 올리는 중…\n영상 크기에 따라 1~2분 걸릴 수 있습니다. 창을 닫지 말아 주세요.'); stage = '저장 · 영상 저장소 올리기';
         return api('save', { board:'hero', id:'H-' + slot, post:{ depth:false, center:null }, photos:[poster.attachmentId], cutouts:[], files:[], videos:[v.attachmentId] }, 360000).then(function(res){
           var hs = heroItem(slot);
           if(hs){
@@ -598,7 +598,8 @@
         });
       });
     }).catch(function(e){
-      toast(e && e.userMsg ? e.userMsg : errMsg(e), true);
+      // 어느 단계에서 멈췄는지 함께 보인다 — 관문 실행 기록과 맞춰 보기 쉽게 (2026-11-26)
+      toast(e && e.userMsg ? e.userMsg : errMsg(e) + ' [' + stage + ' 단계 · ' + Board.formatSize(file.size) + ']', true);
     }).then(function(){ busy(null); place(); });
   }
   function removeVideo(){

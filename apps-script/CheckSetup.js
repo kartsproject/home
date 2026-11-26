@@ -67,8 +67,18 @@ function checkSetup() {
       else pass('GitHub ' + repo + ' 연결됨 (발행 위치 ' + branch + ':' + path + ')');
     }
   }
+  // 표지 동영상 저장소 (Media.js) — 토큰이 쓰기 권한을 가졌는지 실제로 물어본다 (2026-11-26)
   var media = props.getProperty('MEDIA_REPO');
-  if (media) Logger.log('ℹ️ 표지 동영상 저장소 ' + media + ' — 표지 동영상을 쓸 때만 필요(토큰에 이 저장소 쓰기 권한도)');
+  if (media) {
+    try {
+      var mt = mediaTarget_();
+      var mres = UrlFetchApp.fetch('https://api.github.com/repos/' + mt.repo, { headers: githubGit_(mt).headers, muteHttpExceptions: true });
+      var mperm = mres.getResponseCode() === 200 && JSON.parse(mres.getContentText()).permissions;
+      if (mres.getResponseCode() !== 200) fail('표지 동영상 저장소 ' + mt.repo + '에 들어가지 못함(' + mres.getResponseCode() + ') — 토큰의 Repository access에 home-media가 있는지 확인');
+      else if (mperm && mperm.push === false) fail('토큰에 ' + mt.repo + ' 쓰기 권한이 없음 — Contents: Read and write');
+      else pass('표지 동영상 저장소 ' + mt.repo + ' 연결됨');
+    } catch (err) { fail('표지 동영상 저장소 확인 실패: ' + err.message); }
+  }
 
   // 6. 웹앱 배포
   var url = ScriptApp.getService().getUrl();
