@@ -71,10 +71,13 @@
     SERVER_ERROR:'처리 중 오류가 났습니다. 잠시 뒤 다시 시도해 주세요.'
   };
   // 관문 오류가 아닌 화면(브라우저) 쪽 오류는 그 내용을 붙여 보인다 — 원인을 찾기 쉽게
-  function errMsg(e){ return ERRORS[e && e.code] || (e && !e.code && e.message ? '화면에서 오류가 났습니다: ' + e.message : ERRORS.SERVER_ERROR); }
+  function errMsg(e){
+    if(e && e.code === 'SERVER_ERROR' && e.detail) return ERRORS.SERVER_ERROR + ' (관문: ' + e.detail + ')';
+    return ERRORS[e && e.code] || (e && !e.code && e.message ? '화면에서 오류가 났습니다: ' + e.message : ERRORS.SERVER_ERROR);
+  }
 
   /* ---------- 관문 호출 (admin.js와 같은 방식) ---------- */
-  function GatewayError(code){ this.code = code; }
+  function GatewayError(code, detail){ this.code = code; this.detail = detail || ''; }
   function call(body, timeoutMs){
     var ctrl = window.AbortController ? new AbortController() : null;
     var timer = ctrl && setTimeout(function(){ ctrl.abort(); }, timeoutMs || 60000);
@@ -87,7 +90,7 @@
       return r.json().catch(function(){ throw new GatewayError('SERVER_ERROR'); });
     }).then(function(j){
       clearTimeout(timer);
-      if(!j.ok) throw new GatewayError(j.error || 'SERVER_ERROR');
+      if(!j.ok) throw new GatewayError(j.error || 'SERVER_ERROR', j.data && j.data.detail);
       return j.data;
     }, function(e){ clearTimeout(timer); throw e; });
   }

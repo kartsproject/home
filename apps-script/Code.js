@@ -10,8 +10,10 @@ function doPost(e) {
   } catch (err) {
     console.error(err);
     // 드라이브 저장 공간이 꽉 차 파일을 만들지 못함 — 화면이 알아볼 수 있게 따로 알린다 (2026-11-26)
-    if (/storage|quota|저장용량|저장 용량|용량이 부족/i.test(String(err && err.message))) return jsonResponse_(false, 'STORAGE_FULL', null);
-    return jsonResponse_(false, 'SERVER_ERROR', null);
+    var msg = String(err && err.message || err);
+    if (/storage|quota|저장용량|저장 용량|용량이 부족/i.test(msg)) return jsonResponse_(false, 'STORAGE_FULL', null);
+    // 원인을 화면에서 바로 볼 수 있게 오류 문장을 짧게 붙인다 — 파일 · 시트 ID 같은 긴 영숫자는 가린다 (2026-11-26)
+    return jsonResponse_(false, 'SERVER_ERROR', { detail: msg.replace(/[A-Za-z0-9_-]{20,}/g, '…').slice(0, 160) });
   }
 }
 
