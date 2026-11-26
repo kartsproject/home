@@ -64,12 +64,14 @@
     FILE_REJECTED:'올릴 수 없는 파일입니다. 형식과 크기를 확인해 주세요.',
     NOT_FOUND:'사진 자리를 찾을 수 없습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
     BUSY:'다른 저장이 진행 중입니다. 잠시 뒤 다시 눌러 주세요.',
+    STORAGE_FULL:'관리 계정의 구글 드라이브 저장 공간이 가득 차 파일을 올리지 못했습니다. 드라이브에서 필요 없는 파일과 휴지통을 비운 뒤 다시 해 주세요.',
     MEDIA_FAILED:'동영상을 영상 저장소에 올리지 못했습니다. 잠시 뒤 다시 해 주세요. 계속되면 관문의 GitHub 토큰(home-media 쓰기 권한)을 확인해야 합니다.',
     NETWORK:'인터넷 연결을 확인해 주세요.',
     TIMEOUT:'응답이 너무 늦습니다. 잠시 뒤 다시 시도해 주세요.',
     SERVER_ERROR:'처리 중 오류가 났습니다. 잠시 뒤 다시 시도해 주세요.'
   };
-  function errMsg(e){ return ERRORS[e && e.code] || ERRORS.SERVER_ERROR; }
+  // 관문 오류가 아닌 화면(브라우저) 쪽 오류는 그 내용을 붙여 보인다 — 원인을 찾기 쉽게
+  function errMsg(e){ return ERRORS[e && e.code] || (e && !e.code && e.message ? '화면에서 오류가 났습니다: ' + e.message : ERRORS.SERVER_ERROR); }
 
   /* ---------- 관문 호출 (admin.js와 같은 방식) ---------- */
   function GatewayError(code){ this.code = code; }

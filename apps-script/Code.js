@@ -9,6 +9,8 @@ function doPost(e) {
     return route_(req);
   } catch (err) {
     console.error(err);
+    // 드라이브 저장 공간이 꽉 차 파일을 만들지 못함 — 화면이 알아볼 수 있게 따로 알린다 (2026-11-26)
+    if (/storage|quota|저장용량|저장 용량|용량이 부족/i.test(String(err && err.message))) return jsonResponse_(false, 'STORAGE_FULL', null);
     return jsonResponse_(false, 'SERVER_ERROR', null);
   }
 }

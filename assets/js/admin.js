@@ -84,6 +84,7 @@
     NETWORK:'인터넷 연결을 확인해 주세요.',
     TIMEOUT:'응답이 너무 늦습니다. 잠시 뒤 다시 시도해 주세요.',
     DUPLICATE_YEAR:'그 연도의 모집요강이 이미 있습니다. 목록에서 그 연도를 눌러 고쳐 주세요.',
+    STORAGE_FULL:'관리 계정의 구글 드라이브 저장 공간이 가득 차 파일을 올리지 못했습니다. 드라이브에서 필요 없는 파일과 휴지통을 비운 뒤 다시 해 주세요.',
     SERVER_ERROR:'처리 중 오류가 났습니다. 잠시 뒤 다시 시도해 주세요.'
   };
   function errMsg(e){ return ERRORS[e && e.code] || ERRORS.SERVER_ERROR; }
