@@ -9,6 +9,12 @@
  *    → 마지막 조각에서 「첨부」에 구분 「동영상」 한 줄(파일ID = 조각 파일ID들, 쉼표로)
  *    → 표지를 **저장할 때만** 조각을 이어 영상 저장소 hero/{첨부ID}.mp4로 커밋한다 (저장하지 않은 영상은 공개되지 않음)
  * Script Properties: MEDIA_REPO · MEDIA_BRANCH(setup()이 기본값을 넣음). 토큰은 MEDIA_GITHUB_TOKEN이 있으면 그것, 없으면 GITHUB_TOKEN
+ *
+ * 50MB까지 (2026-11-26 사용자 요청, WBS 22.19): Apps Script는 요청 하나에 50MB까지만 보낼 수 있어(URL Fetch POST size)
+ * 50MB 영상의 base64(약 67MB)를 한 번에 커밋할 수 없다. 그래서 조각이 둘 이상이면 Git Data API로 조각을
+ * hero/_parts/{첨부ID}/000 · 001 … (원래 바이트)로 한 커밋에 올리고, 영상 저장소의 GitHub Actions
+ * (.github/workflows/join-video.yml)가 이어 붙여 hero/{첨부ID}.mp4를 만든 뒤 조각을 지운다(보통 1~2분).
+ * 조각 하나는 약 4MB라 요청 · 메모리 한도에 걸리지 않는다. 조각이 하나면 예전처럼 hero/{첨부ID}.mp4로 바로 커밋한다.
  */
 
 var VIDEO_PART_TTL_ = 6 * 60 * 60;   // 조각 파일ID를 기억하는 시간(초). 이 안에 마지막 조각이 와야 한다
@@ -74,12 +80,51 @@ function mediaPath_(attachmentId) {
   return 'hero/' + attachmentId + '.mp4';
 }
 
-// 「첨부」 동영상 한 줄의 조각을 이어 영상 저장소에 커밋한다. 실패하면 예외 — 저장이 MEDIA_FAILED로 멈춘다
+// 「첨부」 동영상 한 줄을 영상 저장소에 커밋한다. 실패하면 예외 — 저장이 MEDIA_FAILED로 멈춘다
 function commitVideo_(a, name) {
-  var b64 = String(a['파일ID']).split(',').map(function (id) {
-    return DriveApp.getFileById(id).getBlob().getDataAsString();
-  }).join('');
-  githubPutFile_(mediaTarget_(), mediaPath_(a['첨부ID']), b64, '[Media]: 표지 동영상 올림 - ' + name);
+  var ids = String(a['파일ID']).split(',').filter(Boolean), t = mediaTarget_();
+  var message = '[Media]: 표지 동영상 올림 - ' + name;
+  if (ids.length === 1) {
+    githubPutFile_(t, mediaPath_(a['첨부ID']), DriveApp.getFileById(ids[0]).getBlob().getDataAsString(), message);
+    return;
+  }
+  // 조각마다 blob을 만들고(요청 하나 = 조각 하나), 트리 · 커밋 하나로 묶는다
+  var g = githubGit_(t), dir = mediaPartsDir_(a['첨부ID']);
+  var entries = ids.map(function (id, i) {
+    var res = githubJson_(g, 'post', 'blobs', { content: DriveApp.getFileById(id).getBlob().getDataAsString(), encoding: 'base64' }, 201);
+    return { path: dir + ('00' + i).slice(-3), mode: '100644', type: 'blob', sha: res.sha };
+  });
+  // 그 사이 다른 커밋이 끼면 브랜치 이동이 거절된다(422) — 한 번 더 최신 위에 다시 만든다
+  for (var attempt = 0; ; attempt++) {
+    var head = githubJson_(g, 'get', 'ref/heads/' + t.branch, null, 200).object.sha;
+    var baseTree = githubJson_(g, 'get', 'commits/' + head, null, 200).tree.sha;
+    var tree = githubJson_(g, 'post', 'trees', { base_tree: baseTree, tree: entries }, 201).sha;
+    var commit = githubJson_(g, 'post', 'commits', { message: message, tree: tree, parents: [head] }, 201).sha;
+    var res = UrlFetchApp.fetch(g.url + 'refs/heads/' + t.branch, { method: 'patch', headers: g.headers, contentType: 'application/json',
+      payload: JSON.stringify({ sha: commit, force: false }), muteHttpExceptions: true });
+    if (res.getResponseCode() === 200) return;
+    if (attempt >= 1 || res.getResponseCode() !== 422) throw new Error('GitHub 영상 커밋 ' + res.getResponseCode());
+  }
+}
+
+// 영상 저장소에서 이어 붙이기 전 조각이 놓이는 곳 (join-video.yml과 맞출 것)
+function mediaPartsDir_(attachmentId) {
+  return 'hero/_parts/' + attachmentId + '/';
+}
+
+function githubGit_(t) {
+  return {
+    url: 'https://api.github.com/repos/' + t.repo + '/git/',
+    headers: { Authorization: 'Bearer ' + t.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+  };
+}
+
+function githubJson_(g, method, path, body, okCode) {
+  var opt = { method: method, headers: g.headers, muteHttpExceptions: true };
+  if (body) { opt.contentType = 'application/json'; opt.payload = JSON.stringify(body); }
+  var res = UrlFetchApp.fetch(g.url + path, opt);
+  if (res.getResponseCode() !== okCode) throw new Error('GitHub ' + method + ' ' + path.split('/')[0] + ' ' + res.getResponseCode());
+  return JSON.parse(res.getContentText());
 }
 
 // 영상 저장소에서 지운다(이력에는 남음). 실패해도 저장은 계속한다 — 지우지 못한 파일은 화면에서 쓰지 않으므로 보이지 않음

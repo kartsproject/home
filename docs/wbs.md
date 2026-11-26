@@ -378,6 +378,7 @@
 | 22.16 | 페이지 직접 편집: 이전 버전 5개(「페이지기록」 탭 · `pageVersions` · [이전 버전] 불러오기) · 원래 구역 숨기기/숨김 풀기 | Pages.js · Setup.js · Code.js, content.js · editor.js · common.css · editor.css | 완료 (관문 흉내 시험 · 편집 화면 1440 · 390) |
 | 22.17 | 페이지 직접 편집: 글자 칸 지우기 · 되살리기([이 칸 지우기]) · 구역 단추를 내용 칸 왼쪽에 · 마지막 저장 시각 읽기 쉽게 | Pages.js, content.js · editor.js · common.css · editor.css | 완료 (관문 흉내 시험 · 메인 여정 · 심화 멘토링 카드) |
 | 22.18 | 표지 동영상을 사이트 편집에서 넣기 · 바꾸기 · 빼기(첫 장면 대기 사진, 조각 업로드, 올린 파일로 미리 보기) | editor.js · main.js | 완료 (흉내 관문 시험 — 실제 관문 · home-media 커밋은 사용자 첫 업로드로 확인) |
+| 22.19 | 표지 동영상 50MB까지 — 조각 커밋(Git Data API) + home-media `join-video.yml`로 잇기 | Settings.js · Media.js · editor.js, home-media/.github/workflows | 완료 (관문 흉내 시험 · 잇기 스크립트 시험 — 실제 Actions 실행은 첫 큰 영상 업로드로 확인) |
 
 ---
 

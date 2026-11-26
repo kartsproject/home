@@ -169,7 +169,7 @@
       '이전 버전: 아래 [이전 버전]에서 저장하기 전 모습 5개를 볼 수 있습니다. [불러오기]로 화면에 띄워 확인한 뒤 [저장]하면 그 모습으로 되돌아갑니다(되돌리기도 다시 되돌릴 수 있습니다). 사진은 누르는 즉시 저장되므로 버전에 들어가지 않습니다.',
       '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(보통 1~2분, 늦으면 10분쯤 뒤 보임).',
       '사진: 사진 위에 마우스를 올리면 [사진 바꾸기] [자르기] [빼기]가 나옵니다. 사진은 누르는 즉시 저장됩니다.',
-      '표지 동영상(메인): 표지 위에 마우스를 올려 분야를 고른 뒤 [동영상 넣기]. MP4(H.264) 20MB 이하, 10~20초 · 1080p 가로 영상이 알맞습니다. 첫 장면이 그 분야 사진(대기 사진)으로 함께 들어가고, 누르는 즉시 저장됩니다. [동영상 빼기]는 첫 장면 사진만 남깁니다.',
+      '표지 동영상(메인): 표지 위에 마우스를 올려 분야를 고른 뒤 [동영상 넣기]. MP4(H.264) 50MB 이하, 10~20초 · 1080p 가로 영상이 알맞습니다(작을수록 방문자 화면에서 빨리 재생됩니다). 첫 장면이 그 분야 사진(대기 사진)으로 함께 들어가고, 누르는 즉시 저장됩니다. [동영상 빼기]는 첫 장면 사진만 남깁니다.',
       '머리 · 바닥 메뉴와 공지 · 갤러리 · 모집요강 파일은 관리자 페이지에서 고칩니다.'
     ].join('\n\n'));
   }
@@ -529,7 +529,7 @@
     });
   }
   /* ---------- 표지 동영상 (2026-11-26 사용자 「첫 화면 배경에 동영상도」, WBS 22.18) ----------
-     관문 · 재생은 2안(WBS 8.6) 그대로: MP4(H.264) 20MB 이하를 약 4MB 조각으로 올리고(upload kind 'video'),
+     관문 · 재생은 2안(WBS 8.6) 그대로: MP4(H.264) 50MB 이하(22.19)를 약 4MB 조각으로 올리고(upload kind 'video'),
      첫 장면을 잘라 그 분야 사진(대기 사진)으로 함께 올린 뒤 표지를 저장하면 관문이 영상 저장소(home-media)에 커밋한다.
      영상 저장소 반영에 1~2분 걸리므로 편집 화면은 그동안 이 컴퓨터의 파일(blob:)로 미리 보여 준다 */
   var vidIn = h('input', { type:'file', accept:'video/mp4,.mp4', hidden:true });
@@ -584,8 +584,8 @@
         }).then(function(d){ i++; return i < n ? next() : d; });
       };
       return next().then(function(v){
-        busy('저장하고 사이트에 반영하는 중…\n동영상이 있어 30초 정도 걸릴 수 있습니다.');
-        return api('save', { board:'hero', id:'H-' + slot, post:{ depth:false, center:null }, photos:[poster.attachmentId], cutouts:[], files:[], videos:[v.attachmentId] }, 240000).then(function(res){
+        busy('저장하고 영상 저장소에 올리는 중…\n영상 크기에 따라 1~2분 걸릴 수 있습니다. 창을 닫지 말아 주세요.');
+        return api('save', { board:'hero', id:'H-' + slot, post:{ depth:false, center:null }, photos:[poster.attachmentId], cutouts:[], files:[], videos:[v.attachmentId] }, 360000).then(function(res){
           var hs = heroItem(slot);
           if(hs){
             hs.photos = [{ attachmentId:poster.attachmentId, fileId:poster.fileId, w:probe.pw, h:probe.ph }];
@@ -594,7 +594,7 @@
           }
           E.local['hero:' + slot] = null;
           drawHero();
-          toast(res.published ? '「' + heroName(slot) + '」 표지에 동영상을 넣었습니다. 보통 1~2분, 늦으면 10분쯤 뒤 방문자 화면에서 재생됩니다.' : '동영상은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
+          toast(res.published ? '「' + heroName(slot) + '」 표지에 동영상을 넣었습니다. 영상 저장소에서 정리되는 시간까지 보통 2~3분, 늦으면 10분쯤 뒤 방문자 화면에서 재생됩니다.' : '동영상은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
         });
       });
     }).catch(function(e){
