@@ -64,6 +64,7 @@
     FILE_REJECTED:'올릴 수 없는 파일입니다. 형식과 크기를 확인해 주세요.',
     NOT_FOUND:'사진 자리를 찾을 수 없습니다. 화면을 새로 고친 뒤 다시 해 주세요.',
     BUSY:'다른 저장이 진행 중입니다. 잠시 뒤 다시 눌러 주세요.',
+    MEDIA_FAILED:'동영상을 영상 저장소에 올리지 못했습니다. 잠시 뒤 다시 해 주세요. 계속되면 관문의 GitHub 토큰(home-media 쓰기 권한)을 확인해야 합니다.',
     NETWORK:'인터넷 연결을 확인해 주세요.',
     TIMEOUT:'응답이 너무 늦습니다. 잠시 뒤 다시 시도해 주세요.',
     SERVER_ERROR:'처리 중 오류가 났습니다. 잠시 뒤 다시 시도해 주세요.'
@@ -168,6 +169,7 @@
       '이전 버전: 아래 [이전 버전]에서 저장하기 전 모습 5개를 볼 수 있습니다. [불러오기]로 화면에 띄워 확인한 뒤 [저장]하면 그 모습으로 되돌아갑니다(되돌리기도 다시 되돌릴 수 있습니다). 사진은 누르는 즉시 저장되므로 버전에 들어가지 않습니다.',
       '글자 · 목록은 아래 [저장]을 눌러야 사이트에 반영됩니다(보통 1~2분, 늦으면 10분쯤 뒤 보임).',
       '사진: 사진 위에 마우스를 올리면 [사진 바꾸기] [자르기] [빼기]가 나옵니다. 사진은 누르는 즉시 저장됩니다.',
+      '표지 동영상(메인): 표지 위에 마우스를 올려 분야를 고른 뒤 [동영상 넣기]. MP4(H.264) 20MB 이하, 10~20초 · 1080p 가로 영상이 알맞습니다. 첫 장면이 그 분야 사진(대기 사진)으로 함께 들어가고, 누르는 즉시 저장됩니다. [동영상 빼기]는 첫 장면 사진만 남깁니다.',
       '머리 · 바닥 메뉴와 공지 · 갤러리 · 모집요강 파일은 관리자 페이지에서 고칩니다.'
     ].join('\n\n'));
   }
@@ -430,23 +432,28 @@
     if(t.kind === 'hero'){ var hs = heroItem(t.slot); return hs && hs.photos[0]; }
     return E.photos[t.slot];
   }
-  function upload(t, r, name){
+  // dropVideo: 표지 칸의 동영상을 빼고 사진 칸으로 ([사진 바꾸기]). 자르기는 동영상을 두고 대기 사진만 바꾼다
+  function upload(t, r, name, dropVideo){
     busy('사진을 올리고 사이트에 반영하는 중…\n20초 정도 걸립니다.');
     return blobToBase64(r.blob).then(function(b64){
       return api('upload', { kind:'photo', board:t.kind === 'hero' ? 'hero' : 'photo', name:String(name || '사진').replace(/\.[^.]+$/, '') + '.jpg', mimeType:'image/jpeg', base64:b64, width:r.w, height:r.h }, 120000);
     }).then(function(d){
-      return saveSlot(t, [d.attachmentId]).then(function(res){
+      return saveSlot(t, [d.attachmentId], dropVideo).then(function(res){
         E.local[t.kind + ':' + t.slot] = r.preview;
-        var ph = { fileId:d.fileId, w:r.w, h:r.h };
-        if(t.kind === 'hero'){ var hs = heroItem(t.slot); if(hs){ hs.photos = [ph]; hs.cutouts = []; } drawHero(); }
+        var ph = { attachmentId:d.attachmentId, fileId:d.fileId, w:r.w, h:r.h };
+        if(t.kind === 'hero'){ var hs = heroItem(t.slot); if(hs){ hs.photos = [ph]; hs.cutouts = []; if(dropVideo) hs.videos = []; } drawHero(); }
         else{ E.photos[t.slot] = ph; showPhoto(t.slot, ph, r.preview); }
         toast(res.published ? '사진을 바꿨습니다. 보통 1~2분, 늦으면 10분쯤 뒤 방문자 화면에 보입니다.' : '사진은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
       });
     }).catch(function(e){ toast(e && e.code ? errMsg(e) : '이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.', true); })
       .then(function(){ busy(null); });
   }
-  function saveSlot(t, photos){
-    if(t.kind === 'hero') return api('save', { board:'hero', id:'H-' + t.slot, post:{ depth:false, center:null }, photos:photos, cutouts:[], files:[] }, 120000);
+  function saveSlot(t, photos, dropVideo){
+    if(t.kind === 'hero'){
+      var body = { board:'hero', id:'H-' + t.slot, post:{ depth:false, center:null }, photos:photos, cutouts:[], files:[] };
+      if(dropVideo) body.videos = [];   // 보내지 않으면 관문이 기존 동영상을 둔다(Posts.js)
+      return api('save', body, 120000);
+    }
     return api('save', { board:'photo', id:'S-' + t.slot, post:{ pos:null }, photos:photos, files:[] }, 120000);
   }
   function showPhoto(slot, ph, preview){
@@ -459,11 +466,12 @@
   }
   function replacePhoto(){
     var t = target(); if(!t) return;
+    if(t.kind === 'hero' && heroVideoOf(t.slot) && !window.confirm('「' + heroName(t.slot) + '」 표지에는 동영상이 있습니다. 사진으로 바꾸면 동영상이 빠집니다. 바꿀까요?')) return;
     filePick = function(file){
       var url = URL.createObjectURL(file);
       Cropper.crop(url, { ratio:ratioOf(t), maxSide:photoSide(), skip:true, onError:function(m){ toast(m, true); } }).then(function(r){
         if(r === null){ URL.revokeObjectURL(url); return; }
-        (r === 'skip' ? Cropper.shrink(file, photoSide()) : Promise.resolve(r)).then(function(x){ upload(t, x, file.name); });
+        (r === 'skip' ? Cropper.shrink(file, photoSide()) : Promise.resolve(r)).then(function(x){ upload(t, x, file.name, true); });
       }, function(){ toast('이 사진은 열 수 없습니다. JPG로 바꿔 올려 주세요.', true); });
     };
     fileIn.click();
@@ -504,7 +512,7 @@
     var custom = {}, videos = {};
     (E.data.hero || []).forEach(function(x){
       if(x.photos && x.photos[0]) custom[x.slot] = { fileId:x.photos[0].fileId, w:x.photos[0].w, h:x.photos[0].h };
-      if(custom[x.slot] && x.videos && x.videos[0] && x.videos[0].src) videos[x.slot] = { src:x.videos[0].src };
+      if(custom[x.slot] && x.videos && x.videos[0] && x.videos[0].src) videos[x.slot] = { src:x.videos[0].local || x.videos[0].src };
     });
     __hero.rebuild(custom, videos);
     if(E.heroSlot) __hero.show(E.heroSlot);
@@ -520,10 +528,97 @@
       heroChips.appendChild(btn(heroName(k) + (has ? '' : ' (없음)'), function(){ E.heroSlot = k; __hero.show(k); drawHeroChips(); }, k === E.heroSlot ? 'on' : null));
     });
   }
+  /* ---------- 표지 동영상 (2026-11-26 사용자 「첫 화면 배경에 동영상도」, WBS 22.18) ----------
+     관문 · 재생은 2안(WBS 8.6) 그대로: MP4(H.264) 20MB 이하를 약 4MB 조각으로 올리고(upload kind 'video'),
+     첫 장면을 잘라 그 분야 사진(대기 사진)으로 함께 올린 뒤 표지를 저장하면 관문이 영상 저장소(home-media)에 커밋한다.
+     영상 저장소 반영에 1~2분 걸리므로 편집 화면은 그동안 이 컴퓨터의 파일(blob:)로 미리 보여 준다 */
+  var vidIn = h('input', { type:'file', accept:'video/mp4,.mp4', hidden:true });
+  vidIn.addEventListener('change', function(){ var f = vidIn.files && vidIn.files[0]; vidIn.value = ''; if(f) addVideo(f); });
+  function heroVideoOf(k){ var hs = heroItem(k); return hs && hs.videos && hs.videos[0]; }
+  function pickVideo(){
+    var t = target(); if(!t || t.kind !== 'hero') return;
+    if(!(E.data.limits && E.data.limits.videoPartBytes)) return toast('관문이 동영상을 받지 않습니다. 개발자에게 알려 주세요.', true);
+    vidIn.click();
+  }
+  function probeVideo(file, maxSide){
+    return new Promise(function(resolve, reject){
+      var url = URL.createObjectURL(file), vd = document.createElement('video');
+      var fail = function(){ URL.revokeObjectURL(url); reject({ userMsg:'이 영상은 열 수 없습니다. MP4(H.264)로 바꿔 올려 주세요. 아이폰 기본 영상(HEVC · MOV)은 브라우저에서 열리지 않을 수 있습니다.' }); };
+      vd.muted = true; vd.playsInline = true; vd.preload = 'auto';
+      vd.onerror = fail;
+      vd.onloadeddata = function(){
+        if(!vd.videoWidth || !vd.videoHeight) return fail();
+        vd.onseeked = function(){
+          vd.onseeked = null;
+          var w = vd.videoWidth, hh = vd.videoHeight, sc = Math.min(1, maxSide / Math.max(w, hh));
+          var pw = Math.round(w * sc), ph = Math.round(hh * sc);
+          var c = document.createElement('canvas'); c.width = pw; c.height = ph;
+          c.getContext('2d').drawImage(vd, 0, 0, pw, ph);
+          c.toBlob(function(blob){ blob ? resolve({ url:url, w:w, h:hh, duration:vd.duration, poster:blob, pw:pw, ph:ph }) : fail(); }, 'image/jpeg', 0.85);
+        };
+        vd.currentTime = 0.001;   // 첫 화면을 확실히 그리게 한 번 옮긴다
+      };
+      vd.src = url;
+    });
+  }
+  function addVideo(file){
+    var t = target(); if(!t || t.kind !== 'hero') return;
+    var lim = E.data.limits || {}, PART = lim.videoPartBytes, slot = t.slot;
+    if(!/\.mp4$/i.test(file.name) || (file.type && file.type !== 'video/mp4')) return toast('MP4 파일만 올릴 수 있습니다. 아이폰 영상(MOV)은 MP4(H.264)로 바꿔 올려 주세요.', true);
+    if(file.size > lim.videoBytes) return toast('동영상이 너무 큽니다(' + Board.formatSize(file.size) + '). ' + Board.formatSize(lim.videoBytes) + ' 이하로 줄여 주세요. 10~20초 · 1080p면 보통 맞습니다.', true);
+    var base = file.name.replace(/\.[^.]+$/, ''), n = Math.max(1, Math.ceil(file.size / PART)), probe;
+    var uploadId = crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+    busy('동영상을 여는 중…');
+    probeVideo(file, photoSide()).then(function(r){
+      probe = r;
+      busy('첫 장면을 표지 사진으로 올리는 중…');
+      return blobToBase64(r.poster).then(function(b64){
+        return api('upload', { kind:'photo', board:'hero', name:base + '-첫장면.jpg', mimeType:'image/jpeg', base64:b64, width:r.pw, height:r.ph }, 120000);
+      });
+    }).then(function(poster){
+      var i = 0;
+      var next = function(){
+        busy('동영상을 올리는 중… (' + (i + 1) + ' / ' + n + ')\n창을 닫지 말아 주세요.');
+        return blobToBase64(file.slice(i * PART, (i + 1) * PART)).then(function(b64){
+          return api('upload', { kind:'video', name:base + '.mp4', mimeType:'video/mp4', width:probe.w, height:probe.h, uploadId:uploadId, part:i, parts:n, base64:b64 }, 180000);
+        }).then(function(d){ i++; return i < n ? next() : d; });
+      };
+      return next().then(function(v){
+        busy('저장하고 사이트에 반영하는 중…\n동영상이 있어 30초 정도 걸릴 수 있습니다.');
+        return api('save', { board:'hero', id:'H-' + slot, post:{ depth:false, center:null }, photos:[poster.attachmentId], cutouts:[], files:[], videos:[v.attachmentId] }, 240000).then(function(res){
+          var hs = heroItem(slot);
+          if(hs){
+            hs.photos = [{ attachmentId:poster.attachmentId, fileId:poster.fileId, w:probe.pw, h:probe.ph }];
+            hs.cutouts = [];
+            hs.videos = [{ attachmentId:v.attachmentId, src:'hero/' + v.attachmentId + '.mp4', local:probe.url, w:probe.w, h:probe.h }];
+          }
+          E.local['hero:' + slot] = null;
+          drawHero();
+          toast(res.published ? '「' + heroName(slot) + '」 표지에 동영상을 넣었습니다. 보통 1~2분, 늦으면 10분쯤 뒤 방문자 화면에서 재생됩니다.' : '동영상은 저장했지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
+        });
+      });
+    }).catch(function(e){
+      toast(e && e.userMsg ? e.userMsg : errMsg(e), true);
+    }).then(function(){ busy(null); place(); });
+  }
+  function removeVideo(){
+    var t = target(); if(!t || t.kind !== 'hero') return;
+    var hs = heroItem(t.slot), ph = hs && hs.photos && hs.photos[0];
+    if(!heroVideoOf(t.slot)) return toast('뺄 동영상이 없습니다.');
+    if(!window.confirm('「' + heroName(t.slot) + '」 표지의 동영상을 뺄까요? 첫 장면 사진은 그대로 남아 사진 칸이 됩니다.')) return;
+    busy('동영상을 빼고 사이트에 반영하는 중…');
+    api('save', { board:'hero', id:'H-' + t.slot, post:{ depth:false, center:null }, photos:ph && ph.attachmentId ? [ph.attachmentId] : [], cutouts:[], files:[], videos:[] }, 120000).then(function(res){
+      hs.videos = [];
+      drawHero();
+      toast(res.published ? '동영상을 뺐습니다.' : '뺐지만 사이트 반영에 실패했습니다. 관리자 페이지의 [다시 반영]을 눌러 주세요.', !res.published);
+    }, function(e){ toast(errMsg(e), true); }).then(function(){ busy(null); place(); });
+  }
+
   var photoLabel = h('b', { class:'lb' });
+  var vidBtn = btn('동영상 넣기', pickVideo, 'fv'), vidOff = btn('동영상 빼기', removeVideo, 'warn fvo');
   var photoBar = h('div', { class:'ed-tool ed-photo', hidden:true }, [
     photoLabel, heroChips,
-    btn('사진 바꾸기', replacePhoto, 'pri'), btn('자르기', recrop), btn('빼기', removePhoto, 'warn')
+    btn('사진 바꾸기', replacePhoto, 'pri'), btn('자르기', recrop), btn('빼기', removePhoto, 'warn'), vidBtn, vidOff
   ]);
   function setPhoto(el){ if(cur.photo === el) return; cur.photo = el; place(); }
 
@@ -719,6 +814,10 @@
       photoLabel.textContent = isHero ? '표지 사진' : '사진';
       heroChips.hidden = !isHero;
       photoBar.querySelector('.pri').textContent = has ? '사진 바꾸기' : '사진 넣기';
+      var hv = isHero && E.heroSlot && heroVideoOf(E.heroSlot);
+      vidBtn.hidden = !isHero; vidBtn.textContent = hv ? '동영상 바꾸기' : '동영상 넣기';
+      vidOff.hidden = !hv;
+      photoLabel.textContent = isHero ? (hv ? '표지 동영상' : '표지 사진') : '사진';
       // 사진 안 왼쪽 아래(화면 아래 막대 위로). 표지는 분야 목록 · 로고 위로 조금 더 올린다
       var top = Math.min(rr.bottom, window.innerHeight - 70) - photoBar.offsetHeight - (isHero ? 90 : 8);
       top = Math.max(top, rr.top + 8);
@@ -760,7 +859,7 @@
   /* ---------- 시작 ---------- */
   function start(){
     document.documentElement.classList.add('ed-on');
-    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, secBar, origBar, pickBox, verBox, bar, fileIn].forEach(function(x){ ui.appendChild(x); });
+    [loginBox, busyEl, toastEl, fmtBar, itemBar, photoBar, secBar, origBar, pickBox, verBox, bar, fileIn, vidIn].forEach(function(x){ ui.appendChild(x); });
     document.body.appendChild(ui);
     saveBtn.disabled = true;
 

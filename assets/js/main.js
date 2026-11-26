@@ -163,7 +163,7 @@
     v.setAttribute('muted',''); v.setAttribute('playsinline',''); v.setAttribute('aria-hidden','true');
     v.addEventListener('playing',function(){ v.classList.add('on'); });
     v.addEventListener('error',function(){ if(v.parentNode) s.removeChild(v); s._v=null; s._video=null; });
-    v.src=MEDIA_BASE+s._video.src;
+    v.src=/^blob:/.test(s._video.src) ? s._video.src : MEDIA_BASE+s._video.src;   /* blob: = 편집 화면이 방금 올린 영상 미리보기(editor.js) */
     s.appendChild(v); s._v=v;
   }
 
